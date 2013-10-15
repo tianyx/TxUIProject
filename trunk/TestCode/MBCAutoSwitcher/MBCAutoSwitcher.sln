@@ -1,0 +1,93 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCAutoSwitcher", "MBCAutoSwitcher\MBCAutoSwitcher.vcproj", "{4C0D3BBF-826A-4F0D-83E8-2AB5136C48A8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E} = {9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CMBCCommonLib", "CMBCCommonLib\CMBCCommonLib.vcproj", "{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCRemoteCtrl", "MBCRemoteCtrl\MBCRemoteCtrl.vcproj", "{BD29651C-1706-4B74-AE34-E9AB8DF83543}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E} = {9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MonitorTest", "MonitorTest\MonitorTest.vcproj", "{AA8F7852-29EB-482D-8E17-A449C98F576C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BD29651C-1706-4B74-AE34-E9AB8DF83543} = {BD29651C-1706-4B74-AE34-E9AB8DF83543}
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E} = {9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MulticastEndTest", "MulticastEndTest\MulticastEndTest.vcproj", "{22C02D86-BF5E-4E68-91C7-77713E9BD368}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E} = {9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCStateMonitor", "MBCStateMonitor\MBCMonitor.vcproj", "{E14B3F3F-DEB1-4492-9ACB-5D7911A332B5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E} = {9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCWatchDog", "MBCWatchDog\MBCWatchDog.vcproj", "{9093D460-3CF9-41F4-B14A-DA0482F93826}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 8
+		SccProjectUniqueName0 = MBCAutoSwitcher\\MBCAutoSwitcher.vcproj
+		SccLocalPath0 = .
+		SccProjectFilePathRelativizedFromConnection0 = MBCAutoSwitcher\\
+		SccProjectUniqueName1 = CMBCCommonLib\\CMBCCommonLib.vcproj
+		SccLocalPath1 = .
+		SccProjectFilePathRelativizedFromConnection1 = CMBCCommonLib\\
+		SccProjectUniqueName2 = MBCRemoteCtrl\\MBCRemoteCtrl.vcproj
+		SccLocalPath2 = .
+		SccProjectFilePathRelativizedFromConnection2 = MBCRemoteCtrl\\
+		SccLocalPath3 = .
+		SccProjectUniqueName4 = MonitorTest\\MonitorTest.vcproj
+		SccLocalPath4 = MonitorTest
+		SccProjectUniqueName5 = MulticastEndTest\\MulticastEndTest.vcproj
+		SccLocalPath5 = MulticastEndTest
+		SccProjectUniqueName6 = MBCStateMonitor\\MBCMonitor.vcproj
+		SccLocalPath6 = MBCStateMonitor
+		SccProjectUniqueName7 = MBCWatchDog\\MBCWatchDog.vcproj
+		SccLocalPath7 = MBCWatchDog
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C0D3BBF-826A-4F0D-83E8-2AB5136C48A8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4C0D3BBF-826A-4F0D-83E8-2AB5136C48A8}.Debug|Win32.Build.0 = Debug|Win32
+		{4C0D3BBF-826A-4F0D-83E8-2AB5136C48A8}.Release|Win32.ActiveCfg = Release|Win32
+		{4C0D3BBF-826A-4F0D-83E8-2AB5136C48A8}.Release|Win32.Build.0 = Release|Win32
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}.Debug|Win32.Build.0 = Debug|Win32
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}.Release|Win32.ActiveCfg = Release|Win32
+		{9CD69E92-9E54-4B0B-B6EC-CD1ADD54AB7E}.Release|Win32.Build.0 = Release|Win32
+		{BD29651C-1706-4B74-AE34-E9AB8DF83543}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BD29651C-1706-4B74-AE34-E9AB8DF83543}.Debug|Win32.Build.0 = Debug|Win32
+		{BD29651C-1706-4B74-AE34-E9AB8DF83543}.Release|Win32.ActiveCfg = Release|Win32
+		{BD29651C-1706-4B74-AE34-E9AB8DF83543}.Release|Win32.Build.0 = Release|Win32
+		{AA8F7852-29EB-482D-8E17-A449C98F576C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AA8F7852-29EB-482D-8E17-A449C98F576C}.Debug|Win32.Build.0 = Debug|Win32
+		{AA8F7852-29EB-482D-8E17-A449C98F576C}.Release|Win32.ActiveCfg = Release|Win32
+		{AA8F7852-29EB-482D-8E17-A449C98F576C}.Release|Win32.Build.0 = Release|Win32
+		{22C02D86-BF5E-4E68-91C7-77713E9BD368}.Debug|Win32.ActiveCfg = Debug|Win32
+		{22C02D86-BF5E-4E68-91C7-77713E9BD368}.Debug|Win32.Build.0 = Debug|Win32
+		{22C02D86-BF5E-4E68-91C7-77713E9BD368}.Release|Win32.ActiveCfg = Release|Win32
+		{22C02D86-BF5E-4E68-91C7-77713E9BD368}.Release|Win32.Build.0 = Release|Win32
+		{E14B3F3F-DEB1-4492-9ACB-5D7911A332B5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E14B3F3F-DEB1-4492-9ACB-5D7911A332B5}.Debug|Win32.Build.0 = Debug|Win32
+		{E14B3F3F-DEB1-4492-9ACB-5D7911A332B5}.Release|Win32.ActiveCfg = Release|Win32
+		{E14B3F3F-DEB1-4492-9ACB-5D7911A332B5}.Release|Win32.Build.0 = Release|Win32
+		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Debug|Win32.Build.0 = Debug|Win32
+		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Release|Win32.ActiveCfg = Release|Win32
+		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

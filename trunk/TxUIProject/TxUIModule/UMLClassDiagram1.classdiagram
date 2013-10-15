@@ -1,0 +1,277 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<logicalClassDesignerModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm4="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm5="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/ModelStore" dslVersion="1.0.0.0" Id="092775f5-ec6d-4f7e-837d-ca91dc81b25a" name="UMLClassDiagram1" linkedPackageId="eef404a2-5561-4bfa-b4c0-ac03fc7643b2" xmlns="http://schemas.microsoft.com/dsltools/LogicalClassDesigner">
+  <ownedCommentsInternal>
+    <comment Id="5e015941-1d67-4bf5-99d7-60e0a08cdf75">
+      <elementDefinition Id="5a752a8b-11e8-4fd7-9bf3-5a8b4156f1d6" />
+      <body>建立ObjectID,每层Object保留1000000个Id,
+最底层ID是wndContainerID,1000以内,第一层10000开始至1000000
+</body>
+      <annotatedElements>
+        <classMoniker Id="d21d3397-5297-436e-9f5a-224c9543f72e" LastKnownName="CTxIDMgr" />
+      </annotatedElements>
+    </comment>
+    <comment Id="d2be022c-458a-476a-9a28-f37add3272a7">
+      <elementDefinition Id="78f756f4-b5f8-47d8-8d4c-8c140ff819a5" />
+      <body>WndProc进行消息分发，根据消息类型和返回值决定是否要调用父窗口的消息处理。涉及界面改变的操作将向container发送redrawRect消息。
+</body>
+      <annotatedElements>
+        <classMoniker Id="a48f079c-4e00-4897-8c09-57cf03cf2818" LastKnownName="CTxObjectBase" />
+      </annotatedElements>
+    </comment>
+    <comment Id="12841051-490c-4538-826c-ceda52ad14e0">
+      <elementDefinition Id="9dcacf48-9e77-44cc-9ffd-40800f5df0a0" />
+      <body>注册非窗口及鼠标按键消息</body>
+      <annotatedElements>
+        <classMoniker Id="e759b745-5d67-4b46-8365-b34f24d45054" LastKnownName="CTxMsgHandler" />
+      </annotatedElements>
+    </comment>
+  </ownedCommentsInternal>
+  <packagedElements>
+    <logicalClassDesignerModelHasTypes>
+      <class Id="568587d7-ccad-481a-9f69-a6b7969f5912" name="CTxWndContainer" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <elementDefinition Id="7c46fda9-9446-404a-92aa-843b5384af84" />
+        <ownedAttributesInternal>
+          <property Id="9fde149c-fda8-4a42-afb3-fe94575085c6" name="m_ObjMgr" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="a3b877b6-f727-4471-a9ad-9e19a84d0b65" />
+            <type_NamedElement>
+              <referencedTypeMoniker Id="7d27d004-aa67-409b-af82-9f2903ea3b18" LastKnownName="CBaseObjMgr" />
+            </type_NamedElement>
+          </property>
+        </ownedAttributesInternal>
+        <ownedOperationsInternal>
+          <operation Id="3bac85f6-4b05-4396-a9b0-04bb30f3a41b" name="WndProc" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="1107af4d-c6e2-4907-863c-391269fbe45e" />
+          </operation>
+        </ownedOperationsInternal>
+      </class>
+    </logicalClassDesignerModelHasTypes>
+    <logicalClassDesignerModelHasTypes>
+      <class Id="a48f079c-4e00-4897-8c09-57cf03cf2818" name="CTxObjectBase" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <elementDefinition Id="f2b1809a-9a04-4318-9c1f-0066e066f97f" />
+        <suppliersInternal>
+          <interfaceRealization Id="b363ce6f-1869-4bfa-91a7-df77c55e80b4">
+            <interfaceMoniker Id="1007e7f1-4110-4516-9562-4560967f09d9" LastKnownName="ITxMsgProc" />
+            <elementDefinition Id="aab66c16-e6f3-40ff-be6f-33083aab3bd8" />
+          </interfaceRealization>
+        </suppliersInternal>
+        <ownedAttributesInternal>
+          <property Id="b6a5c591-af09-4dee-9a47-7b12113f489d" name="m_pParent" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="11242e9d-66ea-4c40-9480-f6d01354fb48" />
+          </property>
+          <property Id="323bffb1-aa3b-4f50-a868-33e368dc6b3d" name="m_vChild" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="a026197c-77ff-40d5-ac7d-b497b1a79298" />
+          </property>
+          <property Id="79be7e9c-b987-4916-aacc-3ac360ab2947" name="m_nId" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="a97b0dfb-eb1e-4ecc-b0ee-cc59dea7ac0f" />
+          </property>
+          <property Id="92380373-83ab-4c75-ba38-e9a90fe77025" name="m_Rect" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="e17af421-d082-4a51-acb7-a5bebcc8a5b6" />
+          </property>
+        </ownedAttributesInternal>
+        <ownedOperationsInternal>
+          <operation Id="bfc3ee6f-44e3-4afb-8ba6-10576a40ca50" name="virtual DefaultMsgProc" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="55c0ee11-5ae2-45ae-97c4-6aeb8aa6976a" />
+            <ownedParameters>
+              <operationHasOwnedParameters>
+                <parameter Id="c0ce0cb9-e913-4da4-9323-f5c7c48d70e4" direction="Return" isUnique="false">
+                  <elementDefinition Id="f0af77e4-d980-416f-81ad-38f2f2586a4f" />
+                  <type_NamedElement>
+                    <referencedTypeMoniker Id="c1c27998-3abe-48ec-8e53-a3822260e64e" LastKnownName="Integer" />
+                  </type_NamedElement>
+                </parameter>
+              </operationHasOwnedParameters>
+            </ownedParameters>
+          </operation>
+        </ownedOperationsInternal>
+      </class>
+    </logicalClassDesignerModelHasTypes>
+    <logicalClassDesignerModelHasTypes>
+      <class Id="8f0dc71f-d36b-4d62-a5a4-cf333c9a34fd" name="CBaseObjMgr" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <elementDefinition Id="8728147a-1743-4f26-baa0-0851e8ed5ae3" />
+        <targetEnds>
+          <association Id="7311a4da-b67f-4e82-b706-8d42ea40f953" isDerived="false" sourceEndRoleName="CBaseObjMgr" targetEndRoleName="CTxWndContainer" isLeaf="false" isAbstract="false">
+            <classMoniker Id="568587d7-ccad-481a-9f69-a6b7969f5912" LastKnownName="CTxWndContainer" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd Id="8a36b94d-7754-43b0-94eb-7232adf9905d" name="CBaseObjMgr" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="Composite" isComposite="false" isNavigableOwned="false">
+                  <elementDefinition Id="68974115-4792-4622-9c34-a4504e5c6c44" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd Id="b4ea4a6f-f8f4-43a8-8b4d-0be9c591cbc5" name="CTxWndContainer" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="true">
+                  <elementDefinition Id="97dd048a-fe5e-44f7-a0ab-d118db3c3902" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+            <elementDefinition Id="106787be-b46b-4ae0-88f2-f1b012c52646" />
+          </association>
+        </targetEnds>
+        <ownedAttributesInternal>
+          <property Id="0e635286-df7c-4383-a32c-b9d079fb302b" name="m_vObject" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <description>保存所有object，计算ptInRect时从反向查找,保证最上面的Object先计算.</description>
+            <elementDefinition Id="3cf0d4c0-3339-45d7-83e8-54edf4055756" />
+            <type_NamedElement>
+              <referencedTypeMoniker Id="b5ea49c1-b0ac-4ef8-8a84-0df4d69c3f3f" LastKnownName="std::map&lt;int, CTxObjectBase&gt;" />
+            </type_NamedElement>
+          </property>
+          <property Id="81eaa57d-8d7a-481c-9688-0c5a6fb199ca" name="m_nActiveObjId" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="6e6538b9-1fd5-4d99-8159-d8263ec8e3a3" />
+          </property>
+          <property Id="823957f1-2409-462e-b7ea-261972a516f0" name="m_nMouseOverId" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="9ba2e1ce-f2c4-4fe0-b8f0-8d91e9efaa21" />
+          </property>
+        </ownedAttributesInternal>
+        <ownedOperationsInternal>
+          <operation Id="ab19f9f3-2839-46d1-8963-ed73fdcebc44" name="GetPtInRect" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="28d9c421-0550-45f9-a47a-d8d7f72b0eb3" />
+          </operation>
+        </ownedOperationsInternal>
+      </class>
+    </logicalClassDesignerModelHasTypes>
+    <logicalClassDesignerModelHasTypes>
+      <class Id="d21d3397-5297-436e-9f5a-224c9543f72e" name="CTxIDMgr" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <elementDefinition Id="ef1a4c0d-3a81-4bbc-907a-cdbd3e0c20cb" />
+        <targetEnds>
+          <association Id="7be853e9-fa7d-43aa-9496-2b6d075dd1cc" isDerived="false" sourceEndRoleName="CTxIDMgr" targetEndRoleName="CTxWndContainer" isLeaf="false" isAbstract="false">
+            <classMoniker Id="568587d7-ccad-481a-9f69-a6b7969f5912" LastKnownName="CTxWndContainer" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd Id="2902f9fc-8bf4-4173-b5e5-23820c4cecda" name="CTxIDMgr" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                  <elementDefinition Id="7a696d0c-4805-4bb7-84b4-2dc43874827d" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd Id="e34b22e5-b1f8-4cd2-9546-3183861f8b21" name="CTxWndContainer" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                  <elementDefinition Id="fa84aa34-961a-4960-8e46-5c7c5716912a" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+            <elementDefinition Id="5ca24eab-4bcf-4b6e-bb18-7b92110cc59f" />
+          </association>
+        </targetEnds>
+      </class>
+    </logicalClassDesignerModelHasTypes>
+    <packageHasNamedElement>
+      <referencedType Id="7d27d004-aa67-409b-af82-9f2903ea3b18" name="CBaseObjMgr" isAbstract="false" isLeaf="false" cachedFullName="TxUIModule::CBaseObjMgr">
+        <elementDefinition Id="8728147a-1743-4f26-baa0-0851e8ed5ae3" />
+      </referencedType>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <referencedType Id="b5ea49c1-b0ac-4ef8-8a84-0df4d69c3f3f" name="std::map&lt;int, CTxObjectBase&gt;" isAbstract="false" isLeaf="false" cachedFullName="std::map&lt;int, CTxObjectBase&gt;">
+        <elementDefinition Id="241f43f1-32f0-45cd-81ba-2d913b721f12" />
+      </referencedType>
+    </packageHasNamedElement>
+    <logicalClassDesignerModelHasTypes>
+      <Interface Id="1007e7f1-4110-4516-9562-4560967f09d9" name="ITxMsgProc" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="c19a8993-3fc9-446e-8d8d-4f796e32365e" />
+        <ownedOperations>
+          <operation Id="1d256fc0-9393-4a05-b52a-5fb79026c8f0" name="virtual DefaultMsgProc" isLeaf="false" isStatic="false" isAbstract="true" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="63ee5a69-a36a-4c05-84e0-541b6ae5c9b1" />
+            <ownedParameters>
+              <operationHasOwnedParameters>
+                <parameter Id="3d13d4e1-de55-443d-aacf-d30b6660ae8d" direction="Return" isUnique="false">
+                  <elementDefinition Id="4ed165f0-fcf9-481d-a4a0-5e2b68f13ed8" />
+                  <type_NamedElement>
+                    <referencedTypeMoniker Id="9118b551-a854-449f-a92c-02d3fbffb161" LastKnownName="Integer" />
+                  </type_NamedElement>
+                </parameter>
+              </operationHasOwnedParameters>
+            </ownedParameters>
+          </operation>
+        </ownedOperations>
+      </Interface>
+    </logicalClassDesignerModelHasTypes>
+    <packageHasNamedElement>
+      <referencedType Id="9118b551-a854-449f-a92c-02d3fbffb161" name="Integer" isAbstract="false" isLeaf="false" cachedFullName="Integer">
+        <elementDefinition Id="220a3521-e091-4221-bae9-3ef9018e845c" />
+      </referencedType>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <referencedType Id="c1c27998-3abe-48ec-8e53-a3822260e64e" name="Integer" isAbstract="false" isLeaf="false" cachedFullName="Integer">
+        <elementDefinition Id="220a3521-e091-4221-bae9-3ef9018e845c" />
+      </referencedType>
+    </packageHasNamedElement>
+    <logicalClassDesignerModelHasTypes>
+      <Interface Id="458f27a2-eeea-48a8-aff8-7a9a5c8a7cc7" name="ITxDraw" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="1986154f-a20c-4221-a0d5-bf6792c58173" />
+        <ownedOperations>
+          <operation Id="98c438fa-70a3-492a-ace7-f9fb4dbe28c7" name="Draw" isLeaf="false" isStatic="false" isAbstract="true" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="dc602a90-fbce-43ed-82cb-bec83ee59244" />
+          </operation>
+        </ownedOperations>
+      </Interface>
+    </logicalClassDesignerModelHasTypes>
+    <logicalClassDesignerModelHasTypes>
+      <class Id="e759b745-5d67-4b46-8365-b34f24d45054" name="CTxMsgHandler" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <elementDefinition Id="98a3d649-11a3-48a8-9f96-7d804e8b2de9" />
+        <suppliersInternal>
+          <interfaceRealization Id="5ac67472-cc2f-48fc-b74a-49329f8f945e">
+            <interfaceMoniker Id="546179da-fb46-44dd-99f3-4f083a833717" LastKnownName="ITxMsgRegster" />
+            <elementDefinition Id="aa48b9f4-2f18-4108-b2ca-fc47befb31fd" />
+          </interfaceRealization>
+        </suppliersInternal>
+        <targetEnds>
+          <association Id="72f7aba2-90a5-419f-a07e-79efc50f95b8" isDerived="false" sourceEndRoleName="CTxMsgHandler" targetEndRoleName="CTxWndContainer" isLeaf="false" isAbstract="false">
+            <classMoniker Id="568587d7-ccad-481a-9f69-a6b7969f5912" LastKnownName="CTxWndContainer" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd Id="72775a61-39ec-4f27-aef3-a3b55603e3ae" name="CTxMsgHandler" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="Composite" isComposite="false" isNavigableOwned="false">
+                  <elementDefinition Id="a350d0b2-3d46-4bd1-a56b-15bff2a9fe81" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd Id="ae299550-aa8c-429d-afc9-2bd5bf4899b0" name="CTxWndContainer" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="true">
+                  <elementDefinition Id="7ea3df22-ffb3-4b34-b110-30f9e82844c9" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+            <elementDefinition Id="82498897-5651-4c4e-80f0-b8fd8d5df38a" />
+          </association>
+        </targetEnds>
+        <ownedAttributesInternal>
+          <property Id="1d027cfc-913e-4fd5-90cc-30a7735ddd8b" name="map&lt;msg, proc&gt;" isLeaf="false" isStatic="false" isReadOnly="false" isUnique="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+            <elementDefinition Id="f083daf3-56ba-4fd8-b15e-745794f1cb4f" />
+          </property>
+        </ownedAttributesInternal>
+        <ownedOperationsInternal>
+          <operation Id="dc48066a-f787-49c4-94da-a331a7de2c1b" name="RegisterMsg" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="30c29780-99d6-47ab-a8ef-b8ea9a7401e3" />
+          </operation>
+          <operation Id="326cb3fa-a900-4f24-903b-42b4f49400fb" name="UnRegisterMsg" isLeaf="false" isStatic="false" isAbstract="false" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="ac472a25-ff95-46e8-b88a-da426f1d660b" />
+          </operation>
+        </ownedOperationsInternal>
+      </class>
+    </logicalClassDesignerModelHasTypes>
+    <logicalClassDesignerModelHasTypes>
+      <Interface Id="546179da-fb46-44dd-99f3-4f083a833717" name="ITxMsgRegster" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="fd4fad24-58f9-46d8-9c87-114c4f6e43bd" />
+        <ownedOperations>
+          <operation Id="72eafbda-a2c2-41f3-96b3-206c08adabbf" name="RegisterMsg" isLeaf="false" isStatic="false" isAbstract="true" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="47e6e300-382f-4406-8144-e3044dc021e1" />
+          </operation>
+          <operation Id="ba2886f1-b4c7-46b8-8d7a-8405e0b2db06" name="UnRegisterMsg" isLeaf="false" isStatic="false" isAbstract="true" concurrency="Sequential" isQuery="false">
+            <elementDefinition Id="f29e4c9a-d506-4890-b2bd-9892cb038b59" />
+          </operation>
+        </ownedOperations>
+      </Interface>
+    </logicalClassDesignerModelHasTypes>
+  </packagedElements>
+  <package Id="eef404a2-5561-4bfa-b4c0-ac03fc7643b2" name="TxUIModule">
+    <elementDefinition Id="7cde6ec1-55d1-40b1-8f7b-0ace55e81966" />
+    <profileInstances>
+      <packageHasProfileInstances Id="9fe50e09-7b62-4e07-8afb-d94b5cf70ea6">
+        <profileInstance Id="f42675a1-2d45-4ef3-9541-0a59822b8f5f" name="StandardProfileL2">
+          <elementDefinition Id="e34d544e-0fea-4ed6-ac5e-1b74119ac791" />
+        </profileInstance>
+        <elementDefinition Id="0caec977-1f8c-4ba3-a7db-8cc9ad9cc73b" />
+      </packageHasProfileInstances>
+      <packageHasProfileInstances Id="c99f44d4-50b1-487b-a40b-ccd03ba1086d">
+        <profileInstance Id="83fa2758-28d6-442b-9788-d035e0ef963a" name="StandardProfileL3">
+          <elementDefinition Id="532ea607-fb19-44b8-8502-3351b05452be" />
+        </profileInstance>
+        <elementDefinition Id="29349502-908c-4fda-9054-c48619c59ed0" />
+      </packageHasProfileInstances>
+    </profileInstances>
+  </package>
+</logicalClassDesignerModel>

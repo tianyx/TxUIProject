@@ -1,0 +1,5 @@
+SCC = This is a source code control file
+
+[MulticastEndTest.vcproj]
+SCC_Aux_Path = "P4SCC#idmmainsvr:1666##tianyx##tianyx_p4Src_D"
+SCC_Project_Name = Perforce Project

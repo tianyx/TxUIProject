@@ -1,0 +1,7 @@
+; TxDrawBase.def : 声明 DLL 的模块参数。
+
+LIBRARY      "TxDrawBase"
+
+EXPORTS
+    ; 此处可以是显式导出
+	;CreateDrawBase_C		@1

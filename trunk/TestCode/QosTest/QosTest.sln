@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QosTestSender", "QosTestSender\QosTestSender.vcproj", "{0ED13476-AEDB-48E9-99F9-CC39F6731EE4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QosTestRecver", "QosTestRecver\QosTestRecver.vcproj", "{CF0CAB65-BF5F-4C96-A97D-27813646016C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0ED13476-AEDB-48E9-99F9-CC39F6731EE4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0ED13476-AEDB-48E9-99F9-CC39F6731EE4}.Debug|Win32.Build.0 = Debug|Win32
+		{0ED13476-AEDB-48E9-99F9-CC39F6731EE4}.Release|Win32.ActiveCfg = Release|Win32
+		{0ED13476-AEDB-48E9-99F9-CC39F6731EE4}.Release|Win32.Build.0 = Release|Win32
+		{CF0CAB65-BF5F-4C96-A97D-27813646016C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF0CAB65-BF5F-4C96-A97D-27813646016C}.Debug|Win32.Build.0 = Debug|Win32
+		{CF0CAB65-BF5F-4C96-A97D-27813646016C}.Release|Win32.ActiveCfg = Release|Win32
+		{CF0CAB65-BF5F-4C96-A97D-27813646016C}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
