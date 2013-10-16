@@ -14,7 +14,7 @@ const int Log::ToDebug   =  1;
 const int Log::ToFile    =  2;
 const int Log::ToConsole =  4;
 
-const static int LINE_BUFFER_SIZE = 4096;
+const static int LINE_BUFFER_SIZE = 1024;
 
 Log::Log(int mode, int level, LPCTSTR filename, bool append)
 {
@@ -66,18 +66,35 @@ int Log::GetLevel() {
 	return m_level;
 }
 
-void Log::SetFile(LPCTSTR filename, bool append) 
+void Log::SetFile(LPCTSTR filenameIn, bool append) 
 {
-	if( !filename )
+	if( !filenameIn )
 		return;
 
     CloseFile();
 	
     m_tofile  = true;
-    
+
+	m_strOrgFileName = filenameIn;
+	CString strFile = filenameIn;
+	int nPos = strFile.ReverseFind('.');
+	if (nPos)
+	{
+		CTime tm(time(NULL));
+		CString strTime = tm.Format(TEXT("%Y%m%d-%H%M%S"));
+		strFile.Insert(nPos, strTime);
+	}
+	LPCTSTR filename =strFile;
+
+
     // If filename is NULL or invalid we should throw an exception here
 	bool bOverSized = FALSE;
-	if (access(filename, 04) != -1)
+#ifdef _UNICODE
+	if (_waccess(filename, 04) != -1)
+
+#else
+	if(access(filename, 04) != -1)
+#endif // _UNICODE
 	{
 		//file exist, check size;
 		HANDLE tmpfile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -121,14 +138,13 @@ void Log::SetFile(LPCTSTR filename, bool append)
         SetEndOfFile( hlogfile );
     }
 
+	nTotalLogWrited = 0;
 	if (hlogfile)
 	{
 		//print log header
-		this->ReallyPrintLine("\r\n-------------------------------------------------------------------------------------------------------\r\n");
-		this->ReallyPrintLine("--------------------------------!!!<<new log started>>!!!----------------------------------------------\r\n");
-		this->ReallyPrintLine("-------------------------------------------------------------------------------------------------------\r\n");
-
-
+		this->ReallyPrintLine(TEXT("\r\n-------------------------------------------------------------------------------------------------------\r\n"));
+		this->ReallyPrintLine(TEXT("--------------------------------!!!<<new log started>>!!!----------------------------------------------\r\n"));
+		this->ReallyPrintLine(TEXT("-------------------------------------------------------------------------------------------------------\r\n"));
 	}
 }
 
@@ -166,14 +182,14 @@ void Log::ReallyPrint(LPCTSTR format, va_list ap)
 	if (memcmp(&m_lastLogT, &current, sizeof(SYSTEMTIME)) != 0)
 	{
 		m_lastLogT = current;
-		char time_str[50] = {0};
-		char date_str[50] = {0};
+		TCHAR time_str[50] = {0};
+		TCHAR date_str[50] = {0};
 
-		int nRet = GetDateFormat(LOCALE_USER_DEFAULT, NULL, &current, "ddd yyyy-MM-dd",  date_str, sizeof(date_str));
-		nRet = GetTimeFormat(LOCALE_USER_DEFAULT,NULL, &current,"hh:mm:ss",time_str,sizeof(time_str));
+		int nRet = GetDateFormat(LOCALE_USER_DEFAULT, NULL, &current, TEXT("dd"),  date_str, sizeof(date_str));
+		nRet = GetTimeFormat(LOCALE_USER_DEFAULT,NULL, &current,TEXT("hh:mm:ss"),time_str,sizeof(time_str));
 		
-		char time_buf[50];
-		sprintf(time_buf, "%s %s\r\n",date_str, time_str);		
+		TCHAR time_buf[50];
+		wsprintf(time_buf, TEXT("<%s %s>:"),date_str, time_str);		
 		ReallyPrintLine(time_buf);
 	}
 
@@ -181,10 +197,18 @@ void Log::ReallyPrint(LPCTSTR format, va_list ap)
 	// Prepare the complete log message
 	TCHAR line[LINE_BUFFER_SIZE];
 	memset(line, 0, sizeof(line));
+	int len = 0;
+#ifdef _UNICODE
+	_vsnwprintf(line, sizeof(line) - 2 * sizeof(TCHAR), format, ap);
+	len = wcslen(line);
+
+#else
 	_vsnprintf(line, sizeof(line) - 2 * sizeof(TCHAR), format, ap);
+	len = strlen(line);
+
+#endif // _UNICODE
 	line[LINE_BUFFER_SIZE-2] = (TCHAR)'\0';
 #if (!defined(_UNICODE) && !defined(_MBCS))
-	int len = strlen(line);
 	if (len > 0 && len <= sizeof(line) - 2 * sizeof(TCHAR) && line[len-1] == (TCHAR)'\n') {
 		// Replace trailing '\n' with MS-DOS style end-of-line.
 		line[len-1] = (TCHAR)'\r';
@@ -194,7 +218,21 @@ void Log::ReallyPrint(LPCTSTR format, va_list ap)
 #endif
 	
 	ReallyPrintLine(line);
-	ReallyPrintLine(TEXT("\n"));
+	ReallyPrintLine(TEXT("\r\n"));
+
+	//if overfollow create new log
+	if (m_tofile)
+	{
+		nTotalLogWrited += len;
+		//max log size = 10m
+		if (nTotalLogWrited > 1024*1024*10)
+		{
+			CloseFile();
+			CString strNewFile = m_strOrgFileName;
+			SetFile(strNewFile);
+		}
+
+	}
 }
 
 Log::~Log()
