@@ -303,13 +303,13 @@ HRESULT CMonitorGraph::CheckGraphState()
 				SOCKADDR_IN& addrDest = objInfo.addrRemote;
 				if (objInfo.nSelfState ==MBCSTATE_STREAMDOWN)
 				{
-					CFWriteLog(TEXT("notify:found stream down: chid = %s, addr=%s"), strCHId,  Addr2String(addrDest).c_str());
+					CFWriteLog(SWITCHERLOGKEY, TEXT("notify:found stream down: chid = %s, addr=%s"), strCHId,  Addr2String(addrDest).c_str());
 					//stream down
 					//check cooldown list,  a channel only allow one live msg
 					if (IsChannelActInCD(strCHId))
 					{
 						//do nothing
-						CFWriteLog(TEXT("warning:channel is in CD: chid = %s"), strCHId);
+						CFWriteLog(SWITCHERLOGKEY, TEXT("warning:channel is in CD: chid = %s"), strCHId);
 
 					}
 					else
@@ -322,7 +322,7 @@ HRESULT CMonitorGraph::CheckGraphState()
 						if (FindFirstValidSlaveLinkPath(strCHId, pSlaveEndObj, pSlaveSvrObj, pSlaveClentObj, addrSvrCtrl))
 						{
 							//
-							CFWriteLog(TEXT("notify: slave link path found : chid = %s"), strCHId);
+							CFWriteLog(SWITCHERLOGKEY, TEXT("notify: slave link path found : chid = %s"), strCHId);
 							//send switch msg
 							ST_MBCACTCOOLDOWN cdmsg;
 							cdmsg.nCoolDownCount = m_nSwitchCD;
@@ -337,11 +337,11 @@ HRESULT CMonitorGraph::CheckGraphState()
 						}
 						else
 						{
-							CFWriteLog(TEXT("warning:no available slave link path  to use, start find back svr : chid = %s"), strCHId);
+							CFWriteLog(SWITCHERLOGKEY, TEXT("warning:no available slave link path for using, start find back svr : chid = %s"), strCHId);
 							CMBCEndObj* pBackEndObj = NULL;
 							if (FindFirstValidBackEnd(strCHId, pBackEndObj))
 							{
-								CFWriteLog(TEXT("found available back end obj, start relay from %s to %s"),  Addr2String(pBackEndObj->m_addrRemote).c_str(),  Addr2String(addrDest).c_str());
+								CFWriteLog(SWITCHERLOGKEY, TEXT("found available back end obj, start relay from %s to %s"),  Addr2String(pBackEndObj->m_addrRemote).c_str(),  Addr2String(addrDest).c_str());
 								pBackEndObj->AddRelayAddr(addrDest);
 								ST_MBCACTCOOLDOWN cdmsg;
 								cdmsg.nCoolDownCount = m_nRelyCD;
@@ -360,7 +360,7 @@ HRESULT CMonitorGraph::CheckGraphState()
 				else
 				{
 					//monitor obj failed.
-					CFWriteLog(TEXT("!!!error:found master end obj error: chid = %s, addr=%s"), strCHId,  Addr2String(addrDest).c_str());
+					CFWriteLog(SWITCHERLOGKEY, TEXT("!!!error:found master end obj error: chid = %s, addr=%s"), strCHId,  Addr2String(addrDest).c_str());
 				}
 			}
 			else

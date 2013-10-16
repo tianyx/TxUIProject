@@ -9,6 +9,7 @@
 #include "GlobalDef.h"
 #include "FGlobal.h"
 #include "TxFontLoader.h"
+#include "TxLogManager.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -65,6 +66,8 @@ BOOL CMBCAutoSwitcherApp::InitInstance()
 #ifdef _DEBUG
 MACRO_CREATEOUTPUTCONSOLE
 #endif // _DEBUG
+
+
 	// 标准初始化
 	// 如果未使用这些功能并希望减小
 	// 最终可执行文件的大小，则应移除下列
@@ -73,6 +76,7 @@ MACRO_CREATEOUTPUTCONSOLE
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (wsaData.wVersion != MAKEWORD(2,2))
@@ -83,6 +87,16 @@ MACRO_CREATEOUTPUTCONSOLE
 		return FALSE;
 	}
 
+	CString strLogFile = 	GetAppPath().c_str();
+	strLogFile += TEXT("\\log");
+	CreateDirectory(strLogFile, NULL);
+	strLogFile +=TEXT("\\autoswitch.log");
+	GetTxLogMgr()->AddNewLogFile(SWITCHERLOGKEY, strLogFile);
+	GetTxLogMgr()->Start();
+	//test log
+	CFWriteLog(SWITCHERLOGKEY, "!!!new log started!!!");
+	CFWriteLog(SWITCHERLOGKEY, "Test message");
+
 	Gdiplus::GdiplusStartup(&g_gdiplusToken, &g_gdiplusStartupInput, NULL);
 	g_pFontLoader = new CTxFontLoader;
 	g_pFontLoader->AddFont(TEXT("宋体"), 16, TRUE);
@@ -90,6 +104,8 @@ MACRO_CREATEOUTPUTCONSOLE
 	{
 		return FALSE;
 	}
+
+
 	// 若要创建主窗口，此代码将创建新的框架窗口
 	// 对象，然后将其设置为应用程序的主窗口对象
 	CMainFrame* pFrame = new CMainFrame;
@@ -162,6 +178,7 @@ void CMBCAutoSwitcherApp::OnAppAbout()
 int CMBCAutoSwitcherApp::ExitInstance()
 {
 	// TODO: 在此添加专用代码和/或调用基类
+	ReleaseTxLogMgr();
 	WSACleanup();
 	if (g_pFontLoader)
 	{

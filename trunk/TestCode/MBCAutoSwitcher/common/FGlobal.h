@@ -43,6 +43,7 @@ extern int g_nScrollBarWidth;
 
 
 void CFWriteLog( LPCTSTR format,...);
+void CFWriteLog(DWORD dwLogKey, LPCTSTR format,...);
 void CFWriteLog2(HWND hwndIn,  LPCTSTR format, va_list& ap );
 void CFWriteLog2Wnd(HWND hwndIn, LPCTSTR format,...);
 

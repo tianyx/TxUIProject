@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "FGlobal.h"
 #include "TxFontLoader.h"
+#include "TxLogManager.h"
 
 using namespace std;
 
@@ -52,6 +53,48 @@ void CFWriteLog( LPCTSTR format,... )
 	
 
 
+	if(g_hwndLog)
+	{
+		SendMessage(g_hwndLog, MSG_LOGWRITE, (WPARAM)line, 0);
+	}
+
+}
+
+void CFWriteLog( DWORD dwLogKey, LPCTSTR format,... )
+{
+	va_list ap;
+	va_start(ap, format);
+
+	TCHAR line[LINE_BUFFER_SIZE];
+	memset(line, 0, sizeof(line));
+
+	int nLen = 0;
+#ifdef _UNICODE
+	vswprintf_s(line, LINE_BUFFER_SIZE-1, format, ap);
+	nLen = wcslen(line);
+
+	_RPTW0(0, TEXT("\n"));
+	_RPTW0(0, line);
+
+#else
+	vsprintf_s(line, LINE_BUFFER_SIZE-1, format, ap);
+	nLen = strlen(line);
+
+	_RPT0(0, TEXT("\n"));
+	_RPT0(0, line);
+
+#endif // _UNICODE
+	va_end(ap);
+	
+	GetTxLogMgr()->WriteLog(dwLogKey, line);
+#ifdef _DEBUG
+	if (g_hconsoleHandle)
+	{
+		DWORD dwWrited = 0;
+		WriteConsole(g_hconsoleHandle, TEXT("\n"), 1, &dwWrited, 0);
+		WriteConsole(g_hconsoleHandle, line, nLen,&dwWrited,0);
+	}
+#endif // _DEBUG
 	if(g_hwndLog)
 	{
 		SendMessage(g_hwndLog, MSG_LOGWRITE, (WPARAM)line, 0);

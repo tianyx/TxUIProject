@@ -77,7 +77,7 @@ private:
 	void ReallyPrintLine(LPCTSTR line);
    
     
-
+	unsigned __int64 nTotalLogWrited;
     bool   m_tofile, m_todebug, m_toconsole;
     int    m_level;
     HANDLE hlogfile;
@@ -85,6 +85,7 @@ private:
 	CRITICAL_SECTION  m_criLock;
 	time_t m_lastLogTime;
 	SYSTEMTIME m_lastLogT;
+	CString m_strOrgFileName;
 };
 
 #endif // VNCLOGGING

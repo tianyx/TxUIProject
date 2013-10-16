@@ -3,6 +3,7 @@
 #include <vector>
 #include "MBCCommonDef.h"
 
+#define SWITCHERLOGKEY 101
 
 struct ST_MBCOBJCFG
 {
