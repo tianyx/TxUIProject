@@ -1,0 +1,278 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 中文(中华人民共和国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#pragma code_page(936)\r\n"
+    "#include ""res\\AutoClockIn.rc2""  // 非 Microsoft Visual C++ 编辑的资源\r\n"
+    "#include ""l.CHS\\afxres.rc""      // 标准组件\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\AutoClockIn.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 AutoClockIn"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "AutoClockIn，1.0 版",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2012",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "确定",IDOK,113,41,50,14,WS_GROUP
+END
+
+IDD_AUTOCLOCKIN_DIALOG DIALOGEX 0, 0, 317, 305
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "AutoClockIn"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "server:",IDC_STATIC,15,25,41,8
+    DEFPUSHBUTTON   "Test",IDC_BTN_TEST,223,190,50,14
+    LISTBOX         IDC_LIST_LOG,6,209,304,89,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_SVR,59,24,106,12,ES_AUTOHSCROLL
+    LTEXT           "clock in 1:",IDC_STATIC,15,80,41,8
+    LTEXT           "clock in 2:",IDC_STATIC,15,102,41,8
+    LTEXT           "clock in 3:",IDC_STATIC,15,125,41,8
+    LTEXT           "clock in 4:",IDC_STATIC,15,145,41,8
+    GROUPBOX        "",IDC_STATIC,6,1,304,174
+    CONTROL         "",IDC_DATETIMEPICKER_N1,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_UPDOWN | WS_TABSTOP | 0x8,59,79,45,12
+    CONTROL         "",IDC_DATETIMEPICKER_N2,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_UPDOWN | WS_TABSTOP | 0x8,59,101,45,12
+    CONTROL         "",IDC_DATETIMEPICKER_N3,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_UPDOWN | WS_TABSTOP | 0x8,59,122,45,12
+    CONTROL         "",IDC_DATETIMEPICKER_N4,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_UPDOWN | WS_TABSTOP | 0x8,59,142,45,12
+    PUSHBUTTON      "Start",IDC_BTN_AUTOSTART,196,112,104,56
+    CONTROL         "Show detail log",IDC_CHECK_SHOWLOG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,192,64,10
+    CONTROL         "",IDC_STC_N1,"Static",SS_SIMPLE | WS_BORDER | WS_GROUP,112,78,52,13
+    CONTROL         "",IDC_STC_N2,"Static",SS_SIMPLE | WS_BORDER | WS_GROUP,112,100,52,13
+    CONTROL         "",IDC_STC_N3,"Static",SS_SIMPLE | WS_BORDER | WS_GROUP,112,121,52,13
+    CONTROL         "",IDC_STC_N4,"Static",SS_SIMPLE | WS_BORDER | WS_GROUP,112,140,52,13
+    EDITTEXT        IDC_EDIT_PRE_MINUTE,86,161,18,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Random Pre-Minute:",IDC_STATIC,16,162,66,8
+    GROUPBOX        "App Config",IDC_STATIC,195,10,106,100
+    PUSHBUTTON      "Exit",IDC_BTN_EXIT,282,190,28,16
+    CONTROL         "autorun after login",IDC_CHECK_AUTORUN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,203,21,74,10
+    LTEXT           "login user:",IDC_STATIC,14,43,41,8
+    EDITTEXT        IDC_EDIT_USER,58,42,106,12,ES_AUTOHSCROLL
+    LTEXT           "login pw:",IDC_STATIC,14,61,41,8
+    EDITTEXT        IDC_EDIT_PW,58,60,106,12,ES_AUTOHSCROLL
+    CONTROL         "Pop bubble after Clock in",IDC_CHECK_POPMSG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,203,66,94,10
+    CONTROL         "try clock in 1 when start",IDC_CHECK_AUTOCLOCKIN1,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,203,51,93,10
+    LTEXT           "last tip:",IDC_STC_LASTTIP,44,177,266,13,0,WS_EX_STATICEDGE
+    CONTROL         "autoStart",IDC_CHECK_AUTOSTART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,203,36,46,10
+    CONTROL         "Shutdown after clock in 4",IDC_CHECK_AUTOSHUTDOWN,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,203,81,97,10
+    CHECKBOX        "Check1",IDC_CHECK_MODIFY,6,6,72,12,BS_PUSHLIKE
+    LTEXT           "last tip:",IDC_STATIC,6,178,32,8
+    PUSHBUTTON      "try",IDC_BTN_TRY1,168,78,18,14
+    PUSHBUTTON      "try",IDC_BTN_TRY2,168,100,18,14
+    PUSHBUTTON      "try",IDC_BTN_TRY3,168,121,18,14
+    PUSHBUTTON      "try",IDC_BTN_TRY4,168,140,18,14
+    CONTROL         "Sleep after clock in 4",IDC_CHECK_AUTOSHUTDOWN2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,218,94,76,10
+END
+
+IDD_DIALOG_SHUTDOWN DIALOGEX 0, 0, 316, 121
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "AutoClockIn"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "取消",IDCANCEL,238,70,58,36
+    LTEXT           "",IDC_STATIC_INFO,7,40,225,41
+    PUSHBUTTON      "立即执行",IDDONOW,237,20,58,36
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080403a8"
+        BEGIN
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "AutoClockIn.exe"
+            VALUE "OriginalFilename", "AutoClockIn.exe"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 936
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_AUTOCLOCKIN_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 310
+        BOTTOMMARGIN, 298
+    END
+
+    IDD_DIALOG_SHUTDOWN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 114
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENUTRAY MENU 
+BEGIN
+    POPUP "traypop"
+    BEGIN
+        MENUITEM "Exit",                        ID_TRAYPOP_EXIT
+        MENUITEM SEPARATOR
+        MENUITEM "About",                       ID_TRAYPOP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// HTML
+//
+
+IDR_HTML_DLGSHUTDOWN    HTML                    "DlgShutDown.htm"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ABOUTBOX            "关于 AutoClockIn(&A)..."
+END
+
+#endif    // 中文(中华人民共和国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE 4, 2
+#pragma code_page(936)
+#include "res\AutoClockIn.rc2"  // 非 Microsoft Visual C++ 编辑的资源
+#include "l.CHS\afxres.rc"      // 标准组件
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
