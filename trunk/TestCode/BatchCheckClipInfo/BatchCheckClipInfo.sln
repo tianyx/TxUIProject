@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BatchCheckClipInfo", "BatchCheckClipInfo\BatchCheckClipInfo.vcproj", "{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 2
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = BatchCheckClipInfo\\BatchCheckClipInfo.vcproj
+		SccLocalPath1 = .
+		SccProjectFilePathRelativizedFromConnection1 = BatchCheckClipInfo\\
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_Unicode|Win32 = Debug_Unicode|Win32
+		Debug|Win32 = Debug|Win32
+		Release_Unicode|Win32 = Release_Unicode|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Debug_Unicode|Win32.ActiveCfg = Debug_Unicode|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Debug_Unicode|Win32.Build.0 = Debug_Unicode|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Debug|Win32.Build.0 = Debug|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Release_Unicode|Win32.ActiveCfg = Release_Unicode|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Release_Unicode|Win32.Build.0 = Release_Unicode|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Release|Win32.ActiveCfg = Release|Win32
+		{361DBF6C-AAB6-41B4-83DC-97B908CFA2AC}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
