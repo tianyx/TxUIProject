@@ -45,7 +45,9 @@ public:
 	int m_nMaxTaskLimit;
 	VECTASKDATAS m_vTasks;
 
-	IPluginTaskDispatch* m_pTaskDispatcher;
+	IPluginTaskCommit* m_pTaskDispatcher;
 };
 
 }
+
+extern EMB::CTaskRiserMgr* g_pPluginInstane;

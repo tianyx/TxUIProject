@@ -40,6 +40,6 @@ BOOL LoadPluginManager()
 		return FALSE;
 	}
 	
-	LoadPlugin(strFile, g_hModulePluginMgr, (LPVOID&)g_pIPluginMgr);
+	TxLoadPlugin(strFile, g_hModulePluginMgr, (LPVOID&)g_pIPluginMgr);
 	return (g_hModulePluginMgr != NULL && g_pIPluginMgr != NULL);
 }

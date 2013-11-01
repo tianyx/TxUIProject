@@ -2,6 +2,9 @@
 #include "MBCCommonDef.h"
 
 #define MBCCHECKSUM  0x58
+#define SMALLBUFSIZE 256
+#define MIDBUFFSIZE 1024
+#define LARGEBUFFSIZE 1024*1024
 
 
 template <typename T>

@@ -157,11 +157,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\Common\EMBCommonFunc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\MBCRemoteObj.cpp"
+				RelativePath="..\Common\EmbStructDef.cpp"
 				>
 			</File>
 			<File
@@ -184,10 +180,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath="..\Common\TxParamString.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -195,7 +187,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\Common\EMBCommonFunc.h"
+				RelativePath="..\Common\EmbStructDef.h"
 				>
 			</File>
 			<File
@@ -204,10 +196,6 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxParamString.h"
 				>
 			</File>
 		</Filter>
@@ -226,6 +214,14 @@
 			</File>
 			<File
 				RelativePath="..\Common\AutoCritSec.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBCommonFunc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBCommonFunc.h"
 				>
 			</File>
 			<File
@@ -274,6 +270,18 @@
 			</File>
 			<File
 				RelativePath="..\Common\MBCCommonDef.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\MBCHeartBeatObj.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\MBCHeartBeatObj.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\MBCRemoteObj.cpp"
 				>
 			</File>
 			<File
@@ -346,6 +354,14 @@
 			</File>
 			<File
 				RelativePath="..\Common\TxLogManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\TxParamString.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\TxParamString.h"
 				>
 			</File>
 			<File

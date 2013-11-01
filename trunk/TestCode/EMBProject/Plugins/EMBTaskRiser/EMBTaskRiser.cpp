@@ -10,14 +10,13 @@
 #endif
 
 using namespace std;
-using namespace EMB;
-CTaskRiserMgr* g_pPluginInstane = NULL;
+extern EMB::CTaskRiserMgr* g_pPluginInstane = NULL;
 
 extern "C" int EMBPLUGIN_API GetPluginInstance( LPVOID& pInterface )
 {
 	if (!g_pPluginInstane)
 	{
-		g_pPluginInstane = new CTaskRiserMgr;
+		g_pPluginInstane = new EMB::CTaskRiserMgr;
 		ASSERT(g_pPluginInstane);
 	}
 	g_pPluginInstane->QueryInterface(GuidEMBPlugin_IBase, pInterface);

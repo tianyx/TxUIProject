@@ -19,7 +19,7 @@ HRESULT CMBCHeartBeatObj::ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType,
 {
 	if (nMsgType == msgtype_LIVEQA)
 	{
-		ST_MBCMSG_LIVEQA msg;
+		ST_TXMSG_LIVEQA msg;
 		HRESULT hr =  UnPackMBCMsg(bufferIn, nUsed, msg);
 		ASSERT(msg.nMsgState == msgState_A);
 		if (hr == S_OK)
@@ -72,7 +72,7 @@ HRESULT CMBCHeartBeatObj::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
 			m_nLiveReplyCount = 0;
 		}
 		//send live info request msg;
-		ST_MBCMSG_LIVEQA msg;
+		ST_TXMSG_LIVEQA msg;
 		msg.nMsgState = msgState_Q;
 		msg.nMsgId = ++m_nLiveRequestCount;
 		char buffer[256];
@@ -166,9 +166,6 @@ HRESULT CMBCHeartBeatObj::GetStateInfo( ST_OBJSTATEINFO& infoOut )
 	infoOut.strName = m_strObjName;
 	infoOut.addrLocal = m_addrLocal;
 	infoOut.addrRemote = m_addrRemote;
-	if (m_nSelfState != MBCSTATE_OK)
-	{
-		infoOut.remoteInfo.vCHInfo.clear();
-	}
+
 	return S_OK;
 }

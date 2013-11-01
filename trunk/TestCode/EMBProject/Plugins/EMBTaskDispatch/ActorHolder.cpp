@@ -116,7 +116,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 			}
 		}
 	}
-	if (nMsgType == embmsgtype_ReportActorInfo
+	else if (nMsgType == embmsgtype_ReportActorInfo
 		||nMsgType == embmsgtype_TaskDispath)
 	{
 		ST_EMBTRANSMSG msgIn(nMsgType);
@@ -133,6 +133,26 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 				m_pActorCallbackInterface->OnActorDispatchTask(GetSockGuid(pMBCSock), msgIn.strData);
 		}
 	}
+	else if (nMsgType == msgtype_LIVEQA)
+	{
+		//extract msg
+		//CFWriteLog("recv live Q");
+		ST_TXMSG_LIVEQA msgIn;
+		UnPackMBCMsg(bufferIn, nUsed, msgIn);
+		//get live info
+		char buffer[128];
+		HRESULT hr = PackMBCMsg(msgIn,  buffer, MAXRECVBUFF, nRetUsed);
+		if (nRetUsed > 0)
+		{
+			hr = send(*pMBCSock, buffer, nRetUsed, 0);
+		}
+		else 
+		{
+			ASSERT(FALSE);
+		}
+
+	}
+
 	
 	return hr;
 }

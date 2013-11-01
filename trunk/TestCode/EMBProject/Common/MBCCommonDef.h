@@ -103,8 +103,6 @@ struct ST_TXMSG_LIVEQA : public ST_TXMSGBASE
 {
 	int nSelfType;
 	int nRemoteState;
-	std::vector<ST_TXCHANNELINFO> vCHInfo;
-
 	ST_TXMSG_LIVEQA()
 	{
 		nMsgType = msgtype_LIVEQA;

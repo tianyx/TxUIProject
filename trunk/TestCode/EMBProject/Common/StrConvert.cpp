@@ -181,6 +181,19 @@ int CTxStrConvert::GetAsInt( int nDefault /*= 0*/ )
 	return nSuc> 0? nRet:nDefault;
 }
 
+
+int CTxStrConvert::GetAsUInt( unsigned int nDefault /*= 0*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return nDefault;
+	}
+
+	int nRet  = nDefault;
+	int nSuc = sscanf_s(m_szParam, TEXT("%u"), &nRet);
+	return nSuc> 0? nRet:nDefault;
+}
+
 INT64 CTxStrConvert::GetAsInt64( INT64 nDefault /*= 0*/ )
 {
 	if (m_szParam.IsEmpty())
@@ -256,3 +269,42 @@ BOOL CTxStrConvert::GetAsStringArray( VECSTRINGS& vOut, TCHAR separator /*= ','*
 	}
 	return TRUE;
 }
+
+void CTxStrConvert::SetVal( unsigned int nVal )
+{
+	m_szParam.Format(TEXT("%u"), nVal);
+}
+
+void CTxStrConvert::SetVal( int nVal )
+{
+	m_szParam.Format(TEXT("%d"), nVal);
+}
+
+void CTxStrConvert::SetVal( INT64 nVal )
+{
+	m_szParam.Format(TEXT("%I64d"), nVal);
+}
+
+void CTxStrConvert::SetVal( bool bVal )
+{
+	m_szParam.Format(TEXT("%d"), bVal? 1:0);
+}
+
+void CTxStrConvert::SetVal( LPCTSTR szVal )
+{
+	m_szParam = szVal;
+}
+
+void CTxStrConvert::SetVal( VECSTRINGS& vVal )
+{
+	m_szParam.Empty();
+	for (size_t i = 0; i < vVal.size(); ++i)
+	{
+		if (i != 0)
+		{
+			m_szParam += TEXT(",");
+		}
+		m_szParam += vVal[i];
+	}
+}
+

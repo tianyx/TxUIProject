@@ -19,7 +19,7 @@ public:
 	virtual HRESULT	GetStateInfo(ST_OBJSTATEINFO& infoOut);
 
 
-	ST_MBCMSG_LIVEQA m_LastReceivedInfo;
+	ST_TXMSG_LIVEQA m_LastReceivedInfo;
 
 	virtual HRESULT TxTimerCallbackProc(DWORD dwEvent, LPARAM lparam);
 

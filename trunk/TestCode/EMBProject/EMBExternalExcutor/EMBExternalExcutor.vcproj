@@ -73,6 +73,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
 				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
@@ -203,6 +204,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ExcutorObj.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MainDef.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -234,6 +243,14 @@
 			</File>
 			<File
 				RelativePath=".\EMBExternalExcutorDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ExcutorObj.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MainDef.h"
 				>
 			</File>
 			<File

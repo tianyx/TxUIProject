@@ -46,8 +46,10 @@ void CTaskRiserMgr::OnFinalRelease()
 {
 	if (m_pTaskDispatcher)
 	{
-		m_pTaskDispatcher->Release();
+		Disconnect(m_pTaskDispatcher);
 	}
+	g_pPluginInstane = NULL;
+	delete this;
 }
 
 HRESULT CTaskRiserMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
@@ -202,7 +204,7 @@ HRESULT EMB::CTaskRiserMgr::Connect( ITxUnkown* pInterfaceIn )
 		Disconnect(m_pTaskDispatcher);
 		m_pTaskDispatcher = NULL;
 	}
-	pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskDispatcher, (LPVOID&) m_pTaskDispatcher);
+	pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&) m_pTaskDispatcher);
 	if (m_pTaskDispatcher)
 	{
 		CTxAutoComPtr<IPluginConnectorInterce> pConn;
@@ -228,8 +230,8 @@ HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 	}
 	else
 	{
-		CTxAutoComPtr<IPluginTaskDispatch> pDispath;
-		if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskDispatcher, (LPVOID&)(*&pDispath))
+		CTxAutoComPtr<IPluginTaskCommit> pDispath;
+		if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&pDispath))
 			&& pDispath == m_pTaskDispatcher)
 		{
 			bFound = TRUE;
@@ -247,17 +249,59 @@ HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 	}
 
 	
-	return S_OK;
+	return hr;
 }
 
 HRESULT EMB::CTaskRiserMgr::OnConnect( ITxUnkown* pInterfaceIn )
 {
-	ASSERT(FALSE);
-	return E_FAIL;
+	if (m_pTaskDispatcher != NULL)
+	{
+		ASSERT(FALSE);
+		return E_FAIL;
+	}
+	if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&m_pTaskDispatcher))
+		&& m_pTaskDispatcher != NULL)
+	{
+		return S_OK;
+	}
+	else
+	{
+		return S_FALSE;
+	}
 }
 
 HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 {
-	ASSERT(FALSE);
-	return E_FAIL;
+	if (m_pTaskDispatcher == NULL)
+	{
+		ASSERT(FALSE);
+		return E_FAIL;
+	}
+
+	HRESULT hr = S_FALSE;
+	BOOL bFound = FALSE;
+	if (m_pTaskDispatcher == pInterfaceIn)
+	{
+		bFound = TRUE;
+	}
+	else
+	{
+		CTxAutoComPtr<IPluginTaskCommit> pDispath;
+		if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&pDispath))
+			&& pDispath == m_pTaskDispatcher)
+		{
+			bFound = TRUE;
+		}
+	}
+
+	if (bFound)
+	{
+		//found it, disconnect the interface
+		m_pTaskDispatcher->Release();
+		m_pTaskDispatcher = NULL;
+		hr =S_OK;
+	}
+
+
+	return hr;
 }

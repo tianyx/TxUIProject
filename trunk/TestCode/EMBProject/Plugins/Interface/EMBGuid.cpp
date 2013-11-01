@@ -20,7 +20,7 @@ extern const GUID GuidEMBPlugin_ITaskRiser =
 
 
 // {F56CF6C8-3C3C-42ae-A71B-41C9B5668FC0}
-extern const GUID GuidEMBPlugin_ITaskDispatcher = 
+extern const GUID GuidEMBPlugin_ITaskCommit = 
 { 0xf56cf6c8, 0x3c3c, 0x42ae, { 0xa7, 0x1b, 0x41, 0xc9, 0xb5, 0x66, 0x8f, 0xc0 } };
 
 // {317E1D62-1490-4554-B46F-AC279924CD8C}

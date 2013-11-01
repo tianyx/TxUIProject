@@ -6,7 +6,7 @@
 	ProjectGUID="{B598D976-8214-432E-A15C-EA1EB1F9F4AA}"
 	RootNamespace="EMBPluginMgr"
 	SccProjectName="Perforce Project"
-	SccLocalPath=".."
+	SccLocalPath="..\.."
 	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"

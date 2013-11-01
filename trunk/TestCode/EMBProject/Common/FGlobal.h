@@ -71,3 +71,33 @@ if (g_hconsoleHandle == NULL)\
 }\
 
 #define MACRO_FREEOUTPUTCONSOLE FreeConsole();
+
+
+struct TXGUID
+{
+	TXGUID(const GUID& guidIn)
+	{
+		guid = guidIn;
+	}
+
+	TXGUID()
+	{
+		guid = GUID_NULL;
+	}
+	GUID guid;
+	bool operator <(const TXGUID& other) const
+	{
+		return guid.Data1 < other.guid.Data1 ||
+			guid.Data2 < other.guid.Data2 ||
+			guid.Data3 < other.guid.Data3 ||
+			(UINT64)guid.Data4 <(UINT64)guid.Data4;
+	}
+
+	operator GUID(){return guid;}
+	TXGUID& operator =(const GUID& guidIn)
+	{
+	
+		guid = guidIn;
+		return *this;
+	}
+};

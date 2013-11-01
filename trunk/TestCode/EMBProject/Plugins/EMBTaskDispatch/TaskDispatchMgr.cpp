@@ -25,9 +25,9 @@ HRESULT EMB::CTaskDispatchMgr::QueryInterface( const GUID& guidIn, LPVOID& pInte
 {
 	pInterfaceOut = NULL;
 
-	if (guidIn == GuidEMBPlugin_ITaskDispatcher)
+	if (guidIn == GuidEMBPlugin_ITaskCommit)
 	{
-		pInterfaceOut = dynamic_cast<IPluginTaskDispatch*>(this);
+		pInterfaceOut = dynamic_cast<IPluginTaskCommit*>(this);
 		AddRef();
 		return S_OK;
 	}
@@ -59,7 +59,8 @@ HRESULT EMB::CTaskDispatchMgr::QueryInterface( const GUID& guidIn, LPVOID& pInte
 
 void EMB::CTaskDispatchMgr::OnFinalRelease()
 {
-
+	g_pPluginInstane = NULL;
+	delete this;
 }
 
 HRESULT EMB::CTaskDispatchMgr::OnFirstInit()

@@ -3,7 +3,7 @@
 //
 
 #pragma once
-
+#include "ExcutorObj.h"
 
 // CEMBExternalExcutorDlg ¶Ô»°¿ò
 class CEMBExternalExcutorDlg : public CDialog
@@ -29,4 +29,10 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+
+	CExcutorObj* m_pExcObj;
+
+public:
+	afx_msg void OnDestroy();
 };

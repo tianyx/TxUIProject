@@ -5,7 +5,7 @@
 
 typedef int (__cdecl *GETPLUGININSTANCE)(LPVOID& pInterface);
 
-BOOL LoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut)
+BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut)
 {
 		hModuleOut = LoadLibrary(strFileIn);
 		if (hModuleOut != NULL)
@@ -25,7 +25,7 @@ BOOL LoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfac
 	return TRUE;
 }
 
-BOOL UnloadPlugin(HMODULE hModuleIn)
+BOOL TxUnloadPlugin(HMODULE hModuleIn)
 {
 	BOOL bRet = TRUE;
 	if (hModuleIn)
@@ -68,5 +68,13 @@ DWORD TxWaitObjWithQuit( HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut /*= INFINIT
 	handls[1] = hQuit;
 	return WaitForMultipleObjects(2, handls, FALSE, dwTimeOut);
 }
+
+GUID TxGenGuid()
+{
+	GUID guid = GUID_NULL;
+	::CoCreateGuid(&guid);
+	return guid;
+}
+
 
 

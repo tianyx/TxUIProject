@@ -1,16 +1,20 @@
 #pragma once
 #include "IEMBBaseInterface.h"
+#include "EMBDefine.h"
+#include "FGlobal.h"
 #include <map>
 #include <vector>
 using namespace std;
+typedef map<HMODULE, HMODULE> MAPMODULES;
+
 namespace EMB{
 struct ST_PLUGINMGRDATA
 {
-	vector<HMODULE> vModules;
+	MAPMODULES vModules;
 	CString strFile;
 	ST_PluginInfo plugInfo;
 };
-typedef map<CString, ST_PLUGINMGRDATA> MAPPLUGINMAGRDATAS;
+typedef map<TXGUID, ST_PLUGINMGRDATA> MAPPLUGINMAGRDATAS;
 
 class CEMBPluginManager: public IPluginBaseInterface, public IPluginManagerInterface
 {
@@ -26,8 +30,8 @@ public:
 	virtual HRESULT QueryInterface(const GUID& guidIn, LPVOID& pInterfaceOut);
 	//iterface for IPluginManagerInterface
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut);
-	virtual HRESULT LoadPlugin(GUID& guidIn, IPluginBaseInterface*& pInterfaceOut);
-
+	virtual HANDLE  LoadPlugin(GUID& guidIn, IPluginBaseInterface*& pInterfaceOut);
+	virtual HRESULT UnloadPlugin(GUID& guidIn, HANDLE handle);
 private:
 	void Init();
 	void UnInit();
@@ -35,4 +39,7 @@ private:
 
 };
 
+
 }//namespace EMB
+
+extern EMB::CEMBPluginManager* g_pPluginInstane;

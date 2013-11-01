@@ -128,6 +128,7 @@ BOOL CTxParamString::InitLayout()
 	Clear();
 	if (m_strRealString.IsEmpty())
 	{
+		m_bInited = TRUE;
 		return TRUE;
 	}
 
@@ -137,10 +138,6 @@ BOOL CTxParamString::InitLayout()
 		_RPT1(0, TEXT("paramString format illegual, %s"), m_strRealString.Left(100));
 		return FALSE;
 	}
-
-	m_kvData.bIsPath = TRUE;
-	m_kvData.strKey = TEXT(".");
-	m_kvData.strVal = "";
 	m_bInited = FindMarkItem(markDoc, m_kvData);
 	return TRUE;
 }
@@ -149,6 +146,10 @@ void CTxParamString::Clear()
 {
 	m_kvData.mapAttrib.clear();
 	m_kvData.mapChildItem.clear();
+	m_kvData.bIsPath = TRUE;
+	m_kvData.strKey = TEXT(".");
+	m_kvData.strVal = "";
+
 }
 
 BOOL CTxParamString::GoToPath( LPCTSTR szRoot )
@@ -256,11 +257,6 @@ CTxStrConvert CTxParamString::GetAttribVal(LPCTSTR szAttribKey,  LPCTSTR szKey)
 
 BOOL CTxParamString::SetElemVal( LPCTSTR szKey, CTxStrConvert& valIn )
 {
-	if (!m_bInited)
-	{
-		ASSERT(FALSE);
-		return FALSE;
-	} 
 	BOOL bRet = FALSE;
 	VECSTRINGS vPath = m_vecCurrPath;
 	ST_MARKITEM* pItem = FindNode(vPath);

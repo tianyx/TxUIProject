@@ -8,7 +8,7 @@
 #define new DEBUG_NEW
 #endif
 
-EMB::CTaskActor* g_pPluginInstane = NULL;
+extern EMB::CTaskActor* g_pPluginInstane = NULL;
 
 extern "C" int EMBPLUGIN_API GetPluginInstance( LPVOID& pInterface )
 {

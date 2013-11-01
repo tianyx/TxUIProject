@@ -54,12 +54,14 @@ public:
 	CString m_szParam;
 public:
 	int GetAsInt(int nDefault = 0);
+	int GetAsUInt(unsigned int nDefault = 0);
 	INT64 GetAsInt64(INT64 nDefault = 0);
 	bool GetAsBOOL(bool bDefault = FALSE);
 	CString GetAsString(LPCTSTR szDefault = TEXT(""));
 	BOOL GetAsStringArray(VECSTRINGS& vOut, TCHAR separator = ',');
 
 	void SetVal(int nVal);
+	void SetVal(unsigned int nVal);
 	void SetVal(INT64 nVal);
 	void SetVal(bool bVal);
 	void SetVal(LPCTSTR szVal);

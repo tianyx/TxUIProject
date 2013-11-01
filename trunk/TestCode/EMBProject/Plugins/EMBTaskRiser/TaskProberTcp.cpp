@@ -18,7 +18,7 @@ HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, 
 	HRESULT hr = S_OK;
 
 
-	if (nMsgType == embmsgtype_Task)
+	if (nMsgType == embmsgtype_TaskIncoming)
 	{
 		int nLen = 0;
 		int nRetUsed = 0;
@@ -66,7 +66,7 @@ HRESULT CTaskProberTcp::TransTask( ST_EMBTRANSMSG& msgIn, ST_EMBTRANSMSG& msgRet
 	//find key 
 	CString strMainGuid = txTask.GetAttribVal(EK_MAIN, EA_MAIN_GUID).GetAsString();
 	int nMainType = txTask.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt();
-	if (nMainType !=embmsgtype_Task || strMainGuid.IsEmpty())
+	if (nMainType !=embmsgtype_TaskIncoming || strMainGuid.IsEmpty())
 	{
 		ASSERT(FALSE);
 		hr = EMBERR_FORMAT;

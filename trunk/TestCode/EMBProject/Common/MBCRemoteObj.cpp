@@ -71,12 +71,6 @@ HRESULT CMBCRemoteObj::ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, ch
 			ST_MBCCHANNELINFO_FORVC6 chInfos[50];
 			int nChUsed = 0;
 			m_pIRemoteCallInterface->GetLiveInfo(msgIn,msgIn.nRemoteState, msgIn.nSelfType, chInfos, 50, nChUsed);
-			for (int i = 0; i < nChUsed; ++i)
-			{
-				ST_TXCHANNELINFO infotmp;
-				CHInfoV62CHInfo(chInfos[i],infotmp);
-				msgIn.vCHInfo.push_back(infotmp);
-			}
 			HRESULT hr = PackMBCMsg(msgIn,  buffer, MAXRECVBUFF, nRetUsed);
 
 

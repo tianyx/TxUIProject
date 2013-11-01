@@ -10,7 +10,7 @@
 
 using namespace std;
 using namespace EMB;
-CTaskDispatchMgr* g_pPluginInstane = NULL;
+extern EMB::CTaskDispatchMgr* g_pPluginInstane = NULL;
 
 extern "C" int EMBPLUGIN_API GetPluginInstance( LPVOID& pInterface )
 {

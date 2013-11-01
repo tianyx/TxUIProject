@@ -47,7 +47,6 @@ BOOL ST_TXCHANNELINFO::operator >>(CTxSerialize& ar)
 	ST_TXMSGBASE::operator <<(ar);
 	ar << nSelfType;
 	ar << nRemoteState;
-	ar <<vCHInfo;
 	return TRUE;
 }
  BOOL ST_TXMSG_LIVEQA::operator >>(CTxSerialize& ar)  
@@ -55,9 +54,6 @@ BOOL ST_TXCHANNELINFO::operator >>(CTxSerialize& ar)
 	ST_TXMSGBASE::operator >>(ar);
 	ar >> nSelfType;
 	ar >> nRemoteState;
-
-	ar >>vCHInfo;
-
 	return TRUE;
 }
 

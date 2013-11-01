@@ -98,6 +98,7 @@ interface IPluginConfigInterface :virtual public ITxUnkown
 };
 
 //////////////////////////////////////////////////////////////////////////
+//to connect plugin, only call connect once
 interface IPluginConnectorInterce:virtual public ITxUnkown
 {
 	//you riseup a action to connect/disconnect to other plugin
@@ -117,7 +118,9 @@ interface IPluginControlInterface:virtual public ITxUnkown
 interface IPluginManagerInterface:virtual public ITxUnkown
 {
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut) = 0;
-	virtual HRESULT LoadPlugin(GUID& guidIn, IPluginBaseInterface*& pInterfaceOut) = 0;
+	virtual HANDLE LoadPlugin(GUID& guidIn, IPluginBaseInterface*& pInterfaceOut) = 0;
+	//this will unload the plugin library, if handle = NULL, unload all plugin that same guid
+	virtual HRESULT UnloadPlugin(GUID& guidIn, HANDLE handle) = 0;
 };
 
 //plugin task generate////////////////////////////////////////////////////////////////////////
@@ -127,8 +130,8 @@ interface IPluginManagerInterface:virtual public ITxUnkown
 // 	//virtual HRESULT ConnectTo(IPluginBaseInterface* pInterface) = 0;
 // };
 
-//plugin task dispatch////////////////////////////////////////////////////////////////////////
-interface IPluginTaskDispatch:virtual public ITxUnkown
+//to connect with taskriser, must implement this interface////////////////////////////////////////////////////////////////////////
+interface IPluginTaskCommit:virtual public ITxUnkown
 {
 	virtual HRESULT SubmitTask(const CTaskString& szTaskIn, CTaskString& szRet) = 0;
 };
@@ -136,47 +139,10 @@ interface IPluginTaskDispatch:virtual public ITxUnkown
 //plugin task Actor////////////////////////////////////////////////////////////////////////
 interface IActorMsgCallBackInterface
 {
-	virtual HRESULT ActCallbackProc(CTaskString& szActMsg) = 0;
-};
-interface IPluginActorManager:virtual public ITxUnkown
-{
-	virtual HRESULT GetActorList(CTaskString& szActorsDesc) = 0;
-	virtual UINT RegisterActorReceiver(const CTaskString& szActorDesc, IActorMsgCallBackInterface* pInterface) = 0;
-	virtual UINT UnRegisterActorReceiver(UINT nReceiverID) = 0;
-	virtual HRESULT AssignTask(const CTaskString& szTaskIn, CTaskString& szRet) = 0;
+	virtual HRESULT ActCallbackProc(CTaskString& szActMsg, CTaskString& szRet) = 0;
 };
 
-//plugin excutor////////////////////////////////////////////////////////////////////////
-interface IExcutorMsgCallBack
-{
-	virtual HRESULT ExcutorCallbackProc(CTaskString& szMsg) = 0;
-};
-interface IPluginActorInterface:virtual public ITxUnkown
-{
-	virtual HRESULT GetExcutorList(CTaskString& szRet) = 0;
-	virtual UINT AddExcutor(CTaskString& szExcutorDesc) = 0;
-	virtual HRESULT RemoveExcutor(UINT nExcutorId) = 0;
-};
 
-//plugin IExcutor//////////////////////////////////////////////////////////////////////
-interface IPluginExcutorInterface:virtual public ITxUnkown
-{
-	virtual HRESULT GetState(CTaskString& szRet) = 0;
-	virtual UINT RegisterCallback(CTaskString& szDesc, IExcutorMsgCallBack* pInterface) = 0;
-	virtual HRESULT UnRegisterCallback(UINT nActorId);
-};
-
-//plugin task 
-
-interface ITaskCreateInterface
-{
-	HRESULT AssignTask();
-};
-
-interface IUIInterface
-{
-	HWND GetMainWnd();
-};
 
 
 }//namespace EMB

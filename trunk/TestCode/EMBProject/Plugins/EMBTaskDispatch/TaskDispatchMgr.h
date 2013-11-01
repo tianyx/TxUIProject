@@ -7,7 +7,7 @@ namespace EMB{
 class CTaskDispatchMgr:
 	public IPluginBaseInterface,
 	public IPluginControlInterface, 
-	public IPluginTaskDispatch, 
+	public IPluginTaskCommit, 
 	public IPluginConnectorInterce,
 	public IEMBActorHolderCallBackInterface
 {
@@ -48,3 +48,4 @@ public:
 };
 
 }
+extern EMB::CTaskDispatchMgr* g_pPluginInstane;

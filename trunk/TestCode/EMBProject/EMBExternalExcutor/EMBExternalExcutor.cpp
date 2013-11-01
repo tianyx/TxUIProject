@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "EMBExternalExcutor.h"
 #include "EMBExternalExcutorDlg.h"
+#include "MainDef.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -58,6 +59,10 @@ BOOL CEMBExternalExcutorApp::InitInstance()
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+	if (!InitGlobalConfig())
+	{
+		return FALSE;
+	}
 
 	CEMBExternalExcutorDlg dlg;
 	m_pMainWnd = &dlg;

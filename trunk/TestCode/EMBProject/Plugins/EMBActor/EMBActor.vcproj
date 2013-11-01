@@ -5,6 +5,10 @@
 	Name="EMBActor"
 	ProjectGUID="{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}"
 	RootNamespace="EMBActor"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -22,7 +26,7 @@
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			BuildLogFile="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)\BuildLog.htm"
 			>
 			<Tool
@@ -192,6 +196,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\ActorConnector.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\dllmain.cpp"
 				>
 				<FileConfiguration
@@ -219,6 +227,10 @@
 			</File>
 			<File
 				RelativePath=".\EMBActor.def"
+				>
+			</File>
+			<File
+				RelativePath=".\ExcutorMgr.cpp"
 				>
 			</File>
 			<File
@@ -251,6 +263,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\ActorConnector.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ExcutorMgr.h"
+				>
+			</File>
 			<File
 				RelativePath=".\Resource.h"
 				>
