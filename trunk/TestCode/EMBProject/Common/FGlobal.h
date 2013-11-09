@@ -57,6 +57,10 @@ bool operator ==(const SOCKADDR_IN& addr1, const SOCKADDR_IN& addr2);
 
 std::string Addr2String(const SOCKADDR_IN& addr1);
 
+CString Guid2String(const GUID& guidIn);
+GUID String2Guid(CString& strIn);
+GUID TxGenGuid();
+
 int GenRand();
 
 #define MUSTBESOK(hr) if(hr != S_OK){ASSERT(FALSE);return hr;}
@@ -87,13 +91,45 @@ struct TXGUID
 	GUID guid;
 	bool operator <(const TXGUID& other) const
 	{
-		return guid.Data1 < other.guid.Data1 ||
-			guid.Data2 < other.guid.Data2 ||
-			guid.Data3 < other.guid.Data3 ||
-			(UINT64)guid.Data4 <(UINT64)guid.Data4;
+// 		return (guid.Data1 != other.guid.Data1)? (guid.Data1 < other.guid.Data1) :
+// 			(guid.Data2 != other.guid.Data2)? (guid.Data2 < other.guid.Data2) :
+// 			(guid.Data3 != other.guid.Data3)? (guid.Data3 < other.guid.Data3) :
+// 			()?((UINT64)guid.Data4 <(UINT64)other.guid.Data4):false;
+		if (guid.Data1 !=other.guid.Data1)
+		{
+			return guid.Data1 < other.guid.Data1;
+		}
+		else
+		{
+			if (guid.Data2 != other.guid.Data2)
+			{
+				return guid.Data2 < other.guid.Data2;
+			}
+			else
+			{
+				if (guid.Data3 != other.guid.Data3)
+				{
+					return guid.Data3 < other.guid.Data3;
+				}
+				else
+				{
+					UINT64& ud4 = (UINT64&)guid.Data4;
+					UINT64& ud4Other = (UINT64&)other.guid.Data4;
+					if (ud4 < ud4Other)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+			}
+		}
 	}
 
 	operator GUID(){return guid;}
+	operator CString(){return Guid2String(guid);}
 	TXGUID& operator =(const GUID& guidIn)
 	{
 	

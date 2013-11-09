@@ -4,11 +4,13 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include "EMBPluginManager.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+extern HMODULE g_hGlobalDllModule = NULL; 
 static AFX_EXTENSION_MODULE EMBPluginMgrDLL = { NULL, NULL };
 
 extern "C" int APIENTRY
@@ -38,6 +40,9 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		//  Œ Ã‚°£
 
 		new CDynLinkLibrary(EMBPluginMgrDLL);
+
+		ASSERT(g_hGlobalDllModule == NULL);
+		g_hGlobalDllModule = (HMODULE)hInstance;
 
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)

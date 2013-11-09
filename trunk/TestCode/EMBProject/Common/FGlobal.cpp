@@ -2,7 +2,8 @@
 #include "FGlobal.h"
 #include "TxFontLoader.h"
 #include "TxLogManager.h"
-
+#include "Rpc.h"
+#pragma comment(lib, "Rpcrt4.lib")
 using namespace std;
 
 HWND g_hwndLog = NULL;
@@ -249,4 +250,44 @@ int GenRand()
 		guid.Data4[0]+ guid.Data4[1]+ guid.Data4[2]+guid.Data4[3] +
 		guid.Data4[4]+ guid.Data4[5]+ guid.Data4[6]+ guid.Data4[7]);
 	return rand();
+}
+
+CString Guid2String(const GUID& guidIn )
+{
+	RPC_CSTR* pStr = NULL;
+	UuidToString(&guidIn, pStr);
+	CString strTmp;
+	if (pStr)
+	{
+		strTmp = (char*)pStr;
+		RpcStringFree(pStr);
+	}
+	return strTmp;
+}
+GUID String2Guid( CString& strIn )
+{
+	GUID guid = GUID_NULL;
+	if(UuidFromString((RPC_CSTR)strIn.GetBuffer(), &guid)== RPC_S_OK)
+	{
+		return guid;
+	}
+	else
+	{
+		return GUID_NULL;
+	}
+}
+
+DWORD TxWaitObjWithQuit( HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut /*= INFINITE*/ )
+{
+	HANDLE handls[2];
+	handls[0] = hWait;
+	handls[1] = hQuit;
+	return WaitForMultipleObjects(2, handls, FALSE, dwTimeOut);
+}
+
+GUID TxGenGuid()
+{
+	GUID guid = GUID_NULL;
+	::CoCreateGuid(&guid);
+	return guid;
 }

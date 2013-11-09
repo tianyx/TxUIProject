@@ -103,11 +103,18 @@ struct ST_TXMSG_LIVEQA : public ST_TXMSGBASE
 {
 	int nSelfType;
 	int nRemoteState;
+	int nParam1;
+	int nParam2;
+	int nParam3;
 	ST_TXMSG_LIVEQA()
 	{
 		nMsgType = msgtype_LIVEQA;
 		nSelfType = 0;
 		nRemoteState = MBCSTATE_OK;
+		nParam1 = 0;
+		nParam2 = 0;
+		nParam3 = 0;
+		
 	}
 
 	virtual BOOL operator <<( CTxSerialize& ar) const;

@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:01
+	filename: 	TxTimer.h
+	author:		tianyx
+	
+	purpose:	timer not use wnd
+*********************************************************************/
 #pragma once
 #include <map>
 using namespace std;

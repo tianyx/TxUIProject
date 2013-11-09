@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "ExcutorMgr.h"
 #include "EMBDefine.h"
+#include "io.h"
 
 LRESULT CALLBACK ExcMgrWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL RegisterExcMgrWnd();
@@ -70,6 +71,8 @@ DWORD __stdcall ExcMgrMsgLoopThread( void* lparam )
 		DispatchMessage(&msg);
 	}
 
+	pMgr->m_hLoopThread = NULL;
+	pMgr->m_hMessageWnd = NULL;
 	return 0;
 }
 
@@ -133,4 +136,45 @@ BOOL CExcutorMgr::Release()
 	}
 
 	return TRUE;
+}
+
+HRESULT CExcutorMgr::Run()
+{
+	if (m_strExcPath.IsEmpty())
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	Stop();
+	m_hLoopThread = CreateThread(NULL, 0, ExcMgrMsgLoopThread, (LPVOID)this,  0,0);
+	ASSERT(m_hLoopThread);
+	return m_hLoopThread != NULL;
+}
+
+BOOL CExcutorMgr::Init( LPCTSTR strExcPathIn )
+{
+	if (access(strExcPathIn, 0) == -1)
+	{
+		return FALSE;
+	}
+	m_strExcPath = strExcPathIn;
+	return TRUE;
+}
+
+HRESULT CExcutorMgr::Stop()
+{
+	if (m_hLoopThread)
+	{
+		::DestroyWindow(m_hMessageWnd);
+		WaitForSingleObject(m_hLoopThread, INFINITE);
+		if (m_hLoopThread)
+		{
+			TerminateThread(m_hLoopThread, 0);
+		}
+	}
+
+	m_hLoopThread = NULL;
+	m_hMessageWnd = NULL;
+	return S_OK;
 }

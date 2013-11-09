@@ -1,8 +1,8 @@
 /********************************************************************
 	created:	2011/08/10
 	created:	10:8:2011   15:26
-	filename: 	e:\Source\EZIM\Src\EZMessenger\common\StrConvert.h
-	file path:	e:\Source\EZIM\Src\EZMessenger\common
+	filename: 	StrConvert.h
+	file path:	
 	file base:	StrConvert
 	file ext:	h
 	author:		tian_yuanxin
@@ -43,6 +43,7 @@ BOOL SplitteStrings( const char* szIn , std::vector<std::string>& vOut, char chS
 
 
 typedef vector<CString> VECSTRINGS;
+typedef vector<int> VECINTS;
 
 
 class CTxStrConvert
@@ -59,6 +60,7 @@ public:
 	bool GetAsBOOL(bool bDefault = FALSE);
 	CString GetAsString(LPCTSTR szDefault = TEXT(""));
 	BOOL GetAsStringArray(VECSTRINGS& vOut, TCHAR separator = ',');
+	BOOL GetAsIntArray(VECINTS& vOut, TCHAR separator = ',');
 
 	void SetVal(int nVal);
 	void SetVal(unsigned int nVal);
@@ -66,5 +68,6 @@ public:
 	void SetVal(bool bVal);
 	void SetVal(LPCTSTR szVal);
 	void SetVal(VECSTRINGS& vVal);
+	void SetVal(VECINTS& vVal);
 
 };

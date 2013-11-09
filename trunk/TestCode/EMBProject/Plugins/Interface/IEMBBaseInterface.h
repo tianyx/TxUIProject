@@ -1,7 +1,15 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:07
+	filename: 	IEMBBaseInterface.h
+	author:		tianyx
+	
+	purpose:	emb plugin interface
+*********************************************************************/
 #pragma once
 #include "EMBGuid.h"
 #include <vector>
-
+using namespace std;
 typedef CString CTaskString;
 
 namespace EMB{
@@ -10,19 +18,21 @@ enum ENUM_PLUGINTYPE
 {
 	PluinType_None				= 0x0,
 	PluinType_PluginManager		= 0x1,
-	PluginType_TaskRiser	= 0x2,
+	PluginType_TaskRiser		= 0x2,
 	PluginType_Dispatcher		= 0x4,
 	PluginType_ActorManager		= 0x8,
 	PluginType_Actor			= 0x10,
+	PluginType_Storage			= 0x20
 };
 
 enum ENUM_SUBTYPE
 {
 	SubType_None		= 0x0,
-	SubType_TransFile	= 0x1,
-	SubType_TransCode	= 0x2,
-	SubType_Mediacheck	= 0x4,
-	SubType_MD5Check	= 0x8
+	SubType_FileTrans	= 0x1,
+	SubType_FileCode	= 0x2,
+	SubType_FileCheck	= 0x4,
+	SubType_MD5Check	= 0x8,
+
 };
 
 
@@ -30,7 +40,7 @@ enum ENUM_SUBTYPE
 interface ITxUnkown
 {
 	int m_nRef;
-	ITxUnkown():m_nRef(1){}
+	ITxUnkown():m_nRef(0){}
 	virtual void AddRef()
 	{
 		++m_nRef;
@@ -82,7 +92,7 @@ struct ST_PluginInfo
 	}
 
 };
-
+//////////////////////////////////////////////////////////////////////////
 typedef std::vector<ST_PluginInfo> VECPLUGINFOS;
 //all plugin must implement this////////////////////////////////////////////////////////////////////////
 interface IPluginBaseInterface :virtual public ITxUnkown
@@ -118,9 +128,9 @@ interface IPluginControlInterface:virtual public ITxUnkown
 interface IPluginManagerInterface:virtual public ITxUnkown
 {
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut) = 0;
-	virtual HANDLE LoadPlugin(GUID& guidIn, IPluginBaseInterface*& pInterfaceOut) = 0;
+	virtual HANDLE LoadPlugin(const GUID guidIn, IPluginBaseInterface*& pInterfaceOut) = 0;
 	//this will unload the plugin library, if handle = NULL, unload all plugin that same guid
-	virtual HRESULT UnloadPlugin(GUID& guidIn, HANDLE handle) = 0;
+	virtual HRESULT UnloadPlugin(const GUID guidIn, HANDLE handle) = 0;
 };
 
 //plugin task generate////////////////////////////////////////////////////////////////////////
@@ -136,13 +146,27 @@ interface IPluginTaskCommit:virtual public ITxUnkown
 	virtual HRESULT SubmitTask(const CTaskString& szTaskIn, CTaskString& szRet) = 0;
 };
 
+
 //plugin task Actor////////////////////////////////////////////////////////////////////////
 interface IActorMsgCallBackInterface
 {
 	virtual HRESULT ActCallbackProc(CTaskString& szActMsg, CTaskString& szRet) = 0;
 };
 
+//
+interface IExcutorTaskInterface
+{
+	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet);
+};
 
+//////////////////////////////////////////////////////////////////////////
+typedef vector<CTaskString> VECTASKS;
+interface IPluginStorageInterface:virtual public ITxUnkown
+{
+	virtual HRESULT UpdateTaskToStorage(const int nDispatchID, CTaskString& szTaskIn) = 0;
+	virtual HRESULT FetchTaskFromStorage(const int nDispatchID, int nDesiredNum, VECTASKS& vTasks) = 0;
+
+};
 
 
 }//namespace EMB

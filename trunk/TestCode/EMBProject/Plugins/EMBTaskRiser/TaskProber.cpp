@@ -16,10 +16,6 @@ CTaskProber::~CTaskProber(void)
 {
 }
 
-HRESULT CTaskProber::Init_Prober()
-{
-	return TRUE;
-}
 
 HRESULT CTaskProber::Run_Prober()
 {

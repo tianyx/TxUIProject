@@ -230,6 +230,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MasterHeartBeat.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SlaveHeartBeat.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -264,7 +272,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MasterHeartBeat.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SlaveHeartBeat.h"
 				>
 			</File>
 			<File

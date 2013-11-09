@@ -16,7 +16,9 @@ struct ST_PLUGINMGRDATA
 };
 typedef map<TXGUID, ST_PLUGINMGRDATA> MAPPLUGINMAGRDATAS;
 
-class CEMBPluginManager: public IPluginBaseInterface, public IPluginManagerInterface
+class CEMBPluginManager: 
+	public IPluginBaseInterface,
+	public IPluginManagerInterface
 {
 public:
 	CEMBPluginManager(void);
@@ -30,8 +32,8 @@ public:
 	virtual HRESULT QueryInterface(const GUID& guidIn, LPVOID& pInterfaceOut);
 	//iterface for IPluginManagerInterface
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut);
-	virtual HANDLE  LoadPlugin(GUID& guidIn, IPluginBaseInterface*& pInterfaceOut);
-	virtual HRESULT UnloadPlugin(GUID& guidIn, HANDLE handle);
+	virtual HANDLE  LoadPlugin(const GUID guidIn, IPluginBaseInterface*& pInterfaceOut);
+	virtual HRESULT UnloadPlugin(const GUID guidIn, HANDLE handle);
 private:
 	void Init();
 	void UnInit();
@@ -43,3 +45,4 @@ private:
 }//namespace EMB
 
 extern EMB::CEMBPluginManager* g_pPluginInstane;
+extern HMODULE g_hGlobalDllModule;

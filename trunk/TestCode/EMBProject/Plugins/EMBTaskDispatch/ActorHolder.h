@@ -1,20 +1,26 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:03
+	filename: 	ActorHolder.h
+	author:		tianyx
+	
+	purpose:	
+*********************************************************************/
 #pragma once
 #include "MBCBaseObj.h"
 #include "TxParamString.h"
 #include "AutoCritSec.h"
+#include "EMBDefine.h"
 using namespace std;
 
-#define ActorConnState_none 0
-#define ActorConnState_conn 1
-#define ActorConnState_ok	2
-#define ActorConnState_del	3
+
 
 interface IEMBActorHolderCallBackInterface
 {
-	virtual HRESULT OnActorConnect(const GUID& szActorGuid) = 0;
-	virtual HRESULT OnActorDisConnect(const GUID& szActorGuid) = 0;
-	virtual HRESULT OnActorReportInfo(const GUID& szActorGuid, CString& szActorInfoIn) = 0;
-	virtual HRESULT OnActorDispatchTask(const GUID& szActorGuid, CString& szActorInfoIn) = 0;
+	virtual HRESULT OnActorConnect(const ACTORID& szActorGuid) = 0;
+	virtual HRESULT OnActorDisConnect(const ACTORID& szActorGuid) = 0;
+	virtual HRESULT OnActorReportInfo(const ACTORID& szActorGuid, CString& szActorInfoIn) = 0;
+	virtual HRESULT OnActorDispatchTask(const ACTORID& szActorGuid, CString& szActorInfoIn) = 0;
 
 };
 
@@ -25,14 +31,14 @@ interface IEMBActorSenderInterface
 
 struct ST_ACTORDATA
 {
-	GUID strGuid;
+	ACTORID strGuid;
 	int  nActorConnState;
 	CMBCSocket* pSock;
 
 	ST_ACTORDATA()
 	{
 		pSock = NULL;
-		strGuid = GUID_NULL;
+		strGuid = INVALID_ID;
 		nActorConnState = ActorConnState_none;
 	}
 };
@@ -67,7 +73,7 @@ private:
 	HRESULT DoSockSend(CMBCSocket* pSock, const char* pbufferIn, const int nSizeIn);
 	void RemoveSock(CMBCSocket* pSock);
 	void AddSock(CMBCSocket* pSock);
-	GUID GetSockGuid(CMBCSocket* pSock);
+	ACTORID GetSockGuid(CMBCSocket* pSock);
 	IEMBActorHolderCallBackInterface* m_pActorCallbackInterface;
 	MAPSOCKINS m_mapSockIns;
 	CAutoCritSec m_locSockMap;

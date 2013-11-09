@@ -2,11 +2,13 @@
 #include "IEMBBaseInterface.h"
 #include "ActorConnector.h"
 #include "ExcutorMgr.h"
+#include "EmbStructDef.h"
 namespace EMB
 {
 class CTaskActor:
 	public IPluginBaseInterface,
 	public IPluginControlInterface,
+	public IPluginConfigInterface,
 // 	public IPluginConnectorInterce,
 // 	public IActorMsgCallBackInterface,
 	public IActorConnectorCallback
@@ -22,6 +24,10 @@ public:
 	//interface for IPluginBaseInterface
 	virtual HRESULT QueryPluginInfo(VECPLUGINFOS& vInfoInOut);
 	virtual HRESULT QueryInterface(const GUID& guidIn, LPVOID& pInterfaceOut);
+
+	//for IPluginConfigInterface
+	virtual HRESULT GetParam(const CTaskString& szIn, CTaskString& szOut);
+	virtual HRESULT SetParam(const CTaskString& szIn, CTaskString& szOut);
 
 	//for IPluginControlInterface
 	virtual HRESULT Run_Plugin();
@@ -48,6 +54,8 @@ private:
 	CActorConnector m_actorconnSlave;
 	CActorConnector* m_pCurrActor;
 	CExcutorMgr* m_pExcMgr;
+	ST_ACTORREG m_ActRegInfo;
+	BOOL m_bRuning;
 };
 
 

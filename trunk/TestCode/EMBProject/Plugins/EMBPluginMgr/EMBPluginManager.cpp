@@ -10,12 +10,13 @@ CEMBPluginManager::CEMBPluginManager(void)
 
 CEMBPluginManager::~CEMBPluginManager(void)
 {
+	g_pPluginInstane = NULL;
 }
 
 HRESULT CEMBPluginManager::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 {
 	ST_PluginInfo info;
-	info.pluginGuid = GuidEMBPlugin_IPluginManager;
+	info.pluginGuid = GuidEMBPlugin_PPluginMgr;
 	info.nPlugInType = PluinType_PluginManager;
 	info.nSubType = SubType_None;
 	vInfoInOut.push_back(info);
@@ -46,10 +47,14 @@ HRESULT CEMBPluginManager::QueryInterface( const GUID& guidIn, LPVOID& pInterfac
 
 void CEMBPluginManager::Init()
 {
+	char szPath[MAX_PATH];
+	GetModuleFileName(g_hGlobalDllModule, szPath, MAX_PATH);
+	CString strThisPath = szPath;
+
 	CFileFind ffind;
 	CString strFileFmt(GetAppPath().c_str());
 	strFileFmt.TrimRight('\\');
-	strFileFmt += "\\plugins\\*.dll";
+	strFileFmt += "\\plugin\\*.dll";
 	BOOL bFind = ffind.FindFile(strFileFmt);
 	if (!bFind)
 	{
@@ -61,6 +66,11 @@ void CEMBPluginManager::Init()
 	{
 		bFind = ffind.FindNextFile();
 		CString strDllFile =ffind.GetFilePath();
+		if (strDllFile.CompareNoCase(strThisPath) == 0)
+		{
+			continue;
+		}
+	
 		EMB::IPluginBaseInterface* pPluginBase = NULL;
 		HMODULE hPluginModule = NULL;
 		::TxLoadPlugin(strDllFile, hPluginModule, (LPVOID&)pPluginBase);
@@ -78,7 +88,7 @@ void CEMBPluginManager::Init()
 					TXGUID strGuid = mgrdata.plugInfo.pluginGuid;
 					if(m_mapPluginInfo.find(strGuid) != m_mapPluginInfo.end())
 					{
-						CFWriteLog(TEXT("plugin guid already defined %s, %s"), mgrdata.strFile, strGuid);
+						CFWriteLog(TEXT("plugin guid already defined %s, %s"), mgrdata.strFile, (CString)strGuid);
 					}
 					m_mapPluginInfo[strGuid] = mgrdata;
 				}
@@ -118,7 +128,7 @@ HRESULT CEMBPluginManager::FindPlugin( const UINT nPluginType, const UINT nSubTy
 	return hr;
 }
 
-HANDLE CEMBPluginManager::LoadPlugin( GUID& guidIn, IPluginBaseInterface*& pInterfaceOut )
+HANDLE CEMBPluginManager::LoadPlugin( const GUID guidIn, IPluginBaseInterface*& pInterfaceOut )
 {
 	TXGUID guid = guidIn;
 	MAPPLUGINMAGRDATAS::iterator itf = m_mapPluginInfo.find(guid);
@@ -170,15 +180,42 @@ HRESULT CEMBPluginManager::OnFirstInit()
 	//init all
 	CString strFile = GetAppPath().c_str();
 	strFile +=TEXT("\\log\\PluginMgr.log");
-	GetTxLogMgr()->AddNewLogFile(PLUGINMGR_LOGKEY, strFile);
+	GetTxLogMgr()->AddNewLogFile(LOGKEY_PLUGINMGR, strFile);
 	Init();
 	return S_OK;
 }
 
 
-HRESULT EMB::CEMBPluginManager::UnloadPlugin( GUID& guidIn, HANDLE handle )
+HRESULT EMB::CEMBPluginManager::UnloadPlugin(const GUID guidIn, HANDLE handle )
 {
 	HRESULT hr = S_OK;
+	if (guidIn == GUID_NULL)
+	{
+		if (handle == NULL)
+		{
+			return E_INVALIDARG;
+		}
+		//find all handle
+		hr = E_FAIL;
+		MAPPLUGINMAGRDATAS::iterator itb = m_mapPluginInfo.begin();
+		MAPPLUGINMAGRDATAS::iterator ite = m_mapPluginInfo.end();
+		for (; itb != ite; ++itb)
+		{
+			MAPMODULES& vModule = itb->second.vModules;
+			MAPMODULES::iterator itfH =vModule.find((HMODULE)handle);
+			if (itfH != vModule.end())
+			{
+				TxUnloadPlugin(itfH->first);
+				vModule.erase(itfH);
+				hr = S_OK;
+				break;
+			}
+		}
+		
+		return hr;
+	}
+
+
 	MAPPLUGINMAGRDATAS::iterator itf = m_mapPluginInfo.find(guidIn);
 	if (itf != m_mapPluginInfo.end())
 	{

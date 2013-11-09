@@ -75,6 +75,7 @@ HRESULT CMBCHeartBeatObj::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
 		ST_TXMSG_LIVEQA msg;
 		msg.nMsgState = msgState_Q;
 		msg.nMsgId = ++m_nLiveRequestCount;
+		FillLIvePack(msg);
 		char buffer[256];
 		int nUsed = 0;
 		HRESULT hr = PackMBCMsg(msg, buffer, 256, nUsed);

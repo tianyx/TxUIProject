@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   17:59
+	filename: 	ActorConnector.h
+	author:		tianyx
+	
+	purpose:	actor connector
+*********************************************************************/
 #pragma once
 #include "MBCHeartBeatObj.h"
 #include "IEMBBaseInterface.h"

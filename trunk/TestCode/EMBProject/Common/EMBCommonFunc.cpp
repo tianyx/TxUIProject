@@ -1,7 +1,9 @@
 #include "StdAfx.h"
 #include "EMBCommonFunc.h"
-#include "Rpc.h"
-#pragma comment(lib, "Rpcrt4.lib")
+
+#include "TxAutoComPtr.h"
+using namespace EMB;
+
 
 typedef int (__cdecl *GETPLUGININSTANCE)(LPVOID& pInterface);
 
@@ -36,45 +38,148 @@ BOOL TxUnloadPlugin(HMODULE hModuleIn)
 	return bRet;
 }
 
-CString Guid2String(const GUID& guidIn )
+
+
+BOOL GetXmlFirstNode(const CString& strXmlIn, CString& strNodeOut )
 {
-	RPC_CSTR* pStr = NULL;
-	UuidToString(&guidIn, pStr);
-	CString strTmp;
-	if (pStr)
+	strNodeOut.Empty();
+	int nXmlLen = strXmlIn.GetLength();
+	if (nXmlLen < 4)
 	{
-		strTmp = (char*)pStr;
-		RpcStringFree(pStr);
+		return FALSE;
 	}
-	return strTmp;
-}
-GUID String2Guid( CString& strIn )
-{
-	GUID guid = GUID_NULL;
-	if(UuidFromString((RPC_CSTR)strIn.GetBuffer(), &guid)== RPC_S_OK)
+
+	int nPos = 0;
+	while (TRUE)
 	{
-		return guid;
+		nPos = strXmlIn.Find('<', nPos);
+		if (nPos < 0 || nPos >= nXmlLen-2)
+		{
+			return FALSE;
+		}
+		char chNext = strXmlIn.GetAt(nPos +1);
+		if (chNext != '?'
+			&& chNext != '!')
+		{
+			int nPos2 = strXmlIn.Find('>', nPos+1);
+			if (nPos2 != -1)
+			{
+				strNodeOut = strXmlIn.Mid(nPos, nPos2 -nPos+1);
+				return TRUE;
+			}
+			else
+			{
+				return FALSE;
+			}
+		}
+		else
+		{
+			//continue
+			nPos++;
+			if (nPos >= nXmlLen -2)
+			{
+
+				return FALSE;
+			}
+		}
+
+		
+	}
+
+	return FALSE;
+}
+
+
+
+BOOL LoadPluginByPluginMgr( int nType, int nSubType, EMB::ITxUnkown* pPluginMgr, ST_LOADEDPLUGIN& pluginOut )
+{
+	pluginOut.handle = NULL;
+	pluginOut.pIface = NULL;
+	CTxAutoComPtr<IPluginManagerInterface> apPluginMgr;
+	pPluginMgr->QueryInterface(GuidEMBPlugin_IPluginManager, (LPVOID&) *&apPluginMgr);
+	ASSERT(apPluginMgr != NULL);
+	GUID guidNeed;
+	apPluginMgr->FindPlugin(nType, nSubType, guidNeed);
+	if (guidNeed == GUID_NULL)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	pluginOut.handle =apPluginMgr->LoadPlugin(guidNeed, pluginOut.pIface);
+	if (pluginOut.handle && pluginOut.pIface)
+	{
+		return TRUE;
 	}
 	else
 	{
-		return GUID_NULL;
+		return FALSE;
 	}
+
 }
 
-DWORD TxWaitObjWithQuit( HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut /*= INFINITE*/ )
+BOOL SetPluginParam( ITxUnkown* pIPlugin, CString& strParam , CString& strRet)
 {
-	HANDLE handls[2];
-	handls[0] = hWait;
-	handls[1] = hQuit;
-	return WaitForMultipleObjects(2, handls, FALSE, dwTimeOut);
+	if (!pIPlugin)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	
+	CTxAutoComPtr<IPluginConfigInterface> apIConfig;
+	pIPlugin->QueryInterface(GuidEMBPlugin_IConfig, (LPVOID&)*&apIConfig);
+	if (apIConfig)
+	{
+		return apIConfig->SetParam(strParam, strRet);
+	}
+	return FALSE;
 }
 
-GUID TxGenGuid()
+
+
+BOOL UnLoadPluginByPluginMgr( EMB::ITxUnkown* pPluginMgr, ST_LOADEDPLUGIN& pluginOut )
 {
-	GUID guid = GUID_NULL;
-	::CoCreateGuid(&guid);
-	return guid;
+	if (pluginOut.pIface)
+	{
+		pluginOut.pIface->Release();
+	}
+	CTxAutoComPtr<IPluginManagerInterface> apPluginMgr;
+	pPluginMgr->QueryInterface(GuidEMBPlugin_IPluginManager, (LPVOID&) *&apPluginMgr);
+	ASSERT(apPluginMgr != NULL);
+	HRESULT hr = apPluginMgr->UnloadPlugin(GUID_NULL, pluginOut.handle);
+	
+	return SUCCEEDED(hr);
 }
 
+HRESULT ConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 )
+{
+	if (!pIPlugin1 || !pIPlugin2)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	CTxAutoComPtr<IPluginConnectorInterce> apIConn1;
+	pIPlugin1->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&)*&apIConn1);
+	if (apIConn1)
+	{
+		return apIConn1->Connect(pIPlugin2);
+	}
 
+	return S_FALSE;
+}
 
+HRESULT DisConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 )
+{
+	if (!pIPlugin1 || !pIPlugin2)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	CTxAutoComPtr<IPluginConnectorInterce> apIConn1;
+	pIPlugin1->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&)*&apIConn1);
+	if (apIConn1)
+	{
+		return apIConn1->Disconnect(pIPlugin2);
+	}
+
+	return S_FALSE;
+}

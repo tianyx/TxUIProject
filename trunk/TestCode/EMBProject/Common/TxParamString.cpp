@@ -154,6 +154,12 @@ void CTxParamString::Clear()
 
 BOOL CTxParamString::GoToPath( LPCTSTR szRoot )
 {
+	if (szRoot == NULL)
+	{
+		m_vecCurrPath.clear();
+		m_vecCurrPath.push_back(TEXT("."));
+		return TRUE;
+	}
 	std::vector<std::string> vOut;
 	SplitteStrings(szRoot, vOut, '\\');
 	if (vOut.size() == 0 || vOut[0].compare(".") != 0)
@@ -230,7 +236,7 @@ CTxStrConvert CTxParamString::GetElemVal( LPCTSTR szKey )
 	return txConvert;
 }
 
-CTxStrConvert CTxParamString::GetAttribVal(LPCTSTR szAttribKey,  LPCTSTR szKey)
+CTxStrConvert CTxParamString::GetAttribVal( LPCTSTR szKey,LPCTSTR szAttribKey)
 {
 	CTxStrConvert txConvert;
 	if (!m_bInited)
@@ -260,7 +266,7 @@ BOOL CTxParamString::SetElemVal( LPCTSTR szKey, CTxStrConvert& valIn )
 	BOOL bRet = FALSE;
 	VECSTRINGS vPath = m_vecCurrPath;
 	ST_MARKITEM* pItem = FindNode(vPath);
-	if (pItem && pItem->bIsPath)
+	if (pItem )
 	{
 		ST_MARKITEM item;
 		item.strKey = szKey;
@@ -293,6 +299,119 @@ BOOL CTxParamString::SetAttribVal( LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrCon
 	}
 
 	return bRet;
+}
+
+BOOL CTxParamString::GetSubNodeString( LPCTSTR szRoot, CTxParamString& subParamOut )
+{
+	BOOL bRet = FALSE;
+	if (szRoot == NULL)
+	{
+		//return all
+		subParamOut.m_kvData = m_kvData;
+		subParamOut.m_bInited = TRUE;
+		bRet = TRUE;
+	}
+	else
+	{
+		std::vector<std::string> vOut;
+		SplitteStrings(szRoot, vOut, '\\');
+		if (vOut.size() == 0 || vOut[0].compare(".") != 0)
+		{
+			_RPT1(0, TEXT("path not illegual, %s"), szRoot);
+		}
+		else
+		{
+			VECSTRINGS tmpPath;
+			for (size_t i = 0; i < vOut.size(); ++i)
+			{
+				tmpPath.push_back(vOut[i].c_str());
+			}
+			ST_MARKITEM* pItem =FindNode(tmpPath);
+			if (pItem)
+			{
+				subParamOut.m_kvData.mapChildItem[pItem->strKey] = *pItem;
+				subParamOut.m_bInited = TRUE;
+				subParamOut.UpdateData();
+				bRet = TRUE;
+			}
+		}
+	}
+
+	return bRet;
+}
+
+BOOL CTxParamString::SetSubNodeString( LPCTSTR szRoot, CTxParamString& subParamIn )
+{
+	if (!subParamIn.m_bInited)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	BOOL bRet = FALSE;
+	if (szRoot == NULL)
+	{
+		//return all
+		m_kvData = subParamIn.m_kvData;
+		m_bInited = TRUE;
+		bRet = TRUE;
+	}
+	else
+	{
+		std::vector<std::string> vOut;
+		SplitteStrings(szRoot, vOut, '\\');
+		if (vOut.size() == 0 || vOut[0].compare(".") != 0)
+		{
+			_RPT1(0, TEXT("path not illegual, %s"), szRoot);
+		}
+		else
+		{
+			VECSTRINGS tmpPath;
+			for (size_t i = 0; i < vOut.size(); ++i)
+			{
+				tmpPath.push_back(vOut[i].c_str());
+			}
+			ST_MARKITEM* pItem =FindNode(tmpPath);
+			if (pItem)
+			{
+				pItem->mapChildItem.insert(subParamIn.m_kvData.mapChildItem.begin(), subParamIn.m_kvData.mapChildItem.end());
+				m_bInited = TRUE;
+				bRet = TRUE;
+			}
+		}
+	}
+
+	return bRet;
+
+}
+
+BOOL CTxParamString::GoIntoKey( LPCTSTR szKey )
+{
+	if (szKey == NULL)
+	{
+		return FALSE;
+	}
+	if (!m_bInited)
+	{
+		return FALSE;
+	}
+
+	if (m_vecCurrPath.size() == 0)
+	{
+		m_vecCurrPath.push_back(TEXT("."));
+	}
+	m_vecCurrPath.push_back(szKey);
+}
+
+BOOL CTxParamString::OutofKey()
+{
+	if (m_vecCurrPath.size() > 1)
+	{
+		m_vecCurrPath.pop_back();
+
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 

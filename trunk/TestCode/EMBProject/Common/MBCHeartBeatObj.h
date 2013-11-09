@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:05
+	filename: 	MBCHeartBeatObj.h
+	author:		tianyx
+	
+	purpose:	
+*********************************************************************/
 #pragma once
 #include "mbcbaseobj.h"
 
@@ -32,4 +40,6 @@ public:
 	virtual HRESULT Run();
 	virtual HRESULT Stop();
 
+	virtual HRESULT FillLIvePack(ST_TXMSG_LIVEQA& msg){return S_OK;}
+	virtual HRESULT OnLiveMsgIn(ST_TXMSG_LIVEQA& msg){return S_OK;}
 };

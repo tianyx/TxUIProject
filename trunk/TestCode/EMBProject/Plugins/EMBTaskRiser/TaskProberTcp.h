@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:04
+	filename: 	TaskProberTcp.h
+	author:		tianyx
+	
+	purpose:	
+*********************************************************************/
 #pragma once
 #include "taskprober.h"
 #include "MBCRemoteObj.h"
@@ -14,5 +22,4 @@ public:
 
 	virtual HRESULT Run_Prober();
 	virtual HRESULT Stop_Prober();
-	virtual HRESULT Init_Prober();
 };

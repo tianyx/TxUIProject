@@ -46,7 +46,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\common"
+				AdditionalIncludeDirectories="..\common;..\plugins\interface"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -270,6 +270,10 @@
 			</File>
 			<File
 				RelativePath="..\Common\MBCCommonDef.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\MBCCommonDef.h"
 				>
 			</File>
 			<File

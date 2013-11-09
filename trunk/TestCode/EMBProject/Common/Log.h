@@ -86,6 +86,8 @@ private:
 	time_t m_lastLogTime;
 	SYSTEMTIME m_lastLogT;
 	CString m_strOrgFileName;
+public:
+	BOOL m_bAutoAddTimeToFileName;
 };
 
 #endif // VNCLOGGING

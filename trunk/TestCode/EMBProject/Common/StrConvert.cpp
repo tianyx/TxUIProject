@@ -308,3 +308,34 @@ void CTxStrConvert::SetVal( VECSTRINGS& vVal )
 	}
 }
 
+void CTxStrConvert::SetVal( VECINTS& vVal )
+{
+	m_szParam.Empty();
+	for (size_t i = 0; i < vVal.size(); ++i)
+	{
+		if (i != 0)
+		{
+			m_szParam += TEXT(",");
+		}
+		CString strVal;
+		strVal.Format(TEXT("%d"), vVal[i]);
+		m_szParam +=strVal;
+	}
+}
+
+BOOL CTxStrConvert::GetAsIntArray( VECINTS& vOut, TCHAR separator /*= ','*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return FALSE;
+	}
+
+	std::vector<std::string> vecstr;
+	SplitteStrings(m_szParam, vecstr, separator);
+	for (size_t i = 0; i < vecstr.size(); ++i)
+	{
+		vOut.push_back(atoi(vecstr[i].c_str()));
+	}
+	return TRUE;
+}
+

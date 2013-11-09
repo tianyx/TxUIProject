@@ -31,9 +31,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskDispatch", "Plugins\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActor", "Plugins\EMBActor\EMBActor.vcproj", "{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActorHost", "EMBActorHost\EMBActorHost.vcproj", "{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskStorage", "Plugins\EMBTaskStorage\EMBTaskStorage.vcproj", "{288D42E6-88C4-4D32-8B5A-88D8D67BF000}"
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 11
+		SccNumberOfProjects = 13
 		SccLocalPath0 = .
 		SccProjectUniqueName1 = EMBServer\\EMBServer.vcproj
 		SccProjectTopLevelParentUniqueName1 = EMBProject.sln
@@ -68,6 +72,14 @@ Global
 		SccProjectUniqueName10 = Plugins\\EMBActor\\EMBActor.vcproj
 		SccProjectTopLevelParentUniqueName10 = EMBProject.sln
 		SccLocalPath10 = Plugins\\EMBActor
+		SccProjectUniqueName11 = EMBActorHost\\EMBActorHost.vcproj
+		SccProjectTopLevelParentUniqueName11 = EMBProject.sln
+		SccLocalPath11 = .
+		SccProjectFilePathRelativizedFromConnection11 = EMBActorHost\\
+		SccProjectUniqueName12 = Plugins\\EMBTaskStorage\\EMBTaskStorage.vcproj
+		SccProjectTopLevelParentUniqueName12 = EMBProject.sln
+		SccLocalPath12 = .
+		SccProjectFilePathRelativizedFromConnection12 = Plugins\\EMBTaskStorage\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -114,6 +126,14 @@ Global
 		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}.Debug|Win32.Build.0 = Debug|Win32
 		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}.Release|Win32.ActiveCfg = Release|Win32
 		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}.Release|Win32.Build.0 = Release|Win32
+		{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}.Debug|Win32.ActiveCfg = Debug|Win32
+		{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}.Debug|Win32.Build.0 = Debug|Win32
+		{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}.Release|Win32.ActiveCfg = Release|Win32
+		{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}.Release|Win32.Build.0 = Release|Win32
+		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Debug|Win32.ActiveCfg = Debug|Win32
+		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Debug|Win32.Build.0 = Debug|Win32
+		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Release|Win32.ActiveCfg = Release|Win32
+		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,11 +143,13 @@ Global
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {7C4288E1-4773-4290-9430-D23FBC240F66}
 		{775A4664-EEB7-4C3B-8B1F-1C6596669199} = {2FF42794-B420-4E85-997B-12C7E78BD3DE}
 		{8D5811C4-8C6C-4813-BAED-39A02EB486B8} = {2FF42794-B420-4E85-997B-12C7E78BD3DE}
+		{451E0FB7-BE70-460F-83B8-0D5B28E2EC03} = {2FF42794-B420-4E85-997B-12C7E78BD3DE}
 		{B598D976-8214-432E-A15C-EA1EB1F9F4AA} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{57248819-1B2D-422C-B349-86D3BC87B461} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{C09F0BBD-BFA6-47BD-B051-11BEC2DE3A6B} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
+		{288D42E6-88C4-4D32-8B5A-88D8D67BF000} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{8FDBC5C7-676D-438E-919F-471D51BEFC9E} = {B0692929-1F47-4692-83C7-759809CCD4D5}
 	EndGlobalSection
 EndGlobal

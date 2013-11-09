@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:03
+	filename: 	TaskProber.h
+	author:		tianyx
+	
+	purpose:	
+*********************************************************************/
 #pragma once
 #include "EMBCommonFunc.h"
 #include "AutoCritSec.h"
@@ -34,7 +42,6 @@ public:
 	virtual HRESULT AddTask(CString& taskIn);
 	virtual HRESULT Run_Prober();
 	virtual HRESULT Stop_Prober();
-	virtual HRESULT Init_Prober();
 private:
 	ITaskCollectCallbackInterface* m_pTaskProcessor;
 

@@ -28,34 +28,36 @@ CTaskRiserMgr::CTaskRiserMgr()
 
 CTaskRiserMgr::~CTaskRiserMgr()
 {
+	g_pPluginInstane = NULL;
 }
 
 HRESULT CTaskRiserMgr::OnFirstInit()
 {
 	CString strFile(GetAppPath().c_str());
-	strFile +=TEXT("\\log\\PluginMgr.log");
-	GetTxLogMgr()->AddNewLogFile(TASKRISER_LOGKEY, strFile);
-	m_nMaxTaskLimit = MAXTASKLIMIT;
-	m_hQuitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	m_hTaskEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	strFile +=TEXT("\\log\\TaskRiser.log");
+	GetTxLogMgr()->AddNewLogFile(LOGKEY_TASKRISER, strFile);
 
 	return S_OK;
 }
 
 void CTaskRiserMgr::OnFinalRelease()
 {
+
 	if (m_pTaskDispatcher)
 	{
 		Disconnect(m_pTaskDispatcher);
 	}
 	g_pPluginInstane = NULL;
+
+	ReleaseTxLogMgr();
+	TRACE("\nCTaskRiserMgr::OnFinalRelease() ");
 	delete this;
 }
 
 HRESULT CTaskRiserMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 {
 	ST_PluginInfo info;
-	info.pluginGuid = GuidEMBPlugin_IPluginManager;
+	info.pluginGuid = GuidEMBPlugin_PTaskRiser;
 	info.nPlugInType = PluginType_TaskRiser;
 	info.nSubType = SubType_None;
 	vInfoInOut.push_back(info);
@@ -102,16 +104,45 @@ HRESULT CTaskRiserMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut
 HRESULT CTaskRiserMgr::Run_Plugin()
 {
 	Stop_Plugin();
+	m_nMaxTaskLimit = MAXTASKLIMIT;
+	m_hQuitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_hTaskEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
 	m_hTaskCheckProc = CreateThread(NULL, NULL, TaskLoopProc, (LPVOID)this, 0, 0);
-	if(m_hTaskCheckProc != NULL)
+	ASSERT(m_hTaskCheckProc != NULL);
+	HRESULT hr = S_OK;
+	//create task prob
+	for (int i = 0; i < m_config.vProbes.size(); ++i)
 	{
-		return S_OK;
+		if (m_config.vProbes[i].nType == embTaskproberType_tcp)
+		{
+			CTaskProberTcp* pProb = new CTaskProberTcp;
+			pProb->SetScokAddr(&m_config.vProbes[i].data.ipdata.addrListen, &m_config.vProbes[i].data.ipdata.addrLocal);
+			pProb->SetTaskProcessor(this);
+			hr =pProb->Run_Prober();
+			ASSERT(SUCCEEDED(hr));
+			m_vProbers.push_back(pProb);
+			
+		}
 	}
+
+
 	return S_FALSE;
 }
 
 HRESULT CTaskRiserMgr::Stop_Plugin()
 {
+
+	for (size_t i = 0; i < m_vProbers.size(); ++i)
+	{
+		CTaskProber* pProb =m_vProbers[i];
+		if (pProb)
+		{
+			pProb->Stop_Prober();
+			delete pProb;
+		}
+	}
+
 	SetEvent(m_hQuitEvent);
 	if (m_hTaskCheckProc)
 	{
@@ -122,8 +153,17 @@ HRESULT CTaskRiserMgr::Stop_Plugin()
 		m_hTaskCheckProc = NULL;
 	}
 	m_vTasks.clear();
-	ResetEvent(m_hQuitEvent);
-	ResetEvent(m_hTaskEvent);
+	if (m_hQuitEvent)
+	{
+		CloseHandle(m_hQuitEvent);
+		m_hQuitEvent = NULL;
+	}
+	if (m_hTaskEvent)
+	{
+		CloseHandle(m_hTaskEvent);
+		m_hTaskEvent = NULL;
+	}
+	
 
 	return S_OK;
 }
@@ -164,11 +204,11 @@ HRESULT CTaskRiserMgr::TaskCollectCallback( CString& taskIn )
 	if(taskIn.IsEmpty())
 	{
 		ASSERT(FALSE);
-		return EMBERR_FORMAT;
+		return EMBERR_INVALIDARG;
 	}
 	if (m_vTasks.size() == m_nMaxTaskLimit)
 	{
-		CFWriteLog(TASKRISER_LOGKEY, TEXT("task list is full!!"));
+		CFWriteLog(LOGKEY_TASKRISER, TEXT("task list is full!!"));
 		return EMBERR_FULL;
 	}
 
@@ -209,7 +249,9 @@ HRESULT EMB::CTaskRiserMgr::Connect( ITxUnkown* pInterfaceIn )
 	{
 		CTxAutoComPtr<IPluginConnectorInterce> pConn;
 		m_pTaskDispatcher->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&) (*&pConn));
+		ASSERT(pConn);
 		pConn->OnConnect(this);
+	
 		return S_OK;
 	}
 	else
@@ -243,8 +285,10 @@ HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 		//found it, disconnect the interface
 		CTxAutoComPtr<IPluginConnectorInterce> pConn;
 		m_pTaskDispatcher->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&) (*&pConn));
+		ASSERT(pConn);
 		pConn->OnDisconnect(this);
 		m_pTaskDispatcher->Release();
+		m_pTaskDispatcher = NULL;
 		hr =S_OK;
 	}
 
@@ -304,4 +348,21 @@ HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 
 
 	return hr;
+}
+
+HRESULT EMB::CTaskRiserMgr::GetParam( const CTaskString& szIn, CTaskString& szOut )
+{
+	return S_OK;
+}
+
+HRESULT EMB::CTaskRiserMgr::SetParam( const CTaskString& szIn, CTaskString& szOut )
+{
+	ST_TASKRISERCONFIG tmpConfig;
+	tmpConfig.FromString(szIn);
+	if (tmpConfig.vProbes.size() == 0)
+	{
+		return E_INVALIDARG;
+	}
+	m_config = tmpConfig;
+	return S_OK;
 }

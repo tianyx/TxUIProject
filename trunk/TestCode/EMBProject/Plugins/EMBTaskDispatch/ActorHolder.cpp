@@ -97,15 +97,15 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
 		if (!msgIn.strGuid.IsEmpty())
 		{
-			GUID strGuidNew = String2Guid(msgIn.strGuid);
-			ASSERT(strGuidNew != GUID_NULL);
+			ACTORID strGuidNew = atoi(msgIn.strGuid);
+			ASSERT(strGuidNew != INVALID_ID);
 			//find sock
 			{
 				CAutoLock lock(&m_locSockMap);
 				MAPSOCKINS::iterator itf = m_mapSockIns.find(pMBCSock);
 				if (itf != m_mapSockIns.end())
 				{
-					ASSERT(itf->second.strGuid == GUID_NULL);
+					ASSERT(itf->second.strGuid == INVALID_ID);
 					itf->second.strGuid = strGuidNew;
 				}
 				
@@ -220,7 +220,7 @@ HRESULT CActorHolder::DoSockSend( CMBCSocket* pSock, const char* pbufferIn, cons
 	return hr > 0? S_OK:hr;
 }
 
-GUID CActorHolder::GetSockGuid( CMBCSocket* pSock )
+ACTORID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 {
 	CAutoLock loc(&m_locSockMap);
 	MAPSOCKINS::iterator itf = m_mapSockIns.find(pSock);
@@ -231,7 +231,7 @@ GUID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 	else
 	{
 		ASSERT(FALSE);
-		return GUID_NULL;
+		return INVALID_ID;
 	}
 }
 

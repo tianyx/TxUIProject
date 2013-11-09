@@ -69,7 +69,7 @@ HRESULT CTaskProberTcp::TransTask( ST_EMBTRANSMSG& msgIn, ST_EMBTRANSMSG& msgRet
 	if (nMainType !=embmsgtype_TaskIncoming || strMainGuid.IsEmpty())
 	{
 		ASSERT(FALSE);
-		hr = EMBERR_FORMAT;
+		hr = EMBERR_INVALIDARG;
 	}
 	else
 	{
@@ -90,9 +90,4 @@ HRESULT CTaskProberTcp::Run_Prober()
 HRESULT CTaskProberTcp::Stop_Prober()
 {
 	return CMBCRemoteObj::Stop();
-}
-
-HRESULT CTaskProberTcp::Init_Prober()
-{
-	return TRUE;
 }

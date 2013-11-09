@@ -29,7 +29,7 @@ BOOL RegisterSockWnd()
 	if ( 0== RegisterClassEx (&wndclassex))
 	{
 		HRESULT hr = GetLastError();
-		ASSERT(FALSE);
+		ASSERT(hr == 0x00000582);
 		
 	}
 

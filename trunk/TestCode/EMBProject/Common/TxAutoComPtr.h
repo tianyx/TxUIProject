@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:09
+	filename: 	TxAutoComPtr.h
+	author:		tianyx
+	
+	purpose:	auto ptr for ITxUnknow
+*********************************************************************/
 #pragma  once
 
 template <class T>

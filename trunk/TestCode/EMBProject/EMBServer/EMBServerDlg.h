@@ -17,8 +17,9 @@ public:
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
+public:
 
-
+	BOOL m_bRunning;
 // 实现
 protected:
 	HICON m_hIcon;
@@ -29,4 +30,8 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnBnClickedBtnStart();
+
+
 };

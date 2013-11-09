@@ -5,6 +5,9 @@
 #include "stdafx.h"
 #include "EMBServer.h"
 #include "EMBServerDlg.h"
+#include "EmbStructDef.h"
+#include "MainDef.h"
+#include "TxParamString.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -51,6 +54,7 @@ CEMBServerDlg::CEMBServerDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CEMBServerDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_bRunning = FALSE;
 }
 
 void CEMBServerDlg::DoDataExchange(CDataExchange* pDX)
@@ -63,6 +67,7 @@ BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
+	ON_BN_CLICKED(IDC_BTN_START, &CEMBServerDlg::OnBnClickedBtnStart)
 END_MESSAGE_MAP()
 
 
@@ -151,3 +156,16 @@ HCURSOR CEMBServerDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+void CEMBServerDlg::OnBnClickedBtnStart()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (m_bRunning)
+	{
+		RunServer(FALSE);
+	}
+	else
+	{
+		m_bRunning = RunServer(TRUE);
+	}
+}
