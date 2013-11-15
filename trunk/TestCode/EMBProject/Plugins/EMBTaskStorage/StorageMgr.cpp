@@ -136,11 +136,19 @@ HRESULT CStorageMgr::UpdateTaskToStorage( const int nDispatchID, CTaskString& sz
 	return E_NOTIMPL;
 }
 
-HRESULT CStorageMgr::FetchTaskFromStorage( const int nDispatchID, int nDesiredNum, VECTASKS& vTasks )
+HRESULT CStorageMgr::FetchTaskFromStorage( const int nDispatchID,  int nMinPriority, int nDesiredNum, VECTASKS& vTasks )
 {
 	if (m_pIStorage)
 	{
-		return m_pIStorage->FetchTaskFromStorage(nDispatchID, nDesiredNum, vTasks);
+		return m_pIStorage->FetchTaskFromStorage(nDispatchID,  nMinPriority, nDesiredNum, vTasks);
+	}
+	return E_NOTIMPL;
+}
+HRESULT EMB::CStorageMgr::GetDispatchedTaskFromStorage( const DISPATCHID nDispatchID, VECTASKS& vTasks )
+{
+	if (m_pIStorage)
+	{
+		return m_pIStorage->GetDispatchedTaskFromStorage(nDispatchID, vTasks);
 	}
 	return E_NOTIMPL;
 }
@@ -173,3 +181,5 @@ HRESULT CStorageMgr::SetParam( const CTaskString& szIn, CTaskString& szOut )
 {
 	return S_OK;
 }
+
+

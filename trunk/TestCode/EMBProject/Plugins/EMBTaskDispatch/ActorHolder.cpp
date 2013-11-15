@@ -8,6 +8,7 @@
 CActorHolder::CActorHolder(void)
 {
 	m_nObjType =MBCOBJTYPE_REMOTEHOST;
+	m_nSvrActive = embSvrState_deactive;
 }
 
 CActorHolder::~CActorHolder(void)
@@ -35,14 +36,14 @@ HRESULT CActorHolder::Run()
 
 HRESULT CActorHolder::Stop()
 {
-	MAPSOCKINS::iterator itb = m_mapSockIns.begin();
-	MAPSOCKINS::iterator ite = m_mapSockIns.end();
+	MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
+	MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
 	for (; itb != ite; ++itb)
 	{
 		delete (itb->first);
 	}
 	m_mapSockIns.clear();
-
+	m_mapActorMirrs.clear();
 
 	return __super::Stop();
 }
@@ -91,46 +92,67 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 	int nLen = 0;
 	
 	int nRetUsed = 0;
-	if (nMsgType == embmsgtype_ReportGuid)
+	if (nMsgType == embmsgtype_ActorReportGuid)
 	{
 		ST_EMBTRANSMSG msgIn(nMsgType);
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
-		if (!msgIn.strGuid.IsEmpty())
+		if (!msgIn.strData.IsEmpty())
 		{
-			ACTORID strGuidNew = atoi(msgIn.strGuid);
-			ASSERT(strGuidNew != INVALID_ID);
+			ACTORID actoridNew = atoi(msgIn.strData);
+			ASSERT(actoridNew != INVALID_ID);
 			//find sock
 			{
-				CAutoLock lock(&m_locSockMap);
-				MAPSOCKINS::iterator itf = m_mapSockIns.find(pMBCSock);
+				CAutoLock lock(&m_csSockMap);
+				MAPSOCKACTORS::iterator itf = m_mapSockIns.find(pMBCSock);
 				if (itf != m_mapSockIns.end())
 				{
 					ASSERT(itf->second.strGuid == INVALID_ID);
-					itf->second.strGuid = strGuidNew;
+					itf->second.strGuid = actoridNew;
+					m_mapActorMirrs[actoridNew] = pMBCSock;
 				}
+				else
+				{
+					ASSERT(FALSE);
+					//sock lost
+					AddSock(pMBCSock);
+				}
+
+				//send svr activestate to sock
+				ST_SVRACTIVEINFO activeInfo;
+				activeInfo.nActive = m_nSvrActive;
+				activeInfo.nMaster = m_nMaster;
+				ST_EMBTRANSMSG msg(embmsgtype_ActorToDispatchMsg);
+				activeInfo.ToString(msg.strData);
+				CEMBAutoBuffer szbuff(msg);
+				int nUsed = 0;
+				PackMBCMsg(msg, szbuff, szbuff.GetSize(), nUsed);
+				send(*pMBCSock, szbuff, nUsed, 0);
 				
 			}
 			if (m_pActorCallbackInterface)
 			{
-				m_pActorCallbackInterface->OnActorConnect(strGuidNew);
+				m_pActorCallbackInterface->OnActorConnect(actoridNew);
 			}
 		}
 	}
-	else if (nMsgType == embmsgtype_ReportActorInfo
-		||nMsgType == embmsgtype_TaskDispath)
+	else if (nMsgType == embmsgtype_ActorToDispatchMsg)
 	{
 		ST_EMBTRANSMSG msgIn(nMsgType);
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
-		if(msgIn.nMsgState != embmsgstate_A)
-		{
-			ASSERT(FALSE);
-			return S_FALSE;
-		}
 		if (m_pActorCallbackInterface)
 		{
-			nMsgType == embmsgtype_ReportActorInfo?
-				m_pActorCallbackInterface->OnActorReportInfo(GetSockGuid(pMBCSock), msgIn.strData):
-				m_pActorCallbackInterface->OnActorDispatchTask(GetSockGuid(pMBCSock), msgIn.strData);
+			CString strRet;
+			m_pActorCallbackInterface->OnActorMessage(GetSockGuid(pMBCSock), msgIn.strData, strRet);
+			if (!strRet.IsEmpty())
+			{
+				//send back
+				ST_EMBTRANSMSG msgRet(embmsgtype_DispatchToActorMsg);
+				msgRet.strData = strRet;
+				CEMBAutoBuffer szbuff(msgRet);
+				int nUsed = 0;
+				PackMBCMsg(msgRet, szbuff, szbuff.GetSize(), nUsed);
+				send(*pMBCSock, szbuff, nUsed, 0);
+			}
 		}
 	}
 	else if (nMsgType == msgtype_LIVEQA)
@@ -140,7 +162,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 		ST_TXMSG_LIVEQA msgIn;
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
 		//get live info
-		char buffer[128];
+		char buffer[256];
 		HRESULT hr = PackMBCMsg(msgIn,  buffer, MAXRECVBUFF, nRetUsed);
 		if (nRetUsed > 0)
 		{
@@ -165,16 +187,17 @@ BOOL CActorHolder::SetActorCallbackInterface( IEMBActorHolderCallBackInterface* 
 
 void CActorHolder::RemoveSock( CMBCSocket* pSock )
 {
-	CAutoLock lock(&m_locSockMap);
-	MAPSOCKINS::iterator itf = m_mapSockIns.find(pSock);
+	CAutoLock lock(&m_csSockMap);
+	MAPSOCKACTORS::iterator itf = m_mapSockIns.find(pSock);
 	if (itf != m_mapSockIns.end())
 	{
-		if (itf->second.nActorConnState == ActorConnState_ok
+		if (itf->second.nActorConnState == embActorConnState_ok
 			&& m_pActorCallbackInterface)
 		{
 			m_pActorCallbackInterface->OnActorDisConnect(itf->second.strGuid);
 		}
 		m_mapSockIns.erase(itf);
+		m_mapActorMirrs.erase(itf->second.strGuid);
 		CFWriteLog(TEXT("==remote closed, ip =%s"),  Addr2String(pSock->m_addrs.addrRemote).c_str());
 		delete pSock;
 	}
@@ -183,20 +206,20 @@ void CActorHolder::RemoveSock( CMBCSocket* pSock )
 void CActorHolder::AddSock( CMBCSocket* pSock )
 {
 	{
-		CAutoLock lock(&m_locSockMap);
+		CAutoLock lock(&m_csSockMap);
 		ST_ACTORDATA actData;
-		actData.nActorConnState = ActorConnState_conn;
+		actData.nActorConnState = embActorConnState_conn;
 		actData.pSock = pSock;
 		m_mapSockIns[pSock] = actData;
 	}
 	//send request info to pSock
-	ST_EMBTRANSMSG msg(embmsgtype_ReportActorInfo);
+	ST_EMBTRANSMSG msg(embmsgtype_ActorToDispatchMsg);
 
 	msg.nMsgState = embmsgstate_Q;
 
 	int nRetUsed = 0;
-	char buffer[MAXRECVBUFF];
-	HRESULT hr = PackMBCMsg(msg, buffer, MAXRECVBUFF, nRetUsed);
+	CEMBAutoBuffer buffer(msg);
+	HRESULT hr = PackMBCMsg(msg, buffer, buffer.GetSize(), nRetUsed);
 	DoSockSend(pSock, buffer, nRetUsed);
 	
 }
@@ -222,8 +245,8 @@ HRESULT CActorHolder::DoSockSend( CMBCSocket* pSock, const char* pbufferIn, cons
 
 ACTORID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 {
-	CAutoLock loc(&m_locSockMap);
-	MAPSOCKINS::iterator itf = m_mapSockIns.find(pSock);
+	CAutoLock loc(&m_csSockMap);
+	MAPSOCKACTORS::iterator itf = m_mapSockIns.find(pSock);
 	if (itf != m_mapSockIns.end())
 	{
 		return itf->second.strGuid;
@@ -235,7 +258,123 @@ ACTORID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 	}
 }
 
-HRESULT CActorHolder::SendToActor(const GUID& szActorGuid, CString& szMsg )
+HRESULT CActorHolder::SendToActor(const ACTORID actorId, CString& szMsg )
 {
-	 return S_OK;
+	HRESULT hr = S_OK;
+	CMBCSocket* pSock = NULL;
+	SOCKET sock = INVALID_SOCKET;
+	{//to auto release lock
+
+
+		CAutoLock loc(&m_csSockMap);
+		MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
+		MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
+		for (; itb != ite; ++itb)
+		{
+			if (itb->second.strGuid == actorId)
+			{
+				pSock = itb->first;
+				break;
+			}
+		}
+
+		if (pSock)
+		{
+			sock = *pSock;
+		}
+
+	}
+
+	if (sock != INVALID_SOCKET)
+	{
+		ST_EMBTRANSMSG msg(embmsgtype_ActorToDispatchMsg);
+		msg.nMsgState = msgState_Q;
+		msg.strData = szMsg;
+		CEMBAutoBuffer szbuff(msg);
+		int nUsed = 0;
+		PackMBCMsg(msg, szbuff, szbuff.GetSize(), nUsed);
+		hr = send(sock, szbuff, nUsed, 0);
+		//CFWriteLog2Wnd(m_hLogWnd, TEXT("=send back to soc %d"), pMBCSock->m_hSock);
+		if(hr == SOCKET_ERROR)
+		{
+			ASSERT(FALSE);
+			hr = WSAGetLastError();
+			RemoveSock(pSock);
+		}
+	}
+	else
+	{
+		hr = EMBERR_INVALIDARG;
+	}
+
+	return hr;
+}
+
+BOOL CActorHolder::HasActor( const ACTORID actorId )
+{
+	CAutoLock lock(&m_csSockMap);
+	MAPACTORSOCKS::iterator itf = m_mapActorMirrs.find(actorId);
+	return itf != m_mapActorMirrs.end();
+
+}
+
+HRESULT CActorHolder::SetSvrState( int nStateIn, int nMaster)
+{
+	//broadcast to all actors whatever
+	ST_SVRACTIVEINFO info;
+	info.nActive= nStateIn;
+	info.nMaster = nMaster;
+	CString strInfo;
+	info.ToString(strInfo);
+	BroadcastToActor(strInfo);
+	return S_OK;
+}
+
+HRESULT CActorHolder::BroadcastToActor( CString& szMsg )
+{
+	vector<ST_SOCKMBCSOCK> vSocks;
+	CAutoLock lock(&m_csSockMap);
+	MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
+	MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
+	for (; itb != ite; ++itb)
+	{
+		ST_SOCKMBCSOCK tmp;
+		tmp.sock= *(itb->first);
+		tmp.pSock = itb->first;
+		vSocks.push_back(tmp);
+	}
+	
+	ST_EMBTRANSMSG msg(embmsgtype_DispatchToActorMsg);
+	msg.nMsgState = msgState_Q;
+	msg.strData = szMsg;
+	CEMBAutoBuffer szbuff(msg);
+	int nUsed = 0;
+	PackMBCMsg(msg, szbuff, szbuff.GetSize(), nUsed);
+
+	for (size_t i = 0; i < vSocks.size(); ++i)
+	{
+		HRESULT hr = S_OK;
+		
+		if (vSocks[i].sock != INVALID_SOCKET)
+		{
+			hr = send(vSocks[i].sock, szbuff, nUsed, 0);
+			if(hr == SOCKET_ERROR)
+			{
+				ASSERT(FALSE);
+				hr = WSAGetLastError();
+				if (hr == WSAEMSGSIZE)
+				{
+					ASSERT(FALSE);
+					_RPT0(0, "\nmessage is too larage!");
+				}
+				else
+				{
+					RemoveSock(vSocks[i].pSock);
+				}
+			}
+		}
+		
+	}
+
+	return S_OK;
 }

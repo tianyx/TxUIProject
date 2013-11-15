@@ -22,7 +22,6 @@ HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, 
 	{
 		int nLen = 0;
 		int nRetUsed = 0;
-		char buffer[MAXGRAPHBUFF];
 
 		//extract msg
 		ST_EMBTRANSMSG msgIn(nMsgType);
@@ -36,7 +35,8 @@ HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, 
 		msgRet.nMsgId = msgIn.nMsgId;
 		msgRet.strGuid = msgIn.strGuid;
 		TransTask(msgIn, msgRet);
-		hr = PackMBCMsg(msgRet, buffer, MAXGRAPHBUFF, nRetUsed);
+		CEMBAutoBuffer buffer(msgIn);
+		PackMBCMsg(msgRet, buffer, buffer.GetSize(), nRetUsed);
 		//send info back
 		if (nRetUsed > 0)
 		{

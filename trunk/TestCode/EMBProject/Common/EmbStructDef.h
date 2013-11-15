@@ -6,16 +6,52 @@
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
+struct ST_EMBWNDMSG
+{
+	HWND hwnd;
+	UINT message;
+	WPARAM wparam;
+	LPARAM lparam;
+	char* pStr;
+	int nBuffLen;
+	ST_EMBWNDMSG()
+	{
+		nBuffLen = 0;
+		pStr = NULL;
+		hwnd= NULL;
+		message = NULL;
+	}
+};
+typedef vector<ST_EMBWNDMSG> VECWNDMSG;
+//////////////////////////////////////////////////////////////////////////
+//call GetEmbXmlMainInfo
+struct ST_EMBXMLMAININFO
+{
+	int ver;
+	int nType;
+	CString guid;
+	ST_EMBXMLMAININFO()
+	{
+		ver = INVALID_VALUE;
+		nType = embxmltype_none;
+	}
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+//////////////////////////////////////////////////////////////////////////
 #define EDOC_COMMON_STRUCT TEXT("<emb></emb>")
 
 #define EDOC_ST_EXCUTORREG_STRUCT TEXT("<ST_EXCUTORREG></ST_EXCUTORREG>")
 struct ST_EXCUTORREG
 {
 	EXCUTORID guid;
+	ACTORID actorId;
 	HWND hwndActor;
 	HWND hwndExcutor;
 	ST_EXCUTORREG()
 	{
+		actorId = INVALID_ID;
 		guid = -1;
 		hwndActor = NULL;
 		hwndExcutor = NULL;
@@ -49,6 +85,7 @@ struct ST_ACTORREG
 	SOCKADDR_IN addrSlave;
 	int nExcutorMinId;
 	int nExcutorMaxId;
+	int nActorLevel;
 	CString strExcPath;
 	ST_ACTORREG()
 	{
@@ -57,6 +94,7 @@ struct ST_ACTORREG
 		nExcutorMaxId = -1;
 		addrMain.sin_family = 0;
 		addrSlave.sin_family = 0;
+		nActorLevel = embActorLevel_normal;
 	}
 
 	BOOL ToString(CString& strOut);
@@ -80,14 +118,25 @@ struct ST_EDOCMAINHEADER
 
 };
 
-typedef vector<CString> VECTASKEXCACTS;
+
+
+typedef vector<CString> VECSUBTASKS;
 //////////////////////////////////////////////////////////////////////////
 struct ST_TASKBASIC
 {
 	CString strGuid;
 	int nPriority;
-	VECTASKEXCACTS vexclist;
+	time_t tmSubmit;
+	int nStartStep;
 	ACTORID nFixActor;
+	VECSUBTASKS vSubTask;
+	ST_TASKBASIC()
+	{
+		nStartStep = 0;
+		tmSubmit = 0;
+		nPriority = embtaskPriority_normal;
+		nFixActor = INVALID_ID;
+	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 
@@ -104,11 +153,12 @@ struct ST_TASKRUNSTATE
 	int nState;
 	int nExcType;
 	int nCurrStep;
+	int nPercent;
+	int nRetry;
 	INT64 tmCommit;
 	INT64 tmExcute;
 	INT64 tmLastReport;
 	INT64 tmLastCheck;
-	int nPercent;
 	ST_TASKRUNSTATE()
 	{
 		guid = GUID_NULL;
@@ -119,6 +169,7 @@ struct ST_TASKRUNSTATE
 		tmCommit = 0;
 		tmExcute = 0;
 		tmLastReport = 0;
+		nRetry = 0;
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
@@ -131,6 +182,14 @@ struct ST_EXCUTORINFO
 	EXCUTORID excutorId;
 	HWND hwnd;
 	DWORD hProcessId;
+	HANDLE hmemMap; //to write data for sending to excutor
+	CString strDesExcMappingName;
+	ST_EXCUTORINFO()
+	{
+		excutorId = INVALID_ID;
+		hwnd = NULL;
+		hProcessId = NULL;
+	}
 };
 
 struct ST_SVRLIVEINFO
@@ -175,6 +234,7 @@ struct ST_PROBERDATA
 
 
 };
+
 typedef vector<ST_PROBERDATA> VECPROBERS;
 struct ST_TASKRISERCONFIG
 {
@@ -197,3 +257,120 @@ struct ST_LOADEDPLUGIN
 	}
 };
 typedef vector<ST_LOADEDPLUGIN> VECLOADEDPLUGINS;
+
+
+struct ST_TASKDISPATCHCONFIG
+{
+	int nMaster;
+	int nSvrID;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+struct ST_TASKUP_END
+{
+	
+	int nEndState;
+	DISPATCHID dispatchid;
+	ACTORID actorid;
+	EXCUTORID excutorid;
+	ST_TASKUP_END()
+	{
+		nEndState = embtaskstate_none;
+		dispatchid = INVALID_ID;
+		actorid = INVALID_ID;
+		excutorid = INVALID_ID;
+	}
+};
+
+struct ST_TASKUP_PRIORITY
+{
+	int nPriority;
+};
+
+struct ST_TASKUPDATE
+{
+	int nUpdateType;
+	TXGUID guid;
+
+	ST_TASKUP_END data_end;
+	ST_TASKUP_PRIORITY data_pri;
+
+	ST_TASKUPDATE()
+	{
+		nUpdateType = embtaskupdatetype_none;
+	}
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+typedef map<CString, int> MAPDISKUSEAGE;
+struct ST_ACTORSTATE
+{
+	ACTORID actorId;
+	int nActorLevel;
+	int nConnState;
+	//runtime state;
+	int nCpuUsage;
+	int nMemUsage;
+	int nDiscUsage;
+// 	CString strHost;
+// 	MAPDISKUSEAGE mapDiskUse;
+	
+	time_t tmLastReport;
+	time_t tmLastCheck;
+
+	ST_ACTORSTATE()
+	{
+		nConnState = embActorConnState_ok;
+		actorId = INVALID_ID;
+		nCpuUsage = INVALID_VALUE;
+		nMemUsage = INVALID_VALUE;
+		nDiscUsage = INVALID_VALUE;
+		nActorLevel = embActorLevel_normal;
+		tmLastReport = 0;
+		tmLastCheck = 0;
+	}
+
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+struct ST_TASKREPORT
+{
+	CString strGuid;
+	ACTORID actorId;
+	EXCUTORID excutorId;
+	int nState;
+	int nSubErrorCode;
+	int nPercent;
+	int nStep;
+	ST_TASKREPORT()
+	{
+		actorId = INVALID_ID;
+		excutorId = INVALID_ID;
+		nState = embtaskstate_none;
+		nPercent = 0;
+		nStep = INVALID_VALUE;
+	}
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_SVRACTIVEINFO
+{
+	int nActive;
+	int nMaster;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};

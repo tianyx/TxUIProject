@@ -54,8 +54,8 @@ BEGIN
     "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
     "LANGUAGE 4, 2\r\n"
     "#pragma code_page(936)\r\n"
-    "#include ""res\\EmbTest.rc2""  // ·? Microsoft Visual C++ ±à?-μ?×ê?′\r\n"
-    "#include ""l.CHS\\afxres.rc""      // ±ê×?×é?t\r\n"
+    "#include ""res\\EmbTest.rc2""  // 非 Microsoft Visual C++ 编辑的资源\r\n"
+    "#include ""l.CHS\\afxres.rc""      // 标准组件\r\n"
     "#endif\r\n"
     "\0"
 END
@@ -97,6 +97,7 @@ BEGIN
     DEFPUSHBUTTON   "确定",IDOK,209,179,50,14
     PUSHBUTTON      "取消",IDCANCEL,263,179,50,14
     PUSHBUTTON      "ParamString Test",IDC_BUTTON1,7,7,63,14
+    PUSHBUTTON      "xcopy test",IDC_BUTTON2,7,25,50,14
 END
 
 

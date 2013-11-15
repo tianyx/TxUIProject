@@ -47,7 +47,9 @@ public:
 	void Clear();
 	//root format like directory. ".\\folder1", "."means root, NULL means root
 	BOOL GoToPath(LPCTSTR szRoot = NULL);
+	//key format like "edoc_main"
 	BOOL GoIntoKey(LPCTSTR szKey);
+
 	BOOL OutofKey();
 
 	//

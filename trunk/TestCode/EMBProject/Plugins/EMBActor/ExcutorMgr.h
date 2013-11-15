@@ -9,11 +9,23 @@
 #pragma once
 #include "fglobal.h"
 #include "EmbStructDef.h"
+#include "AutoCritSec.h"
 #include <map>
 using namespace std;
 
+interface IExcutorMgrInterface
+{
+	virtual HRESULT SendToExcutor(const EXCUTORID excutorId,CString& szInfo) = 0;
+};
 
-typedef map<TXGUID, ST_EXCUTORINFO> MAPEXCUTORS;
+interface IExcutorMsgCallBack
+{
+	virtual HRESULT OnExcutorMessage(const EXCUTORID excutorId, CString& szInfoIn) = 0;
+	virtual HRESULT OnExcutorExit(const EXCUTORID excutorId) = 0;
+};
+
+
+typedef map<EXCUTORID, ST_EXCUTORINFO> MAPEXCUTORS;
 
 class CExcutorMgr
 {
@@ -25,22 +37,51 @@ public:
 	BOOL Init(LPCTSTR strExcPathIn);
 	HRESULT Run();
 	HRESULT Stop();
-	GUID StartNewExcutor();
-	BOOL StopExcutor(const GUID& guidIn);
-	HRESULT SendMessageToExcutor(TXGUID& guid, WPARAM wParam, LPARAM lParam);
+	EXCUTORID CreateNewExcutor();
+	BOOL StopExcutor(const EXCUTORID guidIn);
+	//interface for IExcutorMgrInterface
+	virtual HRESULT SendToExcutor(const EXCUTORID excutorId,CString& szInfo);
+private:
+	//HRESULT SendMessageToExcutor(const EXCUTORID guid, WPARAM wParam, LPARAM lParam);
+	EXCUTORID GetFirstNotUsedExcutorId();
+	HRESULT CheckExcutor();
+	BOOL LaunchExcutorFile(const EXCUTORID excId, DWORD& dwProcessId);
 public:
-	HRESULT OnExcutorMessage(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+	HRESULT OnExcutorMessage(ST_EMBWNDMSG& msgIn);
+	HRESULT SaveMessageToPool(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+	HRESULT OnExcutorReg(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+	HRESULT CheckExcutorLoop();
+	HRESULT WndMsgPoolCheckLoop();
+	HANDLE CreateExchangemapping(EXCUTORID excId);
+
 public:
 	HWND m_hMessageWnd;
-	HANDLE m_hLoopThread;
 
 private:
+	void ClearMsgPool();
+private:
 	CString m_strExcPath;
-	int m_nMinExcutorId;
-	int m_nMaxExcutorId;
+	CString m_strExcFolder;
+	CString m_strExcutorWorkFolder;
+	CString m_strExcName;
+	EXCUTORID m_nMinExcutorId;
+	EXCUTORID m_nMaxExcutorId;
+	ACTORID m_nActorID;
+
+	CAutoCritSec m_csExcutors;
 	MAPEXCUTORS m_mapExcutors;
 	static CExcutorMgr* m_spExcMgr;
 
+	HANDLE m_hMsgLoopThread;
+	HANDLE m_hCheckThread;
+	HANDLE m_hEventQuitLoop;
+
+	HANDLE m_hEventPoolMsgArrival;
+	HANDLE m_hMsgPoolCheckThread;
+	CAutoCritSec m_csMsgPool;
+	VECWNDMSG m_vMsgPool;
+
+	IExcutorMsgCallBack* m_pIExcCallBack;
 public:
 	static CExcutorMgr* GetExcutorMgr();
 	static BOOL Release();

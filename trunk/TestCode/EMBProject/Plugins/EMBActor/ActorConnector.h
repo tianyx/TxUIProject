@@ -12,7 +12,7 @@
 #include "EMBDefine.h"
 interface IActorConnectorCallback
 {
-	virtual HRESULT OnActorConnectorMsg(ST_EMBTRANSMSG& pMsg) = 0;
+	virtual HRESULT OnActorConnectorMsg(CString& strInfo, CString& strRet) = 0;
 };
 class CActorConnector: public CMBCHeartBeatObj
 {
@@ -21,7 +21,7 @@ public:
 	virtual ~CActorConnector(void);
 
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
-
+	virtual HRESULT SendtoDispatcher(CString& strInfo);
 	IActorConnectorCallback* m_pITaskCommit;
-
+	ACTORID m_nActorId;
 };

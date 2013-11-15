@@ -45,6 +45,17 @@ BOOL LoadPluginManager()
 	}
 	
 	TxLoadPlugin(strFile, g_hModulePluginMgr, (LPVOID&)g_pIPluginMgr);
+	if (g_pIPluginMgr)
+	{
+		CTxAutoComPtr<IPluginManagerInterface> apPluginMgr;
+		g_pIPluginMgr->QueryInterface(GuidEMBPlugin_IPluginManager, (LPVOID&) *&apPluginMgr);
+		if (apPluginMgr)
+		{
+			apPluginMgr->InitPluginsSearch(FALSE, TEXT("dll"));
+		}
+
+	}
+
 	return (g_hModulePluginMgr != NULL && g_pIPluginMgr != NULL);
 }
 

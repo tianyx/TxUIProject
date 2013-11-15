@@ -52,7 +52,8 @@ public:
 	
 	//for IPluginStorageInterface
 	virtual HRESULT UpdateTaskToStorage(const int nDispatchID, CTaskString& szTaskIn);
-	virtual HRESULT FetchTaskFromStorage(const int nDispatchID, int nDesiredNum, VECTASKS& vTasks);
+	virtual HRESULT FetchTaskFromStorage(const int nDispatchID,  int nMinPriority, int nDesiredNum, VECTASKS& vTasks);
+	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
 
 	IPluginStorageInterface* m_pIStorage;
 

@@ -20,6 +20,9 @@ BOOL ST_EXCUTORREG::ToString( CString& strOut )
 	CTxStrConvert strVal;
 	strVal.SetVal(guid);
 	sParm.SetAttribVal(NULL, TEXT("guid"), strVal);
+	strVal.SetVal(actorId);
+	sParm.SetAttribVal(NULL, TEXT("actorId"), strVal);
+
 	strVal.SetVal((UINT)hwndActor);
 	sParm.SetAttribVal(NULL, TEXT("hwndActor"), strVal);
 	strVal.SetVal((UINT)hwndExcutor);
@@ -33,7 +36,9 @@ BOOL ST_EXCUTORREG::FromString( const CString& strIn )
 {
 	CTxParamString sParm(strIn);
 	sParm.GoToPath(TEXT(".\\ST_EXCUTORREG"));
-	guid = sParm.GetAttribVal(NULL, TEXT("guid")).GetAsInt();
+	guid = sParm.GetAttribVal(NULL, TEXT("guid")).GetAsInt(INVALID_ID);
+	actorId = sParm.GetAttribVal(NULL, TEXT("actorId")).GetAsInt(INVALID_ID);
+
 	hwndActor = (HWND)sParm.GetAttribVal(NULL, TEXT("hwndActor")).GetAsInt();
 	hwndExcutor = (HWND)sParm.GetAttribVal(NULL, TEXT("hwndExcutor")).GetAsInt();
 	return TRUE;
@@ -126,10 +131,21 @@ BOOL ST_TASKBASIC::ToString( CString& strOut )
 	CTxStrConvert strVal;
 	strVal.SetVal(strGuid);
 	sParm.SetAttribVal(NULL, EV_TBGUID, strVal);
+	strVal.SetVal((INT64)tmSubmit);
+	sParm.SetAttribVal(NULL, EV_TBSUBMIT, strVal);
+
 	strVal.SetVal(nPriority);
 	sParm.SetAttribVal(NULL, EV_TBPRIORITY, strVal);
-	strVal.SetVal(vexclist);
-	sParm.SetAttribVal(NULL, EV_TBEXCLIST, strVal);
+	
+	strVal.SetVal(nFixActor);
+	sParm.SetAttribVal(NULL, EV_TBFIXACTOR, strVal);
+
+	strVal.SetVal(nStartStep);
+	sParm.SetAttribVal(NULL, EV_TBSTARTSTEP, strVal);
+
+
+	strVal.SetVal(vSubTask);
+	sParm.SetAttribVal(NULL, EV_TBSUBTASKLIST, strVal);
 	sParm.UpdateData();
 	strOut = sParm;
 	return TRUE;
@@ -141,7 +157,10 @@ BOOL ST_TASKBASIC::FromString( const CString& strIn )
 	sParm.GoIntoKey(EK_TASKBASIC);
 	strGuid = sParm.GetAttribVal(NULL, EV_TBGUID).GetAsString();
 	nPriority =sParm.GetAttribVal(NULL, EV_TBPRIORITY).GetAsInt(-1);
-	sParm.GetAttribVal(NULL, EV_TBEXCLIST).GetAsStringArray(vexclist);
+	tmSubmit = (time_t)sParm.GetAttribVal(NULL, EV_TBSUBMIT).GetAsInt64();
+	nFixActor = sParm.GetAttribVal(NULL, EV_TBFIXACTOR).GetAsInt(INVALID_ID);
+	nStartStep = sParm.GetAttribVal(NULL, EV_TBSTARTSTEP).GetAsInt(INVALID_VALUE);
+	sParm.GetAttribVal(NULL, EV_TBSUBTASKLIST).GetAsStringArray(vSubTask);
 	return TRUE;
 }
 
@@ -149,6 +168,7 @@ BOOL ST_TASKRUNSTATE::ToString( CString& strOut )
 {
 	CTxParamString sParm(EDOC_ST_TASKRUNSTATE_STRUCT);
 	sParm.GoIntoKey(EK_TASKBASIC);
+
 	return TRUE;
 }
 
@@ -184,6 +204,8 @@ BOOL ST_TASKRISERCONFIG::ToString( CString& strOut )
 	txVal.SetVal(vList);
 	txParam.SetAttribVal(NULL, TEXT("proberList"), txVal);
 
+	txParam.UpdateData();
+	strOut = txParam;
 	return TRUE;
 }
 
@@ -227,4 +249,255 @@ BOOL ST_TASKRISERCONFIG::FromString( const CString& strIn )
 
 	return TRUE;
 
+}
+
+//////////////////////////////////////////////////////////////////////////
+BOOL ST_TASKDISPATCHCONFIG::ToString( CString& strOut )
+{
+	CTxParamString txParam("");
+	CTxStrConvert txVal;
+	txParam.SetElemVal(EK_TASKDISPATCHCONFIG, txVal);
+	txParam.GoIntoKey(EK_TASKDISPATCHCONFIG);
+	txVal.SetVal(nSvrID);
+	txParam.SetAttribVal(NULL, TEXT("nSvrID"), txVal);
+	txVal.SetVal(nMaster);
+	txParam.SetAttribVal(NULL, TEXT("nMaster"), txVal);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_TASKDISPATCHCONFIG::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(EK_TASKDISPATCHCONFIG);
+	nSvrID = txParam.GetAttribVal(NULL, TEXT("nSvrID")).GetAsInt(INVALID_ID);
+	nMaster = txParam.GetAttribVal(NULL, TEXT("nMaster")).GetAsInt(INVALID_ID);
+	return TRUE;
+}
+
+BOOL ST_TASKUPDATE::ToString( CString& strOut )
+{
+	CString strParam;
+	strParam.Format(EDOC_TASKHEADERFMT, embxmltype_taskupdate, TEXT(""));
+	CTxParamString txParam(strParam);
+	CTxStrConvert val;
+	txParam.SetElemVal(EK_TASKUPDATE, val);
+	txParam.GoIntoKey(EK_TASKUPDATE);
+	val.SetVal(Guid2String(guid));
+	txParam.SetAttribVal(NULL, TEXT("guid"), val);
+	val.SetVal(nUpdateType);
+	txParam.SetAttribVal(NULL, TEXT("nUpdateType"), val);
+
+	if (nUpdateType == embtaskupdatetype_finish)
+	{
+		val.SetVal("");
+		txParam.SetElemVal(EK_TASKUPDATE_END, val);
+		txParam.GoIntoKey(EK_TASKUPDATE_END);
+		val.SetVal(data_end.nEndState);
+		txParam.SetAttribVal(NULL, TEXT("nEndState"), val);
+		val.SetVal(data_end.dispatchid);
+		txParam.SetAttribVal(NULL, TEXT("dispatchid"), val);
+		val.SetVal(data_end.actorid);
+		txParam.SetAttribVal(NULL, TEXT("actorid"), val);
+		val.SetVal(data_end.excutorid);
+		txParam.SetAttribVal(NULL, TEXT("excutorid"), val);
+	}
+	else if (nUpdateType == embtaskupdatetype_del)
+	{
+		//to be add...
+		ASSERT(FALSE);
+	}
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_TASKUPDATE::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	int nType = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+	if (nType != embxmltype_taskupdate)
+	{
+		ASSERT(FALSE);
+		nUpdateType = embtaskupdatetype_none;
+		return FALSE;
+	}
+	txParam.GoIntoKey(EK_MAIN);
+	nUpdateType = txParam.GetAttribVal(EK_TASKUPDATE, TEXT("nUpdateType")).GetAsInt(embtaskupdatetype_none);
+	txParam.GoIntoKey(EK_TASKUPDATE);
+	if (nUpdateType == embtaskupdatetype_finish)
+	{
+		//to be add...
+		data_end.nEndState = txParam.GetAttribVal(NULL, TEXT("nEndState")).GetAsInt(embtaskstate_none);
+		data_end.actorid = txParam.GetAttribVal(NULL, TEXT("actorid")).GetAsInt(INVALID_ID);
+		data_end.excutorid = txParam.GetAttribVal(NULL, TEXT("excutorid")).GetAsInt(INVALID_ID);
+		data_end.dispatchid = txParam.GetAttribVal(NULL, TEXT("dispatchid")).GetAsInt(INVALID_ID);
+
+	}
+	else if (nUpdateType == embtaskupdatetype_del)
+	{
+		//to be add...
+	}
+
+	return TRUE;
+}
+
+BOOL ST_TASKREPORT::ToString( CString& strOut )
+{
+	CString strParam;
+	strParam.Format(EDOC_TASKHEADERFMT, embxmltype_taskReport, TEXT(""));
+	CTxParamString txParam(strParam);
+	CTxStrConvert val;
+	txParam.SetElemVal(EK_TASKREPORT, val);
+	txParam.GoIntoKey(EK_TASKREPORT);
+	val.SetVal(strGuid);
+	txParam.SetAttribVal(NULL, TEXT("strGuid"), val);
+	val.SetVal(actorId);
+	txParam.SetAttribVal(NULL, TEXT("actorId"), val);
+	val.SetVal(excutorId);
+	txParam.SetAttribVal(NULL, TEXT("excutorId"), val);
+	val.SetVal(nState);
+	txParam.SetAttribVal(NULL, TEXT("nState"), val);
+	val.SetVal(nPercent);
+	txParam.SetAttribVal(NULL, TEXT("nPercent"), val);
+	val.SetVal(nStep);
+	txParam.SetAttribVal(NULL, TEXT("nStep"), val);
+	txParam.UpdateData();
+	strOut = txParam;
+
+	return TRUE;
+}
+
+BOOL ST_TASKREPORT::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	int nType = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+	if (nType != embxmltype_taskReport)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.GoIntoKey(EK_TASKREPORT);
+	strGuid = txParam.GetAttribVal(NULL, TEXT("strGuid")).GetAsString();
+	actorId = txParam.GetAttribVal(NULL, TEXT("actorId")).GetAsInt(INVALID_ID);
+	excutorId = txParam.GetAttribVal(NULL, TEXT("excutorId")).GetAsInt(INVALID_ID);
+	nState = txParam.GetAttribVal(NULL, TEXT("nState")).GetAsInt(embtaskstate_none);
+	nPercent = txParam.GetAttribVal(NULL, TEXT("nPercent")).GetAsInt(0);
+	nStep = txParam.GetAttribVal(NULL, TEXT("nStep")).GetAsInt(-1);
+
+	return TRUE;
+}
+
+
+BOOL ST_ACTORSTATE::ToString( CString& strOut )
+{
+	CString strParam;
+	strParam.Format(EDOC_TASKHEADERFMT, embxmltype_actorState, TEXT(""));
+	CTxParamString txParam(strParam);
+	CTxStrConvert val;
+	txParam.SetElemVal(EK_ACTORSTATE, val);
+	txParam.GoIntoKey(EK_ACTORSTATE);
+	val.SetVal(actorId);
+	txParam.SetAttribVal(NULL, TEXT("actorId"), val);
+	val.SetVal(nActorLevel);
+	txParam.SetAttribVal(NULL, TEXT("nActorLevel"), val);
+	val.SetVal(nCpuUsage);
+	txParam.SetAttribVal(NULL, TEXT("nCpuUsage"), val);
+	val.SetVal(nMemUsage);
+	txParam.SetAttribVal(NULL, TEXT("nMemUsage"), val);
+	val.SetVal(nDiscUsage);
+	txParam.SetAttribVal(NULL, TEXT("nDiscUsage"), val);
+	txParam.UpdateData();
+	strOut = txParam;
+
+	return TRUE;
+}
+
+BOOL ST_ACTORSTATE::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	int nType = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+	if (nType != embxmltype_actorState)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.GoIntoKey(EK_ACTORSTATE);
+	actorId = txParam.GetAttribVal(NULL, TEXT("actorId")).GetAsInt(INVALID_ID);
+	nActorLevel = txParam.GetAttribVal(NULL, TEXT("nActorLevel")).GetAsInt(INVALID_ID);
+	nCpuUsage = txParam.GetAttribVal(NULL, TEXT("nCpuUsage")).GetAsInt(INVALID_ID);
+	nMemUsage = txParam.GetAttribVal(NULL, TEXT("nMemUsage")).GetAsInt(INVALID_ID);
+	nDiscUsage= txParam.GetAttribVal(NULL, TEXT("nDiscUsage")).GetAsInt(INVALID_ID);
+	//strHost= txParam.GetAttribVal(NULL, TEXT("strHost")).GetAsString();
+// 	VECSTRINGS vStr;
+// 	txParam.GetAttribVal(NULL, TEXT("strHost")).GetAsStringArray(vStr);
+// 	if(vStr.size()%2 == 0)
+// 	{
+// 		for (size_t i = 0; i < vStr.size(); i+=2)
+// 		{
+// 			if (vStr[i].GetLength() == 1)
+// 			{
+// 				CTxStrConvert val;
+// 				val.SetVal(vStr[i+1]);
+// 				mapDiskUse[vStr[i]]= val.GetAsInt();
+// 			}
+// 			
+// 		}
+// 	}
+
+	return TRUE;
+	
+
+}
+
+BOOL ST_EMBXMLMAININFO::ToString( CString& strOut )
+{
+	strOut.Format(EDOC_MAINHEADERFMT, ver, nType, guid);
+
+	return TRUE;
+}
+
+BOOL ST_EMBXMLMAININFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	int type = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+	if (type != embxmltype_actorState)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	txParam.GoIntoKey(EK_MAIN);
+	ver = txParam.GetAttribVal(NULL, TEXT("ver")).GetAsInt(INVALID_ID);
+	type = txParam.GetAttribVal(NULL, TEXT("type")).GetAsInt(embxmltype_none);
+	guid = txParam.GetAttribVal(NULL, TEXT("guid")).GetAsString();
+
+	return TRUE;
+}
+
+BOOL ST_SVRACTIVEINFO::ToString( CString& strOut )
+{
+	strOut.Format(EDOC_SVRACTIVEFMT, embxmltype_svrActive, nMaster, nActive);
+	return TRUE;
+}
+
+BOOL ST_SVRACTIVEINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	int type = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+	if (type != embxmltype_svrActive)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	nActive = txParam.GetAttribVal(NULL, TEXT("active")).GetAsInt(embxmltype_none);
+	nMaster = txParam.GetAttribVal(NULL, TEXT("master")).GetAsInt(embxmltype_none);
+
+	return TRUE;
 }

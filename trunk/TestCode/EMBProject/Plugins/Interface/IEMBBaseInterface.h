@@ -9,6 +9,7 @@
 #pragma once
 #include "EMBGuid.h"
 #include <vector>
+#include "EMBDefine.h"
 using namespace std;
 typedef CString CTaskString;
 
@@ -127,6 +128,7 @@ interface IPluginControlInterface:virtual public ITxUnkown
 //plugin manager///////////////////////////////////////////////////////////////////////
 interface IPluginManagerInterface:virtual public ITxUnkown
 {
+	virtual HRESULT InitPluginsSearch(BOOL bSearchDeep, LPCTSTR szFileExtern) = 0;
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut) = 0;
 	virtual HANDLE LoadPlugin(const GUID guidIn, IPluginBaseInterface*& pInterfaceOut) = 0;
 	//this will unload the plugin library, if handle = NULL, unload all plugin that same guid
@@ -154,17 +156,27 @@ interface IActorMsgCallBackInterface
 };
 
 //
-interface IExcutorTaskInterface
+interface ITaskReportToExcutorInterface
 {
-	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet);
+	virtual HRESULT OnDllReportTaskProgress(const CTaskString& szInfo) = 0;
 };
+
+interface ITaskExcDllInterface:virtual public ITxUnkown
+{
+	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback) = 0;
+	virtual HRESULT CancelTask() = 0;
+	virtual HRESULT GetTaskProgress(CTaskString& szInfo) = 0;
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////
 typedef vector<CTaskString> VECTASKS;
 interface IPluginStorageInterface:virtual public ITxUnkown
 {
-	virtual HRESULT UpdateTaskToStorage(const int nDispatchID, CTaskString& szTaskIn) = 0;
-	virtual HRESULT FetchTaskFromStorage(const int nDispatchID, int nDesiredNum, VECTASKS& vTasks) = 0;
+	virtual HRESULT UpdateTaskToStorage(const DISPATCHID nDispatchID, CTaskString& szTaskIn) = 0;
+	virtual HRESULT FetchTaskFromStorage(const DISPATCHID nDispatchID, int nMinPriority, int nDesiredNum, VECTASKS& vTasks) = 0;
+	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks) = 0;
 
 };
 

@@ -78,7 +78,8 @@ HRESULT CMBCHeartBeatObj::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
 		FillLIvePack(msg);
 		char buffer[256];
 		int nUsed = 0;
-		HRESULT hr = PackMBCMsg(msg, buffer, 256, nUsed);
+		HRESULT hr = S_OK;
+		PackMBCMsg(msg, buffer, 256, nUsed);
 		if (nUsed > 0 && m_pSockBase->IsOpen())
 		{
 			hr = send(*m_pSockBase, buffer, nUsed, 0);

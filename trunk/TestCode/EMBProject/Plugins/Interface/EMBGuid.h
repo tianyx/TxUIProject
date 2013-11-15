@@ -21,3 +21,5 @@ extern const GUID GuidEMBPlugin_ITaskCommit;
 extern const GUID GuidEMBPlugin_IConnector;
 extern const GUID GuidEMBPlugin_IControler;
 extern const GUID GuidEMBPlugin_IStorage;
+
+extern const GUID GuidEMBPlugin_ITaskExcDll;

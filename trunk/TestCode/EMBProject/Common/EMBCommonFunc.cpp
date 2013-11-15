@@ -1,7 +1,9 @@
 #include "StdAfx.h"
 #include "EMBCommonFunc.h"
-
+#include "TxParamString.h"
 #include "TxAutoComPtr.h"
+#include "EMBDocDef.h"
+#include "MBCTransMsg.h"
 using namespace EMB;
 
 
@@ -182,4 +184,71 @@ HRESULT DisConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 
 	}
 
 	return S_FALSE;
+}
+
+BOOL GetTaskBasicInfo( const CString& strTaskIn, ST_TASKBASIC& infoOut )
+{
+	infoOut.strGuid = "";
+	CTxParamString txParam(strTaskIn);
+	CString strPath = EPATH_TASKBASIC;
+	CTxParamString txBasicStr;
+	txParam.GetSubNodeString(strPath, txBasicStr);
+	if (txBasicStr.IsEmpty())
+	{
+		return FALSE;
+	}
+
+	infoOut.FromString(txBasicStr);
+
+	return TRUE;
+}
+
+BOOL GetEmbXmlMainInfo( const CString& strTaskIn, ST_EMBXMLMAININFO& infoOut )
+{
+	int nPos = strTaskIn.Find(EK_MAIN);
+	if (nPos > 0 && strTaskIn.GetAt(nPos -1) == '<')
+	{
+		//try find right
+		int nPosR = strTaskIn.Find('>', nPos);
+		if (nPosR != -1)
+		{
+			CString strSub = strTaskIn.Mid(nPos -1, nPosR -nPos+2);
+			infoOut.FromString(strSub);
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+HRESULT SendMainXmlMsg( SOCKET sock, int nMsgType, int nXmltype, LPCTSTR szGuid /*= NULL*/ )
+{
+	HRESULT hr = S_OK;
+	ST_EMBTRANSMSG msg(nMsgType);
+	msg.strData.Format(EDOC_MAINHEADERFMT, 1, nXmltype, szGuid);
+	CEMBAutoBuffer szbuff(msg);
+	int nUsed = 0;
+	PackMBCMsg(msg, szbuff, szbuff.GetSize(), nUsed);
+	hr = send(sock, szbuff, nUsed, 0);
+	if (hr == SOCKET_ERROR)
+	{
+		ASSERT(FALSE);
+		hr = WSAGetLastError();
+	}
+
+	return hr;
+}
+
+CString GetExcutorMappingName( EXCUTORID excId, HWND hActorWnd )
+{
+	CString strfmt;
+	strfmt.Format(TEXT("excutor%dtoactor%x"), excId, hActorWnd);
+	return strfmt;
+}
+
+CString GetActorMappingName( HWND hActorWnd, EXCUTORID excId )
+{
+	CString strfmt;
+	strfmt.Format(TEXT("actor%xtoexcutor%d"),hActorWnd, excId);
+	return strfmt;
 }

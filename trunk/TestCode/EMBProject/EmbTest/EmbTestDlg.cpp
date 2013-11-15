@@ -66,6 +66,7 @@ BEGIN_MESSAGE_MAP(CEmbTestDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BUTTON1, &CEmbTestDlg::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_BUTTON2, &CEmbTestDlg::OnBnClickedButton2)
 END_MESSAGE_MAP()
 
 
@@ -170,4 +171,16 @@ void CEmbTestDlg::OnBnClickedButton1()
 	txStr.SetAttribVal(TEXT("Date"), TEXT("DD"), CTxStrConvert("testAttr"));
 	txStr.UpdateData();
 
+}
+
+void CEmbTestDlg::OnBnClickedButton2()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString strParm;
+	strParm = TEXT("\"f:\\111\\*.*\" \"f:\\222\\*.*\" /S /C /Y");
+	HINSTANCE nRet = ShellExecute(NULL, 0, "xcopy", strParm, NULL, SW_HIDE);
+	if ((int)nRet < 32)
+	{
+		ASSERT(FALSE);
+	}
 }

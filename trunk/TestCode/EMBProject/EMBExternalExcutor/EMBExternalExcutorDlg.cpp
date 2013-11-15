@@ -103,7 +103,7 @@ BOOL CEMBExternalExcutorDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 	SetWindowText(g_GlobalInfo.strGuid);
-	m_pExcObj = CExcutorObj::GetExcutorObj(g_GlobalInfo.guid, g_GlobalInfo.hwndActor, this->GetSafeHwnd());
+	m_pExcObj = CExcutorObj::GetExcutorObj(g_GlobalInfo.excInfo.guid, g_GlobalInfo.excInfo.actorId, g_GlobalInfo.excInfo.hwndActor, this->GetSafeHwnd());
 	if (!m_pExcObj)
 	{
 		ASSERT(FALSE);

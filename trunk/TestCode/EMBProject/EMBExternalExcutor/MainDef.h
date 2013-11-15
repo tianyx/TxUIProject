@@ -11,15 +11,10 @@ struct ST_GLOBAL
 	CString szPluginPath;
 	CString szLogFile;
 	CString strGuid;
-	EXCUTORID guid;
-	HWND hwndActor;
 	ST_EXCUTORREG excInfo;
 
 	ST_GLOBAL()
 	{
-		hwndActor = NULL;
-		
-		guid = INVALID_ID;
 	}
 
 

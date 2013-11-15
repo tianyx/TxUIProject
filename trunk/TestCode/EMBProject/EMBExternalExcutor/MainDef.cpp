@@ -4,6 +4,8 @@
 #include "TxLogManager.h"
 #include "io.h"
 #include "EMBCommonFunc.h"
+#include "TxAutoComPtr.h"
+#include "IEMBBaseInterface.h"
 
 ST_GLOBAL g_GlobalInfo;
 HMODULE g_hModulePluginMgr = NULL;
@@ -18,8 +20,8 @@ BOOL InitGlobalConfig()
 		return FALSE;
 	}
 
-	CString strHwnd = __argv[1];
-	g_GlobalInfo.excInfo.FromString(strHwnd);
+	CString strParam = __argv[1];
+	g_GlobalInfo.excInfo.FromString(strParam);
 
 	if (!::IsWindow(g_GlobalInfo.excInfo.hwndActor))
 	{
@@ -32,6 +34,8 @@ BOOL InitGlobalConfig()
 		ASSERT(FALSE);
 		return FALSE;
 	}
+
+	g_GlobalInfo.strGuid.Format(TEXT("excutor%d_actor%d"), g_GlobalInfo.excInfo.guid, g_GlobalInfo.excInfo.actorId);
 
 	g_GlobalInfo.szAppPath = GetAppPath().c_str();
 	g_GlobalInfo.szIniPath = g_GlobalInfo.szAppPath;
@@ -64,6 +68,16 @@ BOOL LoadPluginManager()
 	}
 	
 	TxLoadPlugin(strFile, g_hModulePluginMgr, (LPVOID&)g_pIPluginMgr);
+	if (g_pIPluginMgr)
+	{
+		CTxAutoComPtr<EMB::IPluginManagerInterface> apPluginMgr;
+		g_pIPluginMgr->QueryInterface(GuidEMBPlugin_IPluginManager, (LPVOID&) *&apPluginMgr);
+		if (apPluginMgr)
+		{
+			apPluginMgr->InitPluginsSearch(TRUE, TEXT("dll"));
+		}
+
+	}
 	return (g_hModulePluginMgr != NULL && g_pIPluginMgr != NULL);
 }
 

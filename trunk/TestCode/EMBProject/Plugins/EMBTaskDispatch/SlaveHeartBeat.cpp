@@ -63,10 +63,10 @@ HRESULT CSlaveHeartBeat::OnLiveMsgIn( ST_TXMSG_LIVEQA& msg )
 HRESULT CSlaveHeartBeat::GetRemoteSvrState( ST_SVRLIVEINFO& infoOut )
 {
 	infoOut = m_RemoteInfo;
-	infoOut.nConnState = embConnState_fail;
+	infoOut.nConnState = embConnState_error;
 	if (m_pSockBase)
 	{
-		infoOut.nConnState =(GetState() == MBCSTATE_OK)? embConnState_ok:embConnState_fail;
+		infoOut.nConnState =(GetState() == MBCSTATE_OK)? embConnState_ok:embConnState_error;
 	}
 
 	return S_OK;

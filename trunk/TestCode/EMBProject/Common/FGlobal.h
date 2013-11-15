@@ -52,6 +52,11 @@ std::wstring GetAppPathW();
 std::string GetAppPath();
 SOCKADDR_IN GetAddrFromStr(CString& strAddrIn);
 
+//szWideChars like "dll,txt"
+void GetFilesInFolder(CString& strFolder, std::vector<CString>& dataOut, LPCTSTR szWideChars, BOOL bSearchInSubFolder = TRUE);
+CString GetFileExten(CString& strFile);
+
+
 BOOL IsEqualAddr(const SOCKADDR_IN& addr1, const SOCKADDR_IN& addr2);
 bool operator ==(const SOCKADDR_IN& addr1, const SOCKADDR_IN& addr2);
 

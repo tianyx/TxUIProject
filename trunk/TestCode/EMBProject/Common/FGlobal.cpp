@@ -3,6 +3,7 @@
 #include "TxFontLoader.h"
 #include "TxLogManager.h"
 #include "Rpc.h"
+#include "StrConvert.h"
 #pragma comment(lib, "Rpcrt4.lib")
 using namespace std;
 
@@ -266,6 +267,10 @@ CString Guid2String(const GUID& guidIn )
 }
 GUID String2Guid( CString& strIn )
 {
+	if (strIn.IsEmpty())
+	{
+		return GUID_NULL;
+	}
 	GUID guid = GUID_NULL;
 	if(UuidFromString((RPC_CSTR)strIn.GetBuffer(), &guid)== RPC_S_OK)
 	{
@@ -291,3 +296,79 @@ GUID TxGenGuid()
 	::CoCreateGuid(&guid);
 	return guid;
 }
+
+
+void GetFilesInFolder(CString& strFolder, vector<CString>& dataOut, LPCTSTR szExtenList, BOOL bSearchInSubFolder /*= TRUE*/)
+{
+	CFileFind finder;
+	// build a string with wildcards
+	CString strWildcard(strFolder);
+	strWildcard.TrimRight(TEXT("\\"));
+	strWildcard +=TEXT("\\*.*");
+	
+	vector<string> vExtens;
+	SplitteStrings(szExtenList, vExtens);
+
+	// start working for files
+	BOOL bWorking = finder.FindFile(strWildcard);
+
+	while (bWorking)
+	{
+		bWorking = finder.FindNextFile();
+
+		// skip . and .. files; otherwise, we'd
+		// recur infinitely!
+		if (finder.IsDots())
+			continue;
+		// if it's a directory, recursively search it
+		if (finder.IsDirectory() && bSearchInSubFolder)
+		{
+			CString strPath = finder.GetFilePath();
+			GetFilesInFolder(strPath, dataOut, szExtenList, TRUE);
+		}
+		else
+		{
+			//save to vec
+			//check if match the extens
+			if (vExtens.size() == 0)
+			{
+				dataOut.push_back(finder.GetFilePath());
+			}
+			else
+			{
+				CString strFileTmp = finder.GetFilePath();
+				CString strExten = GetFileExten(strFileTmp);
+				BOOL bMatched = FALSE;
+				for (size_t i = 0; i< vExtens.size(); ++i)
+				{
+					if (strExten.CompareNoCase(vExtens[i].c_str()) == 0)
+					{
+						bMatched = TRUE;
+						break;
+					}
+				}
+				if (bMatched)
+				{
+					dataOut.push_back(strFileTmp);
+				}
+
+			}
+		}
+	}
+
+	finder.Close();
+
+}
+
+CString GetFileExten( CString& strFile )
+{
+	CString strRet;
+	int nPos = strFile.ReverseFind(_T('.'));
+	if (!(nPos < 0))
+	{
+		 strRet = strFile.Mid(nPos+1);
+	}
+
+	return strRet;
+}
+

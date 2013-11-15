@@ -3,6 +3,35 @@
 #include "ActorConnector.h"
 #include "ExcutorMgr.h"
 #include "EmbStructDef.h"
+#include <map>
+#include <deque>
+using namespace std;
+
+struct ST_TASKINACTOR
+{
+	TXGUID taskGuid;
+	int nCurrStep;
+	int nState;
+	EXCUTORID excId;
+	int nRetry;
+	int nPercent;
+	time_t tmLastReport;
+	CString strTask;
+	ST_TASKINACTOR()
+	{
+		taskGuid = GUID_NULL;
+		nCurrStep = INVALID_VALUE;
+		nState = embtaskstate_none;
+		tmLastReport = 0;
+		nRetry = 0;
+		excId = INVALID_ID;
+		nPercent = 0;
+	}
+};
+
+typedef map<TXGUID, ST_TASKINACTOR> MAPTASKINACTOR;
+typedef map<EXCUTORID, TXGUID> MAPEXCTASKS;
+typedef deque<TXGUID> DQTASKS;
 namespace EMB
 {
 class CTaskActor:
@@ -11,7 +40,8 @@ class CTaskActor:
 	public IPluginConfigInterface,
 // 	public IPluginConnectorInterce,
 // 	public IActorMsgCallBackInterface,
-	public IActorConnectorCallback
+	public IActorConnectorCallback,
+	public IExcutorMsgCallBack
 
 {
 public:
@@ -45,17 +75,31 @@ public:
 // 	virtual HRESULT ActCallbackProc(CTaskString& szActMsg, CTaskString& szRet);
 
 	//for IActorConnectorCallback
-	virtual HRESULT OnActorConnectorMsg(ST_EMBTRANSMSG& pMsg);
+	virtual HRESULT OnActorConnectorMsg(CString& strInfo, CString& strRet);
+	//for IExcutorMsgCallBack
+	HRESULT OnExcutorMessage(const EXCUTORID excutorId, CString& szInfoIn);
+	HRESULT OnExcutorExit(const EXCUTORID excutorId);
+
+
 
 private:
 	BOOL SwitchActorConn(BOOL bMainConn);
+	BOOL ReportTaskState(ST_TASKINACTOR& infoIn);
+	BOOL OnExcutorIdle(const EXCUTORID excutorId);
+	CActorConnector* GetActiveActorConnector(){return (m_nActiveConn == 1)?(&m_actorconnMain):(m_nActiveConn == 2)? (&m_actorconnSlave):NULL;}
 private:
 	CActorConnector m_actorconnMain;
 	CActorConnector m_actorconnSlave;
-	CActorConnector* m_pCurrActor;
-	CExcutorMgr* m_pExcMgr;
+	int m_nActiveConn;
+	CExcutorMgr* m_pExcutorMgr;
 	ST_ACTORREG m_ActRegInfo;
+
+	CAutoCritSec m_csmapLock;
+	MAPTASKINACTOR m_mapTaskinActor;
+	MAPEXCTASKS m_mapExcTask;
+	DQTASKS m_dqRecentFinishedTasks;
 	BOOL m_bRuning;
+	int nfgRetryMax;
 };
 
 

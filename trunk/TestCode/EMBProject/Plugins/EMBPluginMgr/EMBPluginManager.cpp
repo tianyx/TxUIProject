@@ -3,9 +3,12 @@
 #include "FGlobal.h"
 #include "EMBCommonFunc.h"
 #include "TxLogManager.h"
+#include "StrConvert.h"
 using namespace EMB;
 CEMBPluginManager::CEMBPluginManager(void)
 {
+	m_bDeepSearch = FALSE;
+	m_strExten = TEXT("dll");
 }
 
 CEMBPluginManager::~CEMBPluginManager(void)
@@ -50,22 +53,12 @@ void CEMBPluginManager::Init()
 	char szPath[MAX_PATH];
 	GetModuleFileName(g_hGlobalDllModule, szPath, MAX_PATH);
 	CString strThisPath = szPath;
-
-	CFileFind ffind;
 	CString strFileFmt(GetAppPath().c_str());
-	strFileFmt.TrimRight('\\');
-	strFileFmt += "\\plugin\\*.dll";
-	BOOL bFind = ffind.FindFile(strFileFmt);
-	if (!bFind)
+	VECSTRINGS vFiles;
+	GetFilesInFolder(strFileFmt, vFiles, m_strExten, m_bDeepSearch);
+	for (size_t i = 0; i < vFiles.size(); ++i)
 	{
-		CFWriteLog(TEXT("²å¼þ»ñÈ¡Ê§°Ü"));
-		return;
-	}
-	//m_vecFiles.push_back(ffind.GetFilePath());
-	while(bFind)
-	{
-		bFind = ffind.FindNextFile();
-		CString strDllFile =ffind.GetFilePath();
+		CString strDllFile =vFiles[i];
 		if (strDllFile.CompareNoCase(strThisPath) == 0)
 		{
 			continue;
@@ -103,7 +96,6 @@ void CEMBPluginManager::Init()
 		}
 
 	}
-	ffind.Close();
 }
 
 HRESULT CEMBPluginManager::FindPlugin( const UINT nPluginType, const UINT nSubType, GUID& guidOut )
@@ -181,7 +173,6 @@ HRESULT CEMBPluginManager::OnFirstInit()
 	CString strFile = GetAppPath().c_str();
 	strFile +=TEXT("\\log\\PluginMgr.log");
 	GetTxLogMgr()->AddNewLogFile(LOGKEY_PLUGINMGR, strFile);
-	Init();
 	return S_OK;
 }
 
@@ -246,4 +237,17 @@ HRESULT EMB::CEMBPluginManager::UnloadPlugin(const GUID guidIn, HANDLE handle )
 	}
 
 	return S_FALSE;
+}
+
+HRESULT EMB::CEMBPluginManager::InitPluginsSearch( BOOL bDeepSearch, LPCTSTR szFileExtern )
+{
+	m_bDeepSearch = bDeepSearch;
+	if (szFileExtern != NULL)
+	{
+		m_strExten = szFileExtern;
+	}
+
+	Init();
+
+	return S_OK;
 }
