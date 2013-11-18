@@ -59,5 +59,5 @@ static const GUID GuidEMBPlugin_IStorage =
 
 
 // {AE65F659-C982-40da-B09C-AAB70A48990D}
-static const GUID GuidEMBPlugin_ITaskExcDll = 
+static const GUID GuidEMBPlugin_ITaskWorkerCall = 
 { 0xae65f659, 0xc982, 0x40da, { 0xb0, 0x9c, 0xaa, 0xb7, 0xa, 0x48, 0x99, 0xd } };

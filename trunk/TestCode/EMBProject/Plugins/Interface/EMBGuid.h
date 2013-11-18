@@ -22,4 +22,4 @@ extern const GUID GuidEMBPlugin_IConnector;
 extern const GUID GuidEMBPlugin_IControler;
 extern const GUID GuidEMBPlugin_IStorage;
 
-extern const GUID GuidEMBPlugin_ITaskExcDll;
+extern const GUID GuidEMBPlugin_ITaskWorkerCall;

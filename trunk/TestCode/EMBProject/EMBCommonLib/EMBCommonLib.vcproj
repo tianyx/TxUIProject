@@ -5,9 +5,6 @@
 	Name="EMBCommonLib"
 	ProjectGUID="{140354A3-4FE4-4FE3-A7E5-E6641EE4A647}"
 	RootNamespace="EMBCommonLib"
-	SccProjectName="Perforce Project"
-	SccLocalPath=".."
-	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>

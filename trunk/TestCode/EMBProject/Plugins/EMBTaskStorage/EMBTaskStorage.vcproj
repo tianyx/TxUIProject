@@ -5,10 +5,6 @@
 	Name="EMBTaskStorage"
 	ProjectGUID="{288D42E6-88C4-4D32-8B5A-88D8D67BF000}"
 	RootNamespace="EMBTaskStorage"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>

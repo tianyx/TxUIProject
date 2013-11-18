@@ -5,10 +5,6 @@
 	Name="EMBActor"
 	ProjectGUID="{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}"
 	RootNamespace="EMBActor"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>

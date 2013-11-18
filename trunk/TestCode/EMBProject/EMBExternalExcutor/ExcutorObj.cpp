@@ -790,7 +790,7 @@ BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 	if (LoadPluginByPluginMgr(nTaskType, SubType_None, g_pIPluginMgr, tmpPlugin))
 	{
 		m_taskDll = tmpPlugin;
-		tmpPlugin.pIface->QueryInterface(GuidEMBPlugin_ITaskExcDll, (LPVOID&) m_pTaskDllInterface );
+		tmpPlugin.pIface->QueryInterface(GuidEMBPlugin_ITaskWorkerCall, (LPVOID&) m_pTaskDllInterface );
 		if (!m_pTaskDllInterface)
 		{
 			UnLoadTaskDll();

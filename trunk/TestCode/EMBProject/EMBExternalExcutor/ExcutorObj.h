@@ -63,7 +63,7 @@ public:
 private:
 	CString m_strTask;
 	vector<ST_SUBTASKDATA> m_vSubTasks;
-	ITaskExcDllInterface * m_pTaskDllInterface;
+	ITaskWorkerCallInterface * m_pTaskDllInterface;
 	ST_LOADEDPLUGIN m_taskDll;
 	ST_TASKRUNSTATE m_runState;
 	EXCUTORID m_ExcutorGuid;

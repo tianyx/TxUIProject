@@ -5,10 +5,6 @@
 	Name="EMBTaskRiser"
 	ProjectGUID="{57248819-1B2D-422C-B349-86D3BC87B461}"
 	RootNamespace="EMBTaskRiser"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>

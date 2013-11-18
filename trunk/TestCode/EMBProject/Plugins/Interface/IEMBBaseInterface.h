@@ -23,16 +23,18 @@ enum ENUM_PLUGINTYPE
 	PluginType_Dispatcher		= 0x4,
 	PluginType_ActorManager		= 0x8,
 	PluginType_Actor			= 0x10,
-	PluginType_Storage			= 0x20
+	PluginType_Storage			= 0x20,
+	PluginType_Wroker			=0x40
 };
 
 enum ENUM_SUBTYPE
 {
 	SubType_None		= 0x0,
 	SubType_FileTrans	= 0x1,
-	SubType_FileCode	= 0x2,
+	SubType_FileCodec	= 0x2,
 	SubType_FileCheck	= 0x4,
 	SubType_MD5Check	= 0x8,
+	SubType_WorkSample	=0x10
 
 };
 
@@ -161,7 +163,7 @@ interface ITaskReportToExcutorInterface
 	virtual HRESULT OnDllReportTaskProgress(const CTaskString& szInfo) = 0;
 };
 
-interface ITaskExcDllInterface:virtual public ITxUnkown
+interface ITaskWorkerCallInterface:virtual public ITxUnkown
 {
 	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback) = 0;
 	virtual HRESULT CancelTask() = 0;

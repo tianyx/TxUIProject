@@ -35,52 +35,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActorHost", "EMBActorHos
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskStorage", "Plugins\EMBTaskStorage\EMBTaskStorage.vcproj", "{288D42E6-88C4-4D32-8B5A-88D8D67BF000}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WorkPlugin", "WorkPlugin", "{ABB079B5-C076-4B39-BF5E-A703CD05DEB1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginSample", "Plugins\WorkPluginSample\WorkPluginSample.vcproj", "{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}"
+EndProject
 Global
-	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 13
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = EMBServer\\EMBServer.vcproj
-		SccProjectTopLevelParentUniqueName1 = EMBProject.sln
-		SccLocalPath1 = EMBServer
-		SccProjectUniqueName2 = EMBCommonLib\\EMBCommonLib.vcproj
-		SccProjectTopLevelParentUniqueName2 = EMBProject.sln
-		SccLocalPath2 = .
-		SccProjectFilePathRelativizedFromConnection2 = EMBCommonLib\\
-		SccProjectUniqueName3 = Plugins\\EMBPluginMgr\\EMBPluginMgr.vcproj
-		SccProjectTopLevelParentUniqueName3 = EMBProject.sln
-		SccLocalPath3 = .
-		SccProjectFilePathRelativizedFromConnection3 = Plugins\\EMBPluginMgr\\
-		SccProjectUniqueName4 = EMBClient\\EMBClient.vcproj
-		SccProjectTopLevelParentUniqueName4 = EMBProject.sln
-		SccLocalPath4 = EMBClient
-		SccProjectUniqueName5 = EMBExternalExcutor\\EMBExternalExcutor.vcproj
-		SccProjectTopLevelParentUniqueName5 = EMBProject.sln
-		SccLocalPath5 = EMBExternalExcutor
-		SccProjectUniqueName6 = Plugins\\EMBGuidLib\\EMBGuidLib.vcproj
-		SccProjectTopLevelParentUniqueName6 = EMBProject.sln
-		SccLocalPath6 = .
-		SccProjectFilePathRelativizedFromConnection6 = Plugins\\EMBGuidLib\\
-		SccProjectUniqueName7 = EmbTest\\EmbTest.vcproj
-		SccProjectTopLevelParentUniqueName7 = EMBProject.sln
-		SccLocalPath7 = EmbTest
-		SccProjectUniqueName8 = Plugins\\EMBTaskRiser\\EMBTaskRiser.vcproj
-		SccProjectTopLevelParentUniqueName8 = EMBProject.sln
-		SccLocalPath8 = Plugins\\EMBTaskRiser
-		SccProjectUniqueName9 = Plugins\\EMBTaskDispatch\\EMBTaskDispatch.vcproj
-		SccProjectTopLevelParentUniqueName9 = EMBProject.sln
-		SccLocalPath9 = Plugins\\EMBTaskDispatch
-		SccProjectUniqueName10 = Plugins\\EMBActor\\EMBActor.vcproj
-		SccProjectTopLevelParentUniqueName10 = EMBProject.sln
-		SccLocalPath10 = Plugins\\EMBActor
-		SccProjectUniqueName11 = EMBActorHost\\EMBActorHost.vcproj
-		SccProjectTopLevelParentUniqueName11 = EMBProject.sln
-		SccLocalPath11 = .
-		SccProjectFilePathRelativizedFromConnection11 = EMBActorHost\\
-		SccProjectUniqueName12 = Plugins\\EMBTaskStorage\\EMBTaskStorage.vcproj
-		SccProjectTopLevelParentUniqueName12 = EMBProject.sln
-		SccLocalPath12 = .
-		SccProjectFilePathRelativizedFromConnection12 = Plugins\\EMBTaskStorage\\
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Release|Win32 = Release|Win32
@@ -134,6 +93,10 @@ Global
 		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Debug|Win32.Build.0 = Debug|Win32
 		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Release|Win32.ActiveCfg = Release|Win32
 		{288D42E6-88C4-4D32-8B5A-88D8D67BF000}.Release|Win32.Build.0 = Release|Win32
+		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Debug|Win32.Build.0 = Debug|Win32
+		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Release|Win32.ActiveCfg = Release|Win32
+		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -151,5 +114,6 @@ Global
 		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{288D42E6-88C4-4D32-8B5A-88D8D67BF000} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{8FDBC5C7-676D-438E-919F-471D51BEFC9E} = {B0692929-1F47-4692-83C7-759809CCD4D5}
+		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
 	EndGlobalSection
 EndGlobal
