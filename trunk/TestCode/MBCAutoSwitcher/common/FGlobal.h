@@ -72,3 +72,8 @@ if (g_hconsoleHandle == NULL)\
 }\
 
 #define MACRO_FREEOUTPUTCONSOLE FreeConsole();
+
+HINSTANCE GetSelfModuleHandle();
+
+DWORD TxWaitObjWithQuit(HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut = INFINITE);
+

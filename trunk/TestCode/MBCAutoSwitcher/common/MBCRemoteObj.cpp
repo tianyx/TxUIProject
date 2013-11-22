@@ -21,6 +21,7 @@ HRESULT CMBCRemoteObj::Run()
 	HRESULT hr = S_OK;
 	MCBSOCKADDRS addrs;
 	addrs.addrLocal = m_addrLocal;
+	addrs.addrRemote = m_addrRemote;
 	m_pSockBase = CMBCSocket::CreateTCPSocket(addrs, FD_ACCEPT, this, MBCSOCKTYPE_TCP_LISTENER|MBCSOCKTYPE_AUTORECONNECT);
 	if (m_pSockBase == NULL)
 	{
@@ -39,7 +40,7 @@ HRESULT CMBCRemoteObj::Stop()
 	MAPSOCKINS::iterator ite = m_mapSockIns.end();
 	for (; itb != ite; ++itb)
 	{
-		delete (itb->first);
+		CMBCSocket::ReleaseSock(itb->first);
 	}
 	m_mapSockIns.clear();
 
@@ -130,7 +131,8 @@ HRESULT CMBCRemoteObj::NetCall_Close( CMBCSocket* pMBCSock, WPARAM wParam, LPARA
 		CMBCSocket* pSock = itf->first;
 		if (pSock)
 		{
-			delete pSock;
+			CMBCSocket::ReleaseSock(pSock);
+			pSock = NULL;
 		}
 		m_mapSockIns.erase(itf);
 		CFWriteLog("==remote closed, ip =%s",  Addr2String(pMBCSock->m_addrs.addrRemote).c_str());

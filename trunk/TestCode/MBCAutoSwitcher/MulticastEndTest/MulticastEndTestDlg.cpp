@@ -193,7 +193,7 @@ void CMulticastEndTestDlg::OnClose()
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (m_psock)
 	{
-		delete m_psock;
+		CMBCSocket::ReleaseSock(m_psock);
 	}
 	if (g_pfile)
 	{

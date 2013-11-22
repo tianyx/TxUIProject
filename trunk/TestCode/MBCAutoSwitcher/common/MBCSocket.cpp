@@ -10,7 +10,7 @@ static TCHAR g_szSockWndClsName[] = TEXT ("mbcnetreveiverWnd");
 
 BOOL RegisterSockWnd()
 {
-	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HINSTANCE hInstance = GetSelfModuleHandle();
 
 	WNDCLASSEX   wndclassex = {0};
 	wndclassex.cbSize        = sizeof(WNDCLASSEX);
@@ -29,11 +29,51 @@ BOOL RegisterSockWnd()
 	if ( 0== RegisterClassEx (&wndclassex))
 	{
 		HRESULT hr = GetLastError();
-		ASSERT(FALSE);
+		ASSERT(hr == 0x00000582);
 		
 	}
 
 	return TRUE;
+}
+
+//CreateThreadWindow
+DWORD __stdcall CreateSockWndThread( void* lparam )
+{
+	CMBCSocket* pSock = (CMBCSocket*)lparam;
+	HINSTANCE hInstance = GetSelfModuleHandle();
+	HWND& hwnd = pSock->m_hSockWnd;
+	ASSERT(hwnd == NULL);
+	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
+		g_szSockWndClsName, 
+		TEXT (""),
+		WS_OVERLAPPEDWINDOW,
+		-10, 
+		-10, 
+		2, 
+		2, 
+		NULL, 
+		NULL, 
+		hInstance,0);
+
+	ASSERT(::IsWindow(hwnd));
+	::SetWindowLong(hwnd,  GWL_USERDATA, (LONG)pSock);
+
+	//CFWriteLog(TEXT("SockmsgWnd = %x, bind sock %d"), hwnd, this->m_hSock);
+
+	ShowWindow (hwnd, SW_HIDE);
+	UpdateWindow (hwnd);
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	delete pSock;
+	pSock = NULL;
+  
+	return 0;
 }
 
 LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -89,24 +129,9 @@ DWORD __stdcall SockMsgLoopProc( void* lparam )
 	{
 		return -1;
 	}
-#define MAX_SOCKMSG_BUFF 1000
-	MBCSOCKMSG msgs[MAX_SOCKMSG_BUFF];
-	while(TRUE)
-	{
-		if (pSock->m_bQuitMsgLoop)
-		{
-			pSock->m_bQuitMsgLoop = FALSE;
-			return 0;
-		}
-		pSock->HasMsg();
-		int nLenOut = 0;
-		pSock->CopyMsg(msgs, MAX_SOCKMSG_BUFF, nLenOut);
-		for (size_t i = 0; i < nLenOut; ++i)
-		{
-			pSock->SockMsgCallback(msgs[i].wparam, msgs[i].lparam);
-		}
-		
-	}
+	pSock->HasMsg();
+
+	return 0;
 }
 
 
@@ -124,39 +149,69 @@ CMBCSocket::CMBCSocket( void )
 	m_nFavMsgType = 0;
 	m_pCallBack = NULL;
 	m_vecSockMsg.clear();
-	m_hLockQue = CreateSemaphore(NULL, 0, 1, NULL);
+	m_hEventSockMsgArrival = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_hEventQuit = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_nCreateFlag = 0;
 	//m_hSockLoopProc = CreateThread(NULL, NULL, SockLoopProc, (LPVOID)this, 0, 0);
 	m_hSockWnd = NULL;
 	m_nSelfState = MBCSOCKSTATE_UNINIT;
-
+	m_hWndThread = NULL;
 	CreateMsgWindow();
+
 }
 
 CMBCSocket::~CMBCSocket(void)
 {
-	if (m_hSockLoopProc)
-	{
-		TerminateThread(m_hSockLoopProc , 0);
-		m_hSockLoopProc = NULL;
+	m_timerReconnect.KillTimer();
 
+// 	if (m_hSockLoopProc)
+// 	{
+// 		StopMsgLoopThd();
+// 
+// 	}
+
+	//ASSERT(!::IsWindow(m_hSockWnd));
+// 	if (m_hSockWnd)
+// 	{
+// 		if (m_hWndThread)
+// 		{
+// 			//::DestroyWindow(m_hSockWnd);
+// 			PostMessage(m_hSockWnd, WM_QUIT, 0,0);
+// 			WaitForSingleObject(m_hWndThread, INFINITE);
+// 			ASSERT(!::IsWindow(m_hSockWnd));
+// 		}
+// 		m_hSockWnd = NULL;
+// 		m_hWndThread = NULL;
+// 	}
+
+
+	StopMsgLoopThd();
+	if (m_hSock != INVALID_SOCKET)
+	{
+		closesocket(m_hSock);
+		m_hSock = INVALID_SOCKET;
+	}
+	if (m_hMBCSock != INVALID_SOCKET)
+	{
+		closesocket(m_hMBCSock);
+		m_hMBCSock = INVALID_SOCKET;
 	}
 
-	if (m_hSockWnd)
+	ResetEvent(m_hEventSockMsgArrival);
+	m_vecSockMsg.clear();
+
+	if (m_hEventSockMsgArrival)
 	{
-		if (::IsWindow(m_hSockWnd))
-		{
-			::DestroyWindow(m_hSockWnd);
-		}
-		m_hSockWnd = NULL;
+		CloseHandle(m_hEventSockMsgArrival);
+		m_hEventSockMsgArrival = NULL;
 	}
 
-	UnInit();
-	if (m_hLockQue)
+	if (m_hEventQuit)
 	{
-		CloseHandle(m_hLockQue);
-		m_hLockQue = NULL;
+		CloseHandle(m_hEventQuit);
+		m_hEventQuit = NULL;
 	}
+	
 
 
 }
@@ -165,7 +220,7 @@ HRESULT CMBCSocket::PushMsg( const MBCSOCKMSG& msg )
 {
 	CAutoLock lock(&m_lockdeque);
 	m_vecSockMsg.push_back(msg);
-	ReleaseSemaphore(m_hLockQue, 1,NULL);
+	SetEvent(m_hEventSockMsgArrival);
 	return S_OK;
 }
 
@@ -183,6 +238,7 @@ HRESULT CMBCSocket::CopyMsg( MBCSOCKMSG* pmsgOut, const int inBuffCount, int& nO
 		CFWriteLog("\nsock msg overflow!!!!!");
 	}
 	m_vecSockMsg.clear();
+	ResetEvent(m_hEventSockMsgArrival);
 	return S_OK;
 }
 
@@ -203,6 +259,7 @@ CMBCSocket* CMBCSocket::CreateUDPSocket( MCBSOCKADDRS& addrIn, int nFavMsgType, 
 	{
 		ASSERT(FALSE);
 		delete pSock;
+		pSock = NULL;
 		return NULL;
 	}
 
@@ -356,10 +413,8 @@ void CMBCSocket::UnInit()
 		m_hMBCSock = INVALID_SOCKET;
 	}
 	
-	ReleaseSemaphore(m_hLockQue, 1, NULL);
-	WaitForSingleObject(m_hLockQue, 1000);
-
-	m_timerReconnect.KillTimer();
+	ResetEvent(m_hEventSockMsgArrival);
+	m_vecSockMsg.clear();
 	//ReleaseSemaphore(m_hLockQue, 1,NULL);
 }
 
@@ -377,7 +432,8 @@ CMBCSocket* CMBCSocket::CreateTCPSocket( MCBSOCKADDRS& addrIn, int nFavMsgType, 
 	pSock->m_addrs = addrIn;
 	if (S_OK != pSock->Init())
 	{
-		delete pSock;
+		CMBCSocket::ReleaseSock(pSock);
+		pSock = NULL;
 		return NULL;
 	}
 
@@ -391,34 +447,26 @@ BOOL CMBCSocket::IsOpen()
 }
 
 
+
 BOOL CMBCSocket::CreateMsgWindow()
 {
+	//CreateThreadWindow
 	//create window
-	HINSTANCE hInstance = GetModuleHandle(NULL);
-	HWND& hwnd = m_hSockWnd;
-	ASSERT(hwnd == NULL);
-	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
-		g_szSockWndClsName, 
-		TEXT (""),
-		WS_OVERLAPPEDWINDOW,
-		-10, 
-		-10, 
-		2, 
-		2, 
-		NULL, 
-		NULL, 
-		hInstance,0);
-
-	ASSERT(::IsWindow(hwnd));
-	::SetWindowLong(hwnd,  GWL_USERDATA, (LONG)this);
-
-	//CFWriteLog(TEXT("SockmsgWnd = %x, bind sock %d"), hwnd, this->m_hSock);
-
-	ShowWindow (hwnd, SW_HIDE);
-	UpdateWindow (hwnd);
+	
 	//m_hWndhread = CreateThread(NULL, NULL, SockWndLoopProc, (LPVOID)this, 0, 0);
+	m_hWndThread = CreateThread(NULL, 0, CreateSockWndThread, (LPVOID)this, 0, 0);
+	if (m_hWndThread)
+	{
+		int i = 0;
+		while(m_hSockWnd == 0 && i <1000)
+		{
+			++i;
+			Sleep(1);
+		}
+	}
+	
 
-	return hwnd != NULL;
+	return m_hSockWnd != NULL;
 }
 
 HRESULT CMBCSocket::SockMsgCallback( WPARAM wParam, LPARAM lParam )
@@ -497,7 +545,6 @@ HRESULT CMBCSocket::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
 {
 	if (dwEvent == IDTIMER_RECONN)
 	{
-		m_timerReconnect.KillTimer();
 		//try reconnect
 
 		TRACE("\nsock %x Reconnecting...", this);
@@ -549,16 +596,17 @@ CMBCSocket* CMBCSocket::AttachSock(SOCKET sockIn, int nFavMsgType, ISockMsgCallb
 	HRESULT hr = E_FAIL;
 	if (pSock->m_hSockWnd != NULL)
 	{
+		pSock->StartMsgLoopThd();
 		hr = WSAAsyncSelect(pSock->m_hSock, pSock->m_hSockWnd, MSG_MBCNETSOCK, pSock->m_nFavMsgType);
 		//start thread loop;
-		pSock->StartMsgLoopThd();
 		pSock->m_nSelfState = MBCSOCKSTATE_OK;
 
 	}
 	if (hr != S_OK)
 	{
 		ASSERT(FALSE);
-		delete pSock;
+		CMBCSocket::ReleaseSock(pSock);
+		pSock = NULL;
 		pSock = NULL;
 	}
 
@@ -580,19 +628,30 @@ void CMBCSocket::SetState( ENUMMBCSOCKSTATE stateIn )
 
 BOOL CMBCSocket::HasMsg()
 {
-	HRESULT hr = WaitForSingleObject(m_hLockQue, 100);
-	if (hr != WAIT_OBJECT_0)
+#define MAX_SOCKMSG_BUFF 1000
+	MBCSOCKMSG msgs[MAX_SOCKMSG_BUFF];
+	while(TRUE)
 	{
-		return FALSE;
+		DWORD hr = TxWaitObjWithQuit(m_hEventSockMsgArrival, m_hEventQuit, INFINITE);
+		if (hr != WAIT_OBJECT_0)
+		{
+			//quit
+			return TRUE;
+		}
+	
+		int nLenOut = 0;
+		CopyMsg(msgs, MAX_SOCKMSG_BUFF, nLenOut);
+		for (size_t i = 0; i < nLenOut; ++i)
+		{
+			SockMsgCallback(msgs[i].wparam, msgs[i].lparam);
+		}
+
 	}
-	//TRACE("\nwait tic = %d", m_vecSockMsg.size());
-	return TRUE;
 }
 
 BOOL CMBCSocket::StartMsgLoopThd()
 {
 	StopMsgLoopThd();
-	m_bQuitMsgLoop = FALSE;
 	m_hSockLoopProc = CreateThread(NULL, 0, SockMsgLoopProc, (LPVOID)this, 0,0);
 
 	return m_hSockLoopProc != NULL;
@@ -602,14 +661,33 @@ BOOL CMBCSocket::StopMsgLoopThd()
 {
 	if (m_hSockLoopProc)
 	{
-		m_bQuitMsgLoop = TRUE;
+		SetEvent(m_hEventQuit);
 		WaitForSingleObject(m_hSockLoopProc, INFINITE);
 		CloseHandle(m_hSockLoopProc);
 		m_hSockLoopProc = NULL;
 	}
+	ResetEvent(m_hEventQuit);
 	//m_lockdeque.ResetLock();
+	CAutoLock lock(&m_lockdeque);
 	m_vecSockMsg.clear();
 	return TRUE;
 }
+
+BOOL CMBCSocket::ReleaseSock( CMBCSocket* pSockIn )
+{
+	if (pSockIn && ::IsWindow(pSockIn->m_hSockWnd))
+	{
+		PostMessage(pSockIn->m_hSockWnd, WM_QUIT,0,0);
+		return TRUE;
+	}
+	else
+	{
+		delete pSockIn;
+		ASSERT(FALSE);
+	}
+
+	return FALSE;
+}
+
 
 

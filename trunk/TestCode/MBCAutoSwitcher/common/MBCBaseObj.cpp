@@ -129,7 +129,7 @@ HRESULT CMBCBaseObj::Stop()
 {
 	if (m_pSockBase)
 	{
-		delete m_pSockBase;
+		CMBCSocket::ReleaseSock(m_pSockBase);
 		m_pSockBase = NULL;
 	}
 	m_nSelfState = MBCSTATE_STOP;
@@ -235,4 +235,18 @@ void CMBCBaseObj::ChangeSelfState( ENUM_MBCSTATE stateIn )
 	
 	m_nSelfState = stateIn;
 	
+}
+
+BOOL CMBCBaseObj::SetScokAddr( SOCKADDR_IN* pAddrRemote, SOCKADDR_IN* paddrLocal )
+{
+	if (pAddrRemote)
+	{
+		m_addrRemote = *pAddrRemote;
+	}
+	if (paddrLocal)
+	{
+		m_addrLocal = *paddrLocal;
+	}
+
+	return TRUE;
 }

@@ -280,3 +280,20 @@ int GenRand()
 		guid.Data4[4]+ guid.Data4[5]+ guid.Data4[6]+ guid.Data4[7]);
 	return rand();
 }
+
+HINSTANCE GetSelfModuleHandle()
+{
+	MEMORY_BASIC_INFORMATION mbi;
+
+	return ((::VirtualQuery(GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0) 
+		? (HMODULE) mbi.AllocationBase : NULL);
+}
+
+
+DWORD TxWaitObjWithQuit( HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut /*= INFINITE*/ )
+{
+	HANDLE handls[2];
+	handls[0] = hWait;
+	handls[1] = hQuit;
+	return WaitForMultipleObjects(2, handls, FALSE, dwTimeOut);
+}

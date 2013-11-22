@@ -614,7 +614,7 @@ BOOL CMBCEndObj::RemoveRelayAddr( SOCKADDR_IN& addrIn )
 		{
 			bFind = TRUE;
 			m_vRelaySocks.erase(itb);
-			delete pSock;
+			CMBCSocket::ReleaseSock(pSock);
 			break;
 		}
 	}
@@ -783,7 +783,7 @@ BOOL CMBCEndObj::ClearRelayAddrs()
 		CMBCSocket* pSock = *itb;
 		if (pSock)
 		{
-			delete pSock;
+			CMBCSocket::ReleaseSock(pSock);
 		}
 	}
 	m_vRelaySocks.clear();

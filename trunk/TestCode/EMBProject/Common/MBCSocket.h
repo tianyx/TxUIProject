@@ -5,7 +5,8 @@
 	file base:	MBCSocket
 	file ext:	h
 	author:		tian_yx
-	purpose:	
+	purpose:	socket wrap class, support tcp asynchronous connection,
+				udp multicast, and listen sock,
 *********************************************************************/
 #pragma once
 #include <vector>
@@ -13,15 +14,18 @@
 #include "AutoCritSec.h"
 using namespace std;
 
-
+//socket message define for async sock
 #define MSG_MBCNETSOCK WM_USER + 7999
 #define MSG_MBCREQUESTBASEOBJ WM_USER + 8100
 
+//timer id for sock reconnection 
 #define IDTIMER_RECONN 1032
+
+//timer id for live check
 #define IDTIMER_LIVECHECK 1031
 
-#define IDTIMER_GRAPHCHECK 1033
-#define IDTIMER_COOLDOWN	1034
+// #define IDTIMER_GRAPHCHECK 1033
+// #define IDTIMER_COOLDOWN	1034
 
 #define MAXRECVBUFF 40000
 #define MAXGRAPHBUFF 40000
@@ -78,11 +82,12 @@ DWORD __stdcall SockMsgLoopProc(void* lparam);
 class CMBCSocket : public ITxTimerCallbackInterface
 {
 friend DWORD __stdcall SockMsgLoopProc(void* lparam);
+friend DWORD __stdcall CreateSockWndThread( void* lparam );
 private:
 	CMBCSocket(void);
-public:
 	~CMBCSocket(void);
 
+public:
 	HRESULT Init();
 	void UnInit();
 
