@@ -16,7 +16,7 @@ CExcutorObj* g_pExcObject = NULL;
 
 BOOL RegisterExcObjectWnd()
 {
-	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HINSTANCE hInstance = GetSelfModuleHandle();
 
 	WNDCLASSEX   wndclassex = {0};
 	wndclassex.cbSize        = sizeof(WNDCLASSEX);
@@ -46,7 +46,7 @@ BOOL RegisterExcObjectWnd()
 DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 {
 	CExcutorObj* pExcObj = (CExcutorObj*)lparam;
-	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HINSTANCE hInstance = GetSelfModuleHandle();
 	HWND& hwnd = pExcObj->m_hwndExcMsg;
 	ASSERT(hwnd == NULL);
 	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
@@ -60,7 +60,6 @@ DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 		NULL, 
 		NULL, 
 		hInstance,0);
-
 	ASSERT(::IsWindow(hwnd));
 	//::SetWindowLong(hwnd,  GWL_USERDATA, (LONG)pMgr);
 
@@ -87,12 +86,11 @@ LRESULT CALLBACK ExcObjectWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARA
 		if (g_pExcObject)
 		{
 			g_pExcObject->SaveMessageToPool(hwnd, message, wParam, lParam);
-		}	
-	}
-	else
-	{
+		}
+
 		return 0;
 	}
+	
 	
 	return DefWindowProc (hwnd, message, wParam, lParam);
 }
@@ -100,7 +98,7 @@ LRESULT CALLBACK ExcObjectWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARA
 DWORD __stdcall ExcMsgPoolCheckProc(LPVOID lparam)
 {
 	CExcutorObj* pMgr = (CExcutorObj*)lparam;
-	if(pMgr != NULL)
+	if(pMgr == NULL)
 	{
 		ASSERT(FALSE);
 		return 0;
@@ -113,7 +111,7 @@ DWORD __stdcall ExcMsgPoolCheckProc(LPVOID lparam)
 DWORD __stdcall ExcTaskCheckProc(LPVOID lparam)
 {
 	CExcutorObj* pMgr = (CExcutorObj*)lparam;
-	if(pMgr != NULL)
+	if(pMgr == NULL)
 	{
 		ASSERT(FALSE);
 		return 0;
@@ -133,7 +131,7 @@ CExcutorObj::CExcutorObj( )
 	m_hEventQuitLoop = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_hEventPoolMsgArrival = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_bRegistered = FALSE;
-
+	m_hwndExcMsg = NULL;
 
 	nfgTaskCheckInterval = 1;
 	nfgIdleReportInterval = 10;
@@ -172,6 +170,7 @@ BOOL CExcutorObj::Start()
 
 	if (m_hwndExcMsg)
 	{
+		CFWriteLog(0, TEXT("send reg msg to actor %x"), m_hwndActor);
 		::SendMessage(m_hwndActor, MSG_EMBEXCUTORREG, (WPARAM)m_ExcutorGuid,  (LPARAM)m_hwndExcMsg);
 	}
 
@@ -187,11 +186,9 @@ BOOL CExcutorObj::Stop()
 	if (m_hThreadMsgLoop)
 	{
 
-		::DestroyWindow(m_hwndExcMsg);
-		if (WaitForSingleObject(m_hThreadMsgLoop, 10000) != WAIT_OBJECT_0)
-		{
-			TerminateThread(m_hThreadMsgLoop, 0);
-		}
+		::PostMessage(m_hwndExcMsg, WM_QUIT, 0,0);
+		WaitForSingleObject(m_hThreadMsgLoop, INFINITE);
+		CloseHandle(m_hThreadMsgLoop);
 		m_hThreadMsgLoop = NULL;
 		m_hwndExcMsg = NULL;
 
@@ -262,6 +259,7 @@ BOOL CExcutorObj::Release()
 BOOL CExcutorObj::OnExcutorRegistered( )
 {
 	//query task
+	CFWriteLog(0, TEXT("send idle msg to actor."));
 	CString strMsg;
 	strMsg.Format(EDOC_MAINHEADERFMT, 1, embxmltype_excOnIdle, TEXT(""));
 	m_bRegistered = TRUE;
@@ -279,7 +277,6 @@ BOOL CExcutorObj::SendToActor( CString& strMsg )
 		CEMBAutoBuffer szbuff(msg);
 		int nUsed = 0;
 		PackMBCMsg(msg, szbuff, szbuff.GetSize(), nUsed);
-
 		CAutoLock m_LocPipe(&m_csPipeWrite);
 		char* pmapBuff = (char*)MapViewOfFile(m_hMapping, FILE_MAP_WRITE,0,0,nUsed);
 		if (pmapBuff)
@@ -304,6 +301,8 @@ BOOL CExcutorObj::SendToActor( CString& strMsg )
 
 BOOL CExcutorObj::Quit()
 {
+	SendMessage(m_hwndActor, MSG_EMBEXCUTORQUIT, (WPARAM)m_ExcutorGuid, 0);
+	::PostMessage(m_hwndMain, MSG_EMBKILLEXCUTOR, 0,0);
 	return TRUE;
 }
 
@@ -346,6 +345,7 @@ HRESULT CExcutorObj::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 		if (pmemBuff != NULL)
 		{
 			ST_EMBWNDMSG msg;
+			msg.message =message;
 			msg.pStr = new char[nLen];
 			msg.hwnd = hwnd;
 			msg.nBuffLen = nLen;
@@ -367,6 +367,7 @@ HRESULT CExcutorObj::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 		ST_EMBWNDMSG msg;
 		msg.wparam =wparam;
 		msg.lparam = lparam;
+		msg.message = message;
 		msg.hwnd = hwnd;
 		msg.pStr= NULL;
 		CAutoLock lock(&m_csMsgPool);
@@ -421,6 +422,7 @@ HRESULT CExcutorObj::OnActorMessage( ST_EMBWNDMSG& msgIn )
 {
 	if (msgIn.message == MSG_EMBEXCUTORREGED)
 	{
+		CFWriteLog(0, TEXT("actor returned reg successful msg."));
 		OnExcutorRegistered();
 	}
 	else if (msgIn.message == MSG_EMBTOEXCUTORMSG)
@@ -461,6 +463,7 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 	GetEmbXmlMainInfo(strInfo, mainInfo);
 	if (mainInfo.nType == embxmltype_task)
 	{
+		CFWriteLog(0, TEXT("receive task %s"), mainInfo.guid);
 		if (!m_strTask.IsEmpty())
 		{
 			//report state error
@@ -482,12 +485,14 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 	}
 	else if (mainInfo.nType == embxmltype_taskReport)
 	{
+		CFWriteLog(0, TEXT("actor ask taskReport."));
 		ST_TASKREPORT report;
 		report.FromString(strInfo);
 		TXGUID guid = String2Guid(report.strGuid);
 		if (m_runState.guid != guid)
 		{
 			//error guid
+			ASSERT(FALSE);
 			report.nState = embtaskstate_error;
 			report.nSubErrorCode = EMBERR_NOTMYTASK;
 			report.excutorId = m_ExcutorGuid;
@@ -531,6 +536,19 @@ HRESULT CExcutorObj::TaskCheckLoop()
 						OnTaskProgress(-1);
 						continue;
 					}
+					else if (m_runState.nState == embtaskstate_dispatched)
+					{
+						if (m_runState.nPercent == 100)
+						{
+							//start next step
+							m_runState.nCurrStep++;
+							m_runState.nPercent = 0;
+							//change dll, and send sub task info
+							LaunchTask();
+						}
+						
+					}
+					
 					// task 
 					bIdle = FALSE;
 					if (m_vSubTasks.size() == 0)
@@ -615,11 +633,12 @@ void CExcutorObj::ClearMsgPool()
 
 HRESULT CExcutorObj::OnDllReportTaskProgress( const CTaskString& szInfo )
 {
-	CTxStrConvert val;
-	val.SetVal(szInfo);
-	int nPercent = val.GetAsInt(-1);
-	if (nPercent == -1)
+	ST_WORKERREPORT workreport;
+	workreport.FromString(szInfo);
+	int nPercent = workreport.nPercent;
+	if (nPercent == -1 || FAILED(workreport.code))
 	{
+		nPercent = -1;
 		ASSERT(FALSE);
 	}
 
@@ -642,6 +661,7 @@ HRESULT CExcutorObj::InitTask()
 	CString strPath = EPATH_TASKBASIC;
 	CTxParamString txBasicStr;
 	txParam.GetSubNodeString(strPath, txBasicStr);
+	basicInfo.FromString(txBasicStr);
 	if (txBasicStr.IsEmpty() ||basicInfo.strGuid.IsEmpty())
 	{
 		ASSERT(FALSE);
@@ -651,8 +671,10 @@ HRESULT CExcutorObj::InitTask()
 		return EMBERR_INVALIDARG;
 	}
 
+	CFWriteLog(0, TEXT("start process task %s"), basicInfo.strGuid);
+
 	HRESULT hr = S_OK;
-	if ( basicInfo.nStartStep >= basicInfo.vSubTask.size())
+	if ( basicInfo.nStartStep >= (int)basicInfo.vSubTask.size())
 	{
 		ASSERT(FALSE);
 		hr = EMBERR_TASKSTEPERR;
@@ -708,22 +730,7 @@ HRESULT CExcutorObj::InitTask()
 		m_runState.nCurrStep = basicInfo.nStartStep;
 
 		//LoadTaskDll and run it
-		UnLoadTaskDll();
-		LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
-		CString strRet;
-		if (m_pTaskDllInterface)
-		{
-			hr = m_pTaskDllInterface->DoTask(m_vSubTasks[m_runState.nCurrStep].strSubTask, strRet, this);
-			if (hr != S_OK)
-			{
-				ASSERT(FALSE);
-			}
-		}
-		else
-		{
-			ASSERT(FALSE);
-			hr = EMBERR_SUBTASKLOADDLL;
-		}
+		hr =LaunchTask();
 	}
 	if (hr != S_OK)
 	{
@@ -744,6 +751,7 @@ HRESULT CExcutorObj::InitTask()
 
 void CExcutorObj::OnTaskProgress( int nPercent )
 {
+	CFWriteLog(0, TEXT("task %s step %d, percent %d"), Guid2String(m_runState.guid), m_runState.nCurrStep, nPercent);
 	if (nPercent < 0 || nPercent > 100)
 	{
 		ASSERT(FALSE);
@@ -753,7 +761,7 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 	m_runState.nPercent = nPercent;
 	if (nPercent >= 100)
 	{
-		if (m_runState.nCurrStep == m_vSubTasks.size()-1)
+		if (m_runState.nCurrStep >= (int)m_vSubTasks.size()-1)
 		{
 			//task finished
 			m_runState.nState = embtaskstate_finished;
@@ -763,9 +771,7 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 		}
 		else
 		{
-			//start next step
-			m_runState.nCurrStep++;
-			//change dll, and send sub task info
+			//wait check thread to launch next workdll
 		}
 	}
 	else if (nPercent < 0)
@@ -776,6 +782,9 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 	
 
 	ST_TASKREPORT report;
+	report.strGuid = Guid2String(m_runState.guid);
+	report.actorId = m_actorId;
+	report.excutorId = m_ExcutorGuid;
 	report.nState = m_runState.nState;
 	report.nStep = m_runState.nCurrStep;
 	report.nPercent = m_runState.nPercent;
@@ -786,8 +795,9 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 
 BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 {
+	CFWriteLog(0, TEXT("lunch task dll type = %d"), nTaskType);
 	ST_LOADEDPLUGIN tmpPlugin;
-	if (LoadPluginByPluginMgr(nTaskType, SubType_None, g_pIPluginMgr, tmpPlugin))
+	if (LoadPluginByPluginMgr(PluginType_Wroker, nTaskType, g_pIPluginMgr, tmpPlugin))
 	{
 		m_taskDll = tmpPlugin;
 		tmpPlugin.pIface->QueryInterface(GuidEMBPlugin_ITaskWorkerCall, (LPVOID&) m_pTaskDllInterface );
@@ -817,5 +827,31 @@ BOOL CExcutorObj::UnLoadTaskDll()
 		
 	return TRUE;
 }
+
+HRESULT CExcutorObj::LaunchTask()
+{
+	HRESULT hr = S_OK;
+	CFWriteLog(0, TEXT("start launch workdll"));
+	//LoadTaskDll and run it
+	UnLoadTaskDll();
+	LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
+	CString strRet;
+	if (m_pTaskDllInterface)
+	{
+		hr = m_pTaskDllInterface->DoTask(m_vSubTasks[m_runState.nCurrStep].strSubTask, strRet, this);
+		if (hr != S_OK)
+		{
+			ASSERT(FALSE);
+		}
+		CFWriteLog(0, TEXT("end launch workdll"));
+	}
+	else
+	{
+		ASSERT(FALSE);
+		hr = EMBERR_SUBTASKLOADDLL;
+	}
+	return hr;
+}
+
 
 

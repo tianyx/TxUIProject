@@ -20,7 +20,7 @@ public:
 	BOOL SetLiveCallback(IServerLiveInterface* pCallbackIn){m_pSvrLiveCallback = pCallbackIn;}
 
 	//for IRemoteSvrLiveInterface
-	virtual HRESULT GetRemoteSvrState(ST_SVRLIVEINFO& infoOut) = 0;
+	virtual HRESULT GetRemoteSvrState(ST_SVRLIVEINFO& infoOut);
 
 	virtual HRESULT FillLivePack(ST_TXMSG_LIVEQA& msg);
 	virtual HRESULT OnLiveMsgIn(ST_TXMSG_LIVEQA& msg);

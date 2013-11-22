@@ -18,6 +18,8 @@
 #define EDOC_TASKHEADERFMT TEXT("<edoc_main ver=\"1\" type=\"%d\" guid=\"%s\"></edoc_main>")
 #define EDOC_ACTORRESFMT TEXT("<edoc_main ver=\"1\" type=\"%d\"></edoc_main>")
 #define EDOC_SVRACTIVEFMT TEXT("<edoc_main ver=\"1\" type=\"%d\" master =\"%d\"  active =\"%d\"></edoc_main>")
+#define EDOC_WORKMD5FMT TEXT("<md5 desfile=\"%s\" writeto =\"%s\"></md5>")
+#define EDOC_WORKREPORTFMT TEXT("<workReport percent=\"%d\" code =\"%d\"></workReport>")
 
 //////////////////////////////////////////////////////////////////////////
 #define EK_MAIN TEXT("edoc_main")
@@ -42,6 +44,7 @@
 #define EK_TASKRISERCONFIG TEXT("TaskRiserConfig")
 #define EK_TASKSTORAGECONFIG TEXT("TaskStorageConfig")
 #define EK_TASKDISPATCHCONFIG TEXT("TaskDispatchConfig")
+#define EK_TASKACTORCONFIG TEXT("TaskActorConfig")
 
 //////////////////////////////////////////////////////////////////////////
 #define EPATH_TASKBASIC TEXT(".\\edoc_main\\basic")
@@ -59,3 +62,15 @@
 //////////////////////////////////////////////////////////////////////////
 #define EA_SUBTASK_TYPE TEXT("acttype")
 #define EA_SUBTASK_NAME TEXT("actname")
+
+//////////////////////////////////////////////////////////////////////////
+
+#define EK_WORKMD5		TEXT("md5")
+#define EA_MD5DES		TEXT("desfile")
+#define EA_MD5WRITETO	TEXT("writeto")
+
+//////////////////////////////////////////////////////////////////////////
+
+#define EK_WORKREPORT		TEXT("workReport")
+#define EA_REPORTPERCENT		TEXT("percent")
+#define EA_REPORTCODE			TEXT("code")

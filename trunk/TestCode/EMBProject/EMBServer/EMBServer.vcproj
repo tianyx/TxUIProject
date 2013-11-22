@@ -5,6 +5,10 @@
 	Name="EMBServer"
 	ProjectGUID="{9BB7CE29-FB44-46B2-831F-A135699D2971}"
 	RootNamespace="EMBServer"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="MFCProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -102,12 +106,13 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)\BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -131,6 +136,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="..\common;..\plugins\interface"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -153,8 +159,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\$(ProjectName).exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(SolutionDir)pdb\$(ConfigurationName)\$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

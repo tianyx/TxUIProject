@@ -68,6 +68,7 @@ BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_START, &CEMBServerDlg::OnBnClickedBtnStart)
+	ON_BN_CLICKED(IDC_BTNTEST, &CEMBServerDlg::OnBnClickedBtntest)
 END_MESSAGE_MAP()
 
 
@@ -163,9 +164,41 @@ void CEMBServerDlg::OnBnClickedBtnStart()
 	if (m_bRunning)
 	{
 		RunServer(FALSE);
+		m_bRunning = !m_bRunning;
+
 	}
 	else
 	{
 		m_bRunning = RunServer(TRUE);
 	}
+	GetDlgItem(IDC_BTN_START)->SetWindowText(m_bRunning? TEXT("Stop"):TEXT("Start"));
+}
+
+void CEMBServerDlg::OnBnClickedBtntest()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString strfile =GetAppPath().c_str();
+
+	strfile += TEXT("\\testTask.xml");
+	CFile file;
+	BOOL bOPen =file.Open(strfile, CFile::modeRead, NULL);
+	CString strTask;
+	if (bOPen)
+	{
+		int nLen = file.GetLength()+1;
+		char* pBuff = new char[nLen];
+		ZeroMemory(pBuff, nLen);
+		file.Read(pBuff, file.GetLength());
+		file.Close();
+		strTask = pBuff;
+		delete[] pBuff;
+		EMB::IPluginTaskCommit* pIcall = dynamic_cast<EMB::IPluginTaskCommit* >(g_GlobalInfo.vPlugins[2].pIface);
+		if (pIcall)
+		{
+			CString strRet;
+			pIcall->SubmitTask(strTask, strRet);
+		}
+	}
+
+
 }

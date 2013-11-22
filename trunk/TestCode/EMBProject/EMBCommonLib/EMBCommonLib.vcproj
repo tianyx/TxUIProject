@@ -5,6 +5,9 @@
 	Name="EMBCommonLib"
 	ProjectGUID="{140354A3-4FE4-4FE3-A7E5-E6641EE4A647}"
 	RootNamespace="EMBCommonLib"
+	SccProjectName="Perforce Project"
+	SccLocalPath=".."
+	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -83,12 +86,13 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="4"
 			UseOfMFC="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)\BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -109,6 +113,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="..\common;..\plugins\interface"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -127,6 +132,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				OutputFile="$(SolutionDir)lib\$(ConfigurationName)\$(ProjectName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -219,6 +225,10 @@
 			</File>
 			<File
 				RelativePath="..\Common\EMBCommonFunc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBMessageDef.h"
 				>
 			</File>
 			<File

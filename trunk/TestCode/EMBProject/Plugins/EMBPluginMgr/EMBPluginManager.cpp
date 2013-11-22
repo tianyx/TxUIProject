@@ -53,7 +53,8 @@ void CEMBPluginManager::Init()
 	char szPath[MAX_PATH];
 	GetModuleFileName(g_hGlobalDllModule, szPath, MAX_PATH);
 	CString strThisPath = szPath;
-	CString strFileFmt(GetAppPath().c_str());
+	int nPos = strThisPath.ReverseFind(_T('\\'));
+	CString strFileFmt = strThisPath.Left(nPos);
 	VECSTRINGS vFiles;
 	GetFilesInFolder(strFileFmt, vFiles, m_strExten, m_bDeepSearch);
 	for (size_t i = 0; i < vFiles.size(); ++i)
@@ -66,33 +67,59 @@ void CEMBPluginManager::Init()
 	
 		EMB::IPluginBaseInterface* pPluginBase = NULL;
 		HMODULE hPluginModule = NULL;
+		BOOL bVC6Dll = FALSE;
 		::TxLoadPlugin(strDllFile, hPluginModule, (LPVOID&)pPluginBase);
+		VECPLUGINFOS vtmpInfos;
+
 		if (hPluginModule && pPluginBase)
 		{
-			VECPLUGINFOS vtmpInfos;
 			HRESULT hr = pPluginBase->QueryPluginInfo(vtmpInfos);
-			if (hr == S_OK)
-			{
-				for (size_t i = 0; i < vtmpInfos.size(); ++i)
-				{
-					ST_PLUGINMGRDATA mgrdata;
-					mgrdata.strFile = strDllFile;
-					mgrdata.plugInfo = vtmpInfos[i];
-					TXGUID strGuid = mgrdata.plugInfo.pluginGuid;
-					if(m_mapPluginInfo.find(strGuid) != m_mapPluginInfo.end())
-					{
-						CFWriteLog(TEXT("plugin guid already defined %s, %s"), mgrdata.strFile, (CString)strGuid);
-					}
-					m_mapPluginInfo[strGuid] = mgrdata;
-				}
-			}
-			else
+			if (hr != S_OK)
 			{
 				ASSERT(FALSE);
 				CFWriteLog(TEXT("plugin info get error %s"), strDllFile);
 			}
 			pPluginBase->Release();
 			TxUnloadPlugin(hPluginModule);
+		}
+		else
+		{
+			EMB::IPluginBaseInterfaceVC6* pPluginBaseVC6 = NULL;
+			::TxLoadPluginVC6(strDllFile, hPluginModule, (LPVOID&)pPluginBaseVC6);
+			if (hPluginModule && pPluginBaseVC6)
+			{
+				bVC6Dll = TRUE;
+				ST_PluginInfo tmpInfo;
+				HRESULT hr = pPluginBaseVC6->QueryPluginInfo(tmpInfo);
+				if (hr != S_OK || tmpInfo.pluginGuid ==GUID_NULL)
+				{
+					ASSERT(FALSE);
+					CFWriteLog(TEXT("plugin info get error %s"), strDllFile);
+				}
+				else
+				{
+					vtmpInfos.push_back(tmpInfo);
+				}
+				pPluginBaseVC6->Release();
+				TxUnloadPlugin(hPluginModule);
+			}
+
+		}
+		if (vtmpInfos.size() > 0)
+		{
+
+			for (size_t i = 0; i < vtmpInfos.size(); ++i)
+			{
+				ST_PLUGINMGRDATA mgrdata;
+				mgrdata.strFile = strDllFile;
+				mgrdata.plugInfo = vtmpInfos[i];
+				TXGUID strGuid = mgrdata.plugInfo.pluginGuid;
+				if(m_mapPluginInfo.find(strGuid) != m_mapPluginInfo.end())
+				{
+					CFWriteLog(TEXT("plugin guid already defined %s, %s"), mgrdata.strFile, (CString)strGuid);
+				}
+				m_mapPluginInfo[strGuid] = mgrdata;
+			}		
 		}
 
 	}

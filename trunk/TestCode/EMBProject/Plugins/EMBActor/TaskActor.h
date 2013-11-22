@@ -92,7 +92,7 @@ private:
 	CActorConnector m_actorconnSlave;
 	int m_nActiveConn;
 	CExcutorMgr* m_pExcutorMgr;
-	ST_ACTORREG m_ActRegInfo;
+	ST_ACTORCONFIG m_ActRegInfo;
 
 	CAutoCritSec m_csmapLock;
 	MAPTASKINACTOR m_mapTaskinActor;

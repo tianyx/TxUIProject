@@ -3,6 +3,7 @@
 #include "MBCTransMsg.h"
 #include "FGlobal.h"
 #include "TxParamString.h"
+#include "EMBMessageDef.h"
 CActorConnector::CActorConnector(void)
 {
 	m_pITaskCommit = NULL;
@@ -24,18 +25,30 @@ HRESULT CActorConnector::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType,
 			m_pITaskCommit->OnActorConnectorMsg(msgIn.strData, strRet);
 			if (!strRet.IsEmpty())
 			{
-				msgIn.strData = strRet;
-				CEMBAutoBuffer szbuff(msgIn);
+				ST_EMBTRANSMSG msgOut(embmsgtype_ActorToDispatchMsg);
+				msgOut.strGuid = msgIn.strGuid;
+				msgOut.strData = strRet;
+				CEMBAutoBuffer szbuff(msgOut);
 				int nRetUsed = 0;
-				PackMBCMsg(msgIn, szbuff, szbuff.GetSize(), nRetUsed);
+				PackMBCMsg(msgOut, szbuff, szbuff.GetSize(), nRetUsed);
 				//send back to dispatch
 				HRESULT hr = send(*pMBCSock, szbuff, nRetUsed, 0);
-				MUSTBESOK(hr);
+				if (hr == SOCKET_ERROR)
+				{
+					hr = WSAGetLastError();
+					ASSERT(FALSE);
+				}
+				else
+				{
+					hr = S_OK;
+				}
+				
 			}
 		}
 	}
 	else if (nMsgType == embmsgtype_ActorReportGuid)
 	{
+		CFWriteLog(0, TEXT("dispatch request actorid"));
 		ST_EMBTRANSMSG msgIn(nMsgType);
 		CTxStrConvert val;
 		val.SetVal(m_nActorId);
@@ -45,7 +58,11 @@ HRESULT CActorConnector::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType,
 		PackMBCMsg(msgIn, szbuff, szbuff.GetSize(), nRetUsed);
 		//send back to dispatch
 		HRESULT hr = send(*pMBCSock, szbuff, nRetUsed, 0);
-		MUSTBESOK(hr);
+		if(hr == SOCKET_ERROR)
+		{
+			hr = WSAGetLastError();
+			ASSERT(FALSE);
+		}
 	}
 	else 
 	{
@@ -56,15 +73,18 @@ HRESULT CActorConnector::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType,
 
 HRESULT CActorConnector::SendtoDispatcher( CString& strInfo )
 {
-	ST_EMBTRANSMSG msgIn(embmsgtype_ActorToDispath);
-	CTxStrConvert val;
-	val.SetVal(m_nActorId);
-	msgIn.strData = val.GetAsString(); 
+	ST_EMBTRANSMSG msgIn(embmsgtype_ActorToDispatchMsg);
+	msgIn.strData = strInfo; 
 	CEMBAutoBuffer szbuff(msgIn);
 	int nRetUsed = 0;
 	PackMBCMsg(msgIn, szbuff, szbuff.GetSize(), nRetUsed);
 	//send back to dispatch
 	HRESULT hr = send(*m_pSockBase, szbuff, nRetUsed, 0);
-	MUSTBESOK(hr)
+	if (hr == SOCKET_ERROR)
+	{
+		hr = WSAGetLastError();
+		ASSERT(FALSE);
+	}
+	
 	return hr;
 }

@@ -5,6 +5,10 @@
 	Name="WorkPluginSample"
 	ProjectGUID="{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}"
 	RootNamespace="WorkPluginSample"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -69,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).dll"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\exc\$(ProjectName)\$(ProjectName).dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\WorkPluginSample.def"
@@ -103,12 +107,13 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)\BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -131,7 +136,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_AFXEXT"
+				AdditionalIncludeDirectories="..\interface; ..\..\common"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_AFXEXT;EMBPLUGIN_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
@@ -152,12 +158,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\exc\$(ProjectName)\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\WorkPluginSample.def"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(SolutionDir)pdb\$(ConfigurationName)\$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary="$(SolutionDir)lib\$(ConfigurationName)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool

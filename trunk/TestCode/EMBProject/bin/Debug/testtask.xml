@@ -1,0 +1,14 @@
+<edoc_main ver="1.0" type="1" guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067">
+	<basic guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067" priority="1" actor = "" excList="step1,step2" />
+	<step1 acttype="16" actname="sample">
+		<sample>
+			<src>c:\1.mpg</src>
+			<des>d:\1.mpg</des>
+		</sample>
+	</step1>
+	<step2 acttype="16" actname="sample">
+		<sample>
+			<src>d:\1.mpg</src>
+		</sample>
+	</step2>
+</edoc_main>

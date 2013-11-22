@@ -99,7 +99,6 @@ public:
 	virtual HRESULT UpdateTaskToStorage(const DISPATCHID nDispatchID, CTaskString& szTaskIn);
 	virtual HRESULT FetchTaskFromStorage(const DISPATCHID nDispatchID, int nDesiredNum, VECTASKS& vTasks);
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
-
 };
 
 }

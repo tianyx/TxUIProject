@@ -13,6 +13,12 @@ EMB::IPluginBaseInterface* g_pIPluginMgr = NULL;
 BOOL InitGlobalConfig()
 {
 	//check arg
+#ifdef EXCSELFTEST
+	g_GlobalInfo.excInfo.actorId = 1;
+	g_GlobalInfo.excInfo.guid = 1;
+	g_GlobalInfo.excInfo.hwndActor = GetDesktopWindow();
+#else
+
 	int nArgC = __argc;
 	if (nArgC != 2)
 	{
@@ -29,11 +35,14 @@ BOOL InitGlobalConfig()
 		return FALSE;
 	}
 
-	if (g_GlobalInfo.excInfo.guid == INVALID_ID)
+	if (g_GlobalInfo.excInfo.guid == INVALID_ID
+		||g_GlobalInfo.excInfo.actorId == INVALID_ID)
 	{
 		ASSERT(FALSE);
 		return FALSE;
 	}
+#endif // _DEBUG
+
 
 	g_GlobalInfo.strGuid.Format(TEXT("excutor%d_actor%d"), g_GlobalInfo.excInfo.guid, g_GlobalInfo.excInfo.actorId);
 
@@ -50,7 +59,7 @@ BOOL InitGlobalConfig()
 	if (_access(g_GlobalInfo.szIniPath, 04) == -1)
 	{
 		//CFWriteLog("找不到配置文件Excutor.ini！");
-		return FALSE;
+		//return FALSE;
 	}
 
 	return TRUE;
@@ -59,7 +68,7 @@ BOOL InitGlobalConfig()
 BOOL LoadPluginManager()
 {
 	CString strFile = g_GlobalInfo.szAppPath;
-	strFile +=TEXT("\\plugins\\EMBPluginMgr.dll");
+	strFile +=TEXT("\\EMBPluginMgr.dll");
 	if (_access(strFile, 0) == -1)
 	{
 		ASSERT(FALSE);

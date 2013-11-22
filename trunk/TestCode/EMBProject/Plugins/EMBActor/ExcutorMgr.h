@@ -34,7 +34,7 @@ private:
 	virtual ~CExcutorMgr(void);
 
 public:
-	BOOL Init(LPCTSTR strExcPathIn);
+	BOOL Init(LPCTSTR strExcPathIn, ST_ACTORCONFIG& actCfg, IExcutorMsgCallBack* pCallBack);
 	HRESULT Run();
 	HRESULT Stop();
 	EXCUTORID CreateNewExcutor();
@@ -82,6 +82,8 @@ private:
 	VECWNDMSG m_vMsgPool;
 
 	IExcutorMsgCallBack* m_pIExcCallBack;
+
+	int nfgExcutorLaunchTimeout;
 public:
 	static CExcutorMgr* GetExcutorMgr();
 	static BOOL Release();

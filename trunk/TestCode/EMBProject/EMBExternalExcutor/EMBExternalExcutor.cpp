@@ -6,6 +6,7 @@
 #include "EMBExternalExcutor.h"
 #include "EMBExternalExcutorDlg.h"
 #include "MainDef.h"
+#include "LogKeyDef.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -59,10 +60,14 @@ BOOL CEMBExternalExcutorApp::InitInstance()
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+	MACRO_CREATEOUTPUTCONSOLE
 	if (!InitGlobalConfig())
 	{
+
 		return FALSE;
 	}
+
+	GetTxLogMgr()->AddNewLogFile(LOGKEY_TASKEXCUTOR, TEXT("excutor"));
 
 	CEMBExternalExcutorDlg dlg;
 	m_pMainWnd = &dlg;
@@ -81,4 +86,12 @@ BOOL CEMBExternalExcutorApp::InitInstance()
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
 	return FALSE;
+}
+
+int CEMBExternalExcutorApp::ExitInstance()
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	ReleaseTxLogMgr();
+	MACRO_FREEOUTPUTCONSOLE
+	return CWinAppEx::ExitInstance();
 }

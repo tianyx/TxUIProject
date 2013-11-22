@@ -5,6 +5,10 @@
 	Name="EMBTaskRiser"
 	ProjectGUID="{57248819-1B2D-422C-B349-86D3BC87B461}"
 	RootNamespace="EMBTaskRiser"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -103,12 +107,13 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)\BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -132,7 +137,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\interface; ..\..\common"
-				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_AFXEXT"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_AFXEXT;_AFXEXT;EMBPLUGIN_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
@@ -153,12 +158,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\EMBTaskRiser.def"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(SolutionDir)pdb\$(ConfigurationName)\$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary="$(SolutionDir)lib\$(ConfigurationName)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool

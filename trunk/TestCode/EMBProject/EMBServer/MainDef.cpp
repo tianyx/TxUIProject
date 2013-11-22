@@ -87,7 +87,7 @@ BOOL InitServer()
 		pBuff[nFileLen] = '\0';
 		int nRead = xmlfile.Read(pBuff, nFileLen);
 		strParam = pBuff;
-		delete pBuff;
+		delete[] pBuff;
 		pBuff = NULL;
 		xmlfile.Close();
 	}

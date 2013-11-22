@@ -42,7 +42,8 @@ struct ST_EMBXMLMAININFO
 //////////////////////////////////////////////////////////////////////////
 #define EDOC_COMMON_STRUCT TEXT("<emb></emb>")
 
-#define EDOC_ST_EXCUTORREG_STRUCT TEXT("<ST_EXCUTORREG></ST_EXCUTORREG>")
+#define EDOC_ST_EXCUTORREG_STRUCT TEXT("<excutorreg></excutorreg>")
+//note: ST_EXCUTORREG's ToString
 struct ST_EXCUTORREG
 {
 	EXCUTORID guid;
@@ -57,6 +58,7 @@ struct ST_EXCUTORREG
 		hwndExcutor = NULL;
 	}
 
+	BOOL ToExcParamString(CString& strOut);
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 };
@@ -77,19 +79,19 @@ struct ST_EMBRET
 };
 
 //////////////////////////////////////////////////////////////////////////
-#define EDOC_ST_ACTORREG_STRUCT TEXT("<ST_ACTORREG></ST_ACTORREG>")
-struct ST_ACTORREG
+#define EDOC_ST_ACTORREG_STRUCT TEXT("<TaskActorConfig></TaskActorConfig>")
+struct ST_ACTORCONFIG
 {
-	int guid;
+	int actorId;
 	SOCKADDR_IN addrMain;
 	SOCKADDR_IN addrSlave;
 	int nExcutorMinId;
 	int nExcutorMaxId;
 	int nActorLevel;
 	CString strExcPath;
-	ST_ACTORREG()
+	ST_ACTORCONFIG()
 	{
-		guid = -1;
+		actorId = -1;
 		nExcutorMinId = -1;
 		nExcutorMaxId = -1;
 		addrMain.sin_family = 0;
@@ -101,6 +103,23 @@ struct ST_ACTORREG
 	BOOL FromString(const CString& strIn);
 
 };
+//////////////////////////////////////////////////////////////////////////
+struct ST_STORAGECONFIG
+{
+	int nType;
+	union
+	{
+		struct  
+		{
+			char szdbSvr[64];
+			char szdbName[64];
+			char szUser[64];
+			char szPw[64];
+		}dbCfg;
+		
+	}data;
+};
+
 
 //////////////////////////////////////////////////////////////////////////
 struct ST_EDOCMAINHEADER
@@ -184,11 +203,13 @@ struct ST_EXCUTORINFO
 	DWORD hProcessId;
 	HANDLE hmemMap; //to write data for sending to excutor
 	CString strDesExcMappingName;
+	time_t tmLastcheck;
 	ST_EXCUTORINFO()
 	{
 		excutorId = INVALID_ID;
 		hwnd = NULL;
 		hProcessId = NULL;
+		tmLastcheck = 0;
 	}
 };
 
@@ -223,7 +244,6 @@ struct ST_PROBERDATA
 	struct  ST_IPPROBERDATA
 	{
 		SOCKADDR_IN addrListen;
-		SOCKADDR_IN addrLocal;
 	};
 	CString strProberName;
 	int nType;
@@ -263,6 +283,8 @@ struct ST_TASKDISPATCHCONFIG
 {
 	int nMaster;
 	int nSvrID;
+	CString strIpActorHolder;
+	CString strIpMaster;
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 
@@ -372,5 +394,30 @@ struct ST_SVRACTIVEINFO
 	int nMaster;
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_MD5TASKINFO
+{
+	CString strFileToCheck;
+	CString strFileToWriteResult;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_WORKERREPORT
+{
+	int nPercent;
+	int code;
+
+	ST_WORKERREPORT()
+	{
+		nPercent = 0;
+		code = 0;
+	}
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
 
 };

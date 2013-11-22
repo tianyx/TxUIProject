@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include "FGlobal.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -38,12 +39,22 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		//  问题。
 
 		new CDynLinkLibrary(EMBTaskDispatchDLL);
+		MACRO_CREATEOUTPUTCONSOLE
+		WSADATA wsaData;
+		WSAStartup(MAKEWORD(2,2), &wsaData);
+		if (wsaData.wVersion != MAKEWORD(2,2))
+		{
+			int nErr = WSAGetLastError();
+			ASSERT(FALSE);
+			AfxMessageBox(TEXT("系统不支持winsock2"));
+			return FALSE;
+		}
 
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)
 	{
 		TRACE0("EMBTaskDispatch.DLL 正在终止!\n");
-
+		WSACleanup();
 		// 在调用析构函数之前终止该库
 		AfxTermExtensionModule(EMBTaskDispatchDLL);
 	}

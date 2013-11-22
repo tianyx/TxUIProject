@@ -21,6 +21,18 @@ extern const GUID GuidEMBPlugin_PActor =
 extern const GUID GuidEMBPlugin_PTaskDispatch = 
 { 0xe20d645a, 0xd98c, 0x4842, { 0xa9, 0x4e, 0x58, 0xd3, 0x3e, 0x9a, 0xda, 0xdc } };
 
+// {C8CA9461-F275-4db7-A90B-5B54B44506D2}
+extern const GUID GuidEMBPlugin_PWorkerSample = 
+{ 0xc8ca9461, 0xf275, 0x4db7, { 0xa9, 0xb, 0x5b, 0x54, 0xb4, 0x45, 0x6, 0xd2 } };
+
+// {B2F93970-E4DD-42b3-9AB6-805A9D48A5A6}
+extern const GUID GuidEMBPlugin_PWorkerMediaCheck = 
+{ 0xb2f93970, 0xe4dd, 0x42b3, { 0x9a, 0xb6, 0x80, 0x5a, 0x9d, 0x48, 0xa5, 0xa6 } };
+
+// {382D1E75-BB26-4c33-8534-670A4ACB7BFE}
+static const GUID GuidEMBPlugin_PWorkerMD5 = 
+{ 0x382d1e75, 0xbb26, 0x4c33, { 0x85, 0x34, 0x67, 0xa, 0x4a, 0xcb, 0x7b, 0xfe } };
+
 //////////////////////////////////////////////////////////////////////////
 
 // {B05A5B34-FA04-41d6-81ED-DADF46C7C40A}
@@ -30,6 +42,11 @@ extern const GUID GuidEMBPlugin_IUnknow =
 // {E8302B68-15A0-4a8c-9ECB-A5CE40B4BDD7}
 extern const GUID GuidEMBPlugin_IBase = 
 { 0xe8302b68, 0x15a0, 0x4a8c, { 0x9e, 0xcb, 0xa5, 0xce, 0x40, 0xb4, 0xbd, 0xd7 } };
+
+// {D38745BB-8EA4-4228-8F10-C142EC7E726D}
+static const GUID GuidEMBPlugin_IBaseVC6 = 
+{ 0xd38745bb, 0x8ea4, 0x4228, { 0x8f, 0x10, 0xc1, 0x42, 0xec, 0x7e, 0x72, 0x6d } };
+
 
 // {FD53F907-EBDB-47b4-A9C4-AAB77245B457}
 extern const GUID GuidEMBPlugin_IPluginManager = 

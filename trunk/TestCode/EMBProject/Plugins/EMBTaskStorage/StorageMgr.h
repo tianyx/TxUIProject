@@ -56,7 +56,7 @@ public:
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
 
 	IPluginStorageInterface* m_pIStorage;
-
+	ST_STORAGECONFIG m_cfgStorage;
 };
 
 }// name space EMB

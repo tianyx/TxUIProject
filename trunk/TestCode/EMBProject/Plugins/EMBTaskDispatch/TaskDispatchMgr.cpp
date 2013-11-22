@@ -38,17 +38,21 @@ CTaskDispatchMgr::CTaskDispatchMgr(void)
 	m_pIStorage = NULL;
 	m_bCheckBackSvr = FALSE;
 	m_pIbackSvr = NULL;
+	m_hThdCheck = NULL;
+	m_hThdFtask = NULL;
+	m_nMaster = embSvrType_master;
+	m_nSvrId = INVALID_ID;
 
 	//task check param
 	nfgTaskPoolSizeMax = 2000;
-	nfgTaskDispatchCD = 10;
+	nfgTaskDispatchCD = 60;
 	nfgTaskReDispatchMaxCount = 5;
 	nfgTaskReportIntervalMax = 20;
 	nfgTaskCheckProgressIntervalMax = 5;
 	nfgTaskLostTimeOutMax = 60;
 
-	nfgActorLostTimeOutMax = 10;
-	nfgActorCheckInterval = 5;
+	nfgActorLostTimeOutMax = 30;
+	nfgActorCheckInterval = 10;
 
 
 	nfgCpuWeight = 1;
@@ -105,6 +109,13 @@ HRESULT EMB::CTaskDispatchMgr::QueryInterface( const GUID& guidIn, LPVOID& pInte
 		return S_OK;
 
 	}
+	else if (guidIn == GuidEMBPlugin_IConfig)
+	{
+		pInterfaceOut = dynamic_cast<IPluginConfigInterface*>(this);
+		AddRef();
+		return S_OK;
+
+	}
 	else
 	{
 		return __super::QueryInterface(guidIn, pInterfaceOut);
@@ -138,6 +149,40 @@ HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 
 	m_hThdFtask = CreateThread(NULL, 0, TDFTaskProc, (LPVOID)this, 0, 0);
 	ASSERT(m_hThdFtask);
+
+	SOCKADDR_IN addrHolder;
+	addrHolder = GetAddrFromStr(m_config.strIpActorHolder);
+	SOCKADDR_IN addrMaster;
+	addrMaster = GetAddrFromStr(m_config.strIpMaster);
+	SOCKADDR_IN addrLocal;
+	addrLocal.sin_family = AF_INET;
+	addrLocal.sin_port =  htons(0);
+	addrLocal.sin_addr.S_un.S_addr =htonl(INADDR_ANY);
+	if (addrHolder.sin_family != AF_INET || addrMaster.sin_family != AF_INET)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	m_actHolder.SetScokAddr(&addrHolder, &addrHolder);
+	m_actHolder.SetSvrState(m_nActive, m_nMaster);
+	m_actHolder.Run();
+	CMBCBaseObj* pRemote = NULL;
+	if(m_nMaster == embSvrType_master)
+	{
+		pRemote = new CMasterHeartBeat;
+		pRemote->SetScokAddr(&addrMaster, &addrMaster);
+
+	}
+	else
+	{
+		pRemote = new CSlaveHeartBeat;
+		pRemote->SetScokAddr(&addrMaster, &addrLocal);
+	}
+	pRemote->Run();
+	ASSERT(m_pIbackSvr == NULL);
+	m_pIbackSvr = dynamic_cast<IRemoteSvrLiveInterface*>(pRemote) ;
+	ASSERT(m_pIbackSvr);
 
 	if (m_hThdCheck && m_hThdFtask)
 	{
@@ -181,6 +226,14 @@ HRESULT EMB::CTaskDispatchMgr::Stop_Plugin()
 	//finished
 	SetActive(embSvrState_deactive);
 	m_actHolder.Stop();
+	if (m_pIbackSvr)
+	{
+		CMBCBaseObj* pRemoteObj = dynamic_cast<CMBCBaseObj*>(m_pIbackSvr) ;
+		pRemoteObj->Stop();
+		delete pRemoteObj;
+		m_pIbackSvr = NULL;
+	}
+	
 	return S_OK;
 }
 
@@ -214,10 +267,12 @@ HRESULT EMB::CTaskDispatchMgr::SubmitTask( const CTaskString& szTaskIn, CTaskStr
 	ftask.taskRunState.tmLastReport = tmNow;
 	ftask.taskRunState.tmLastCheck = tmNow;
 	ftask.taskRunState.tmCommit = tmNow;
+	ftask.strTask = szTaskIn;
 	CAutoLock lock(&m_csFTask);
 	if (m_mapTasks.find(guid) == m_mapTasks.end())
 	{
 		//push it;
+		CFWriteLog(0, TEXT("task received %s"), ftask.taskBasic.strGuid);
 		m_mapTasks[guid] = ftask;
 	}
 	else
@@ -296,6 +351,8 @@ HRESULT EMB::CTaskDispatchMgr::OnActorConnect( const ACTORID& szActorGuid )
 	actState.tmLastCheck = time(NULL);
 	actState.tmLastReport = time(NULL);
 	m_mapActors[actState.actorId] = actState;
+	CFWriteLog(0, TEXT("actor connected %d"), actState.actorId);
+
 	return S_OK;
 }
 
@@ -306,15 +363,18 @@ HRESULT EMB::CTaskDispatchMgr::OnActorDisConnect( const ACTORID& szActorGuid )
 	info.actorid = szActorGuid;
 	info.tmReport = time(NULL);
 	m_vCachedDisconnActor.push_back(info);
+	CFWriteLog(0, TEXT("actor disconnected %d"), szActorGuid);
+
 	return S_OK;
 }
 
-HRESULT EMB::CTaskDispatchMgr::OnActorMessage( const ACTORID&szActorGuid, CString& szActorInfoIn ,  CString& szRet)
+HRESULT EMB::CTaskDispatchMgr::OnActorMessage( const ACTORID& nActorIdIn, CString& szActorInfoIn ,  CString& szRet)
 {
 	CTxParamString txParam(szActorInfoIn);
 	int nXmlType = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
 	if (nXmlType == embxmltype_taskReport)
 	{
+		//CFWriteLog(0, TEXT("actor %d report %s"),nActorIdIn, szActorInfoIn);
 		//report task percent
 		ST_TASKREPORT report;
 		report.FromString(szActorInfoIn);
@@ -445,6 +505,8 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	if (taskIn.taskRunState.nState == embtaskstate_finished ||
 		taskIn.taskRunState.nState == embtaskstate_error)
 	{
+		CFWriteLog(0, TEXT("task %s finished,update to storage"), taskIn.taskBasic.strGuid);
+
 		//write task back to storage;
 		ST_TASKUPDATE upInfo;
 		upInfo.nUpdateType = embtaskupdatetype_finish;
@@ -470,6 +532,8 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 			{
 				taskIn.taskRunState.actorId = actid;
 				taskIn.taskRunState.nState = embtaskstate_dispatching;
+				CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, actid);
+
 				
 			}
 			else
@@ -487,6 +551,7 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 			if (taskIn.taskRunState.nRetry < nfgTaskReDispatchMaxCount)
 			{
 				//timeout, reset state 
+				CFWriteLog(0, TEXT("task dispatch time out %s"), taskIn.taskBasic.strGuid);
 				taskIn.taskRunState.nState = embtaskstate_zero;
 				taskIn.taskRunState.tmLastCheck = tmNow;
 				taskIn.taskRunState.nRetry++;
@@ -502,40 +567,52 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	else if (taskIn.taskRunState.nState == embtaskstate_dispatched)
 	{
 		//check state
-		CTimeSpan tmSpan(tmNow - taskIn.taskRunState.tmLastReport);
-		if (tmSpan.GetTotalSeconds() > nfgTaskLostTimeOutMax)
+		if (taskIn.taskRunState.nPercent >= 100 && taskIn.taskRunState.nCurrStep == (int)(taskIn.taskBasic.vSubTask.size()-1))
 		{
-			//task lost retset
-			taskIn.taskRunState.nState = embtaskstate_error;
+			taskIn.taskRunState.nState = embtaskstate_finished;
+			CFWriteLog(0, TEXT("task %s finished!"), taskIn.taskBasic.strGuid);
+			bRet = FALSE;
 		}
 		else
 		{
-			if (tmSpan.GetTotalSeconds() > nfgTaskReportIntervalMax)
+			CTimeSpan tmSpan(tmNow - taskIn.taskRunState.tmLastReport);
+			if (tmSpan.GetTotalSeconds() > nfgTaskLostTimeOutMax)
 			{
-				CTimeSpan tmSpan2(tmNow - taskIn.taskRunState.tmLastCheck);
-				if (tmSpan2.GetTotalSeconds() > nfgTaskCheckProgressIntervalMax)
+				//task lost retset
+				taskIn.taskRunState.nState = embtaskstate_error;
+			}
+			else
+			{
+				if (tmSpan.GetTotalSeconds() > nfgTaskReportIntervalMax)
 				{
-					//check it now
-					if (taskIn.taskRunState.actorId != INVALID_ID)
+					CTimeSpan tmSpan2(tmNow - taskIn.taskRunState.tmLastCheck);
+					if (tmSpan2.GetTotalSeconds() > nfgTaskCheckProgressIntervalMax)
 					{
-						taskIn.taskRunState.tmLastCheck = tmNow;
-						CString strMsg;
-						strMsg.Format(EDOC_TASKHEADERFMT, embxmltype_taskReport);
-						HRESULT hr = m_actHolder.SendToActor(taskIn.taskRunState.actorId, strMsg);
-						if (hr != S_OK)
+						//check it now
+						if (taskIn.taskRunState.actorId != INVALID_ID)
 						{
-							ASSERT(FALSE);
+							taskIn.taskRunState.tmLastCheck = tmNow;
+							CString strMsg;
+							strMsg.Format(EDOC_TASKHEADERFMT, embxmltype_taskReport, taskIn.taskBasic.strGuid);
+							HRESULT hr = m_actHolder.SendToActor(taskIn.taskRunState.actorId, strMsg);
+							if (hr != S_OK)
+							{
+								ASSERT(FALSE);
+							}
 						}
-					}
-					else
-					{
-						//may be switched active now wait for actor report 
-					}
-					
+						else
+						{
+							//may be switched active now wait for actor report 
+						}
 
+
+					}
 				}
 			}
 		}
+		
+
+		
 		
 	}
 	else
@@ -566,6 +643,9 @@ HRESULT EMB::CTaskDispatchMgr::SetParam( const CTaskString& szIn, CTaskString& s
 	}
 
 	m_config = tmpCfg;
+	m_nMaster = m_config.nMaster;
+	m_nSvrId = m_config.nSvrID;
+
 
 	return S_OK;
 }
@@ -613,7 +693,7 @@ BOOL EMB::CTaskDispatchMgr::ConfirmActive()
 BOOL EMB::CTaskDispatchMgr::SetActive( int nActive )
 {
 	if (nActive != embSvrState_active
-		|| nActive != embSvrState_deactive)
+		&& nActive != embSvrState_deactive)
 	{
 		return FALSE;
 	}
@@ -623,16 +703,21 @@ BOOL EMB::CTaskDispatchMgr::SetActive( int nActive )
 		m_nActive = nActive;
 		OnActiveStateChanged();
 	}
+	else
+	{
+		//state not change
+		ASSERT(FALSE);
+	}
 	return TRUE;
 }
 
 HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 {
 	HRESULT hr = S_OK;
+	CFWriteLog(0, TEXT("svr(%d) active change to %d"), m_nMaster,  m_nActive);
 	if (GetActive() == embSvrState_active)
 	{
 		//get tasks that already assigned to me
-		ASSERT(FALSE);
 		if (m_pIStorage)
 		{
 			VECTASKS vTasks;
@@ -973,8 +1058,22 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 				taskRun.nPercent = reportIn.nPercent;
 				taskRun.nCurrStep = reportIn.nStep;
 				taskRun.tmLastReport = time(NULL);
+				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task (%s),  step = %d, percent = %d%%"), reportIn.actorId,reportIn.excutorId, reportIn.strGuid,reportIn.nStep, reportIn.nPercent);
+
 			}
 		}
+		else if (reportIn.nState == embtaskstate_finished)
+		{
+			ASSERT(taskRun.actorId == reportIn.actorId
+				&& taskRun.excId == reportIn.excutorId
+				&& taskRun.nState == embtaskstate_dispatched);
+			taskRun.nState = embtaskstate_finished;
+			taskRun.nPercent = reportIn.nPercent;
+			taskRun.nCurrStep = reportIn.nStep;
+			taskRun.tmLastReport = time(NULL);
+			CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task finished (%s),  step = %d, percent = %d%%"), reportIn.actorId,reportIn.excutorId, reportIn.strGuid,reportIn.nStep, reportIn.nPercent);
+		}
+		
 	}
 
 	return TRUE;

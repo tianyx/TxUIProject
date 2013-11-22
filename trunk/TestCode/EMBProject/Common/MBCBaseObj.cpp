@@ -129,7 +129,7 @@ HRESULT CMBCBaseObj::Stop()
 {
 	if (m_pSockBase)
 	{
-		delete m_pSockBase;
+		CMBCSocket::ReleaseSock(m_pSockBase);
 		m_pSockBase = NULL;
 	}
 	m_nSelfState = MBCSTATE_STOP;

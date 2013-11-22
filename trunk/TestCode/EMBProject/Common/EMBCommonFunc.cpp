@@ -4,6 +4,7 @@
 #include "TxAutoComPtr.h"
 #include "EMBDocDef.h"
 #include "MBCTransMsg.h"
+#include "EMBMessageDef.h"
 using namespace EMB;
 
 
@@ -26,6 +27,27 @@ BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterf
 			}
 			
 		}
+	return TRUE;
+}
+
+BOOL TxLoadPluginVC6( const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut )
+{
+
+	hModuleOut = LoadLibrary(strFileIn);
+	if (hModuleOut != NULL)
+	{
+		GETPLUGININSTANCE  pFun = (GETPLUGININSTANCE)GetProcAddress(hModuleOut, "GetPluginInstanceVC6");
+		if (pFun)
+		{
+			pFun(pInterfaceOut);
+		}
+		else
+		{
+			FreeLibrary(hModuleOut);
+			hModuleOut = NULL;
+		}
+
+	}
 	return TRUE;
 }
 
@@ -213,6 +235,9 @@ BOOL GetEmbXmlMainInfo( const CString& strTaskIn, ST_EMBXMLMAININFO& infoOut )
 		if (nPosR != -1)
 		{
 			CString strSub = strTaskIn.Mid(nPos -1, nPosR -nPos+2);
+			strSub += TEXT("</");
+			strSub +=EK_MAIN;
+			strSub += TEXT(">");
 			infoOut.FromString(strSub);
 			return TRUE;
 		}
@@ -252,3 +277,5 @@ CString GetActorMappingName( HWND hActorWnd, EXCUTORID excId )
 	strfmt.Format(TEXT("actor%xtoexcutor%d"),hActorWnd, excId);
 	return strfmt;
 }
+
+

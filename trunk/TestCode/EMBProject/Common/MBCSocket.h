@@ -95,11 +95,12 @@ public:
 	operator SOCKET(){return m_hSock;}
 
 	public:
-	HANDLE m_hLockQue;
-
+	HANDLE m_hEventSockMsgArrival;
+	HANDLE m_hEventQuit;
 	SOCKET m_hSock;
 	SOCKET m_hMBCSock; //for end obj only
 	HANDLE m_hSockLoopProc; //for receive msg async
+	HANDLE m_hWndThread;
 	VECSOCKMSG m_vecSockMsg;
 
 	CAutoCritSec m_lockdeque;
@@ -110,7 +111,6 @@ public:
 	int m_nProtocolType;
 	int m_nFavMsgType;
 	int m_nCreateFlag;
-	BOOL m_bQuitMsgLoop;
 
 	int  SOCKDOWN_RECONN_INTERVAL;
 
@@ -142,6 +142,9 @@ public:
 	static CMBCSocket* CreateUDPSocket(MCBSOCKADDRS& addrIn, int nFavMsgType, ISockMsgCallbackInterFace* pCallbackProc, int nFlag = 0);
 	static CMBCSocket* CreateTCPSocket(MCBSOCKADDRS& addrIn, int nFavMsgType, ISockMsgCallbackInterFace* pCallbackProc, int nFlag = 0);
 	static CMBCSocket* AttachSock(SOCKET sockIn, int nFavMsgType, ISockMsgCallbackInterFace* pCallbackProc, int nFlag = 0);
+	//do not to call delete functon,must use this.
+	static BOOL ReleaseSock(CMBCSocket* pSockIn);
+
 };
 
 

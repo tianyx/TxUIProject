@@ -4,6 +4,7 @@
 
 CSlaveHeartBeat::CSlaveHeartBeat(void)
 {
+	m_pSvrLiveCallback = NULL;
 }
 
 CSlaveHeartBeat::~CSlaveHeartBeat(void)

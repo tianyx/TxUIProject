@@ -5,6 +5,7 @@
 using namespace EMB;
 CStorageMgr::CStorageMgr(void)
 {
+	m_pIStorage = NULL;
 }
 
 CStorageMgr::~CStorageMgr(void)
@@ -157,6 +158,7 @@ HRESULT CStorageMgr::Run_Plugin()
 {
 	Stop_Plugin();
 #ifdef _DEBUG
+	m_cfgStorage.nType = embStorageType_mem;
 	m_pIStorage = new CEMBStorageMem;
 #endif // _DEBUG
 	return S_OK;
@@ -166,7 +168,16 @@ HRESULT CStorageMgr::Stop_Plugin()
 {
 	if (m_pIStorage)
 	{
-		delete m_pIStorage;
+		if (m_cfgStorage.nType == embStorageType_mem)
+		{
+			CEMBStorageMem* pMem = (CEMBStorageMem*)m_pIStorage;
+			delete pMem;
+		}
+		else
+		{
+			ASSERT(FALSE);
+		}
+	
 		m_pIStorage = NULL;
 	}
 	return S_OK;

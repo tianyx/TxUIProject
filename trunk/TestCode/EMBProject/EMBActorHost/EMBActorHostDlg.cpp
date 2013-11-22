@@ -63,6 +63,7 @@ BEGIN_MESSAGE_MAP(CEMBActorHostDlg, CDialog)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -151,3 +152,10 @@ HCURSOR CEMBActorHostDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+void CEMBActorHostDlg::OnDestroy()
+{
+	CDialog::OnDestroy();
+	
+	// TODO: 在此处添加消息处理程序代码
+}

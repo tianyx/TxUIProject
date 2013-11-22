@@ -48,6 +48,7 @@ void CFWriteLog2(HWND hwndIn,  LPCTSTR format, va_list& ap );
 void CFWriteLog2Wnd(HWND hwndIn, LPCTSTR format,...);
 
 
+HINSTANCE GetSelfModuleHandle();
 std::wstring GetAppPathW();
 std::string GetAppPath();
 SOCKADDR_IN GetAddrFromStr(CString& strAddrIn);

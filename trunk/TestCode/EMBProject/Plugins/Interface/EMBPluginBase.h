@@ -17,3 +17,6 @@
 //must implement this func.
 extern "C"
 int EMBPLUGIN_API GetPluginInstance(LPVOID& pInterface);
+//for vc6 ver dll
+extern "C"
+int EMBPLUGIN_API GetPluginInstanceVC6(LPVOID& pInterface);

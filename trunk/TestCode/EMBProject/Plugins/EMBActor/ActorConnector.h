@@ -22,6 +22,8 @@ public:
 
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
 	virtual HRESULT SendtoDispatcher(CString& strInfo);
+	void SetActorId(ACTORID actoridIn){m_nActorId = actoridIn;}
+	void SetActorConnectorCallback(IActorConnectorCallback* pCallback){m_pITaskCommit = pCallback;}
 	IActorConnectorCallback* m_pITaskCommit;
 	ACTORID m_nActorId;
 };

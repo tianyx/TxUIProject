@@ -1,19 +1,40 @@
 #include "StdAfx.h"
 #include "WorkSample.h"
+#include "TxParamString.h"
+#include "FGlobal.h"
+#include "TxLogManager.h"
+#include "EmbStructDef.h"
 
+//////////////////////////////////////////////////////////////////////////
 using namespace EMB;
+
+DWORD __stdcall TaskRunProc(LPVOID lparam)
+{
+	CWorkSample* pObj = (CWorkSample*)lparam;
+	if (pObj)
+	{
+		pObj->RunTaskLoop();
+	}
+
+	return 0;
+}
+//////////////////////////////////////////////////////////////////////////
 CWorkSample::CWorkSample(void)
 {
+	m_hThreadTask = NULL;
+	m_pReportCallback = NULL;
+	m_nPercent = 0;
 }
 
 CWorkSample::~CWorkSample(void)
 {
 }
 
+
 HRESULT EMB::CWorkSample::QueryPluginInfo( VECPLUGINFOS& vInfoOut )
 {
 	ST_PluginInfo info;
-	info.pluginGuid = GuidEMBPlugin_IStorage;
+	info.pluginGuid = GuidEMBPlugin_PWorkerSample;
 	info.nPlugInType = PluginType_Wroker;
 	info.nSubType = SubType_WorkSample;
 	vInfoOut.push_back(info);
@@ -23,6 +44,13 @@ HRESULT EMB::CWorkSample::QueryPluginInfo( VECPLUGINFOS& vInfoOut )
 
 HRESULT EMB::CWorkSample::DoTask( const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback )
 {
+	if (m_hThreadTask)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	m_pReportCallback = pICallback;
+	m_hThreadTask = CreateThread(NULL, 0, TaskRunProc, (LPVOID)this, 0, 0);
 	return S_OK;
 }
 
@@ -33,6 +61,9 @@ HRESULT EMB::CWorkSample::CancelTask()
 
 HRESULT EMB::CWorkSample::GetTaskProgress( CTaskString& szInfo )
 {
+	ST_WORKERREPORT report;
+	report.nPercent = m_nPercent;
+	report.ToString(szInfo);
 	return S_OK;
 }
 
@@ -56,4 +87,45 @@ HRESULT EMB::CWorkSample::QueryInterface( const GUID& guidIn, LPVOID& pInterface
 	{
 		return __super::QueryInterface(guidIn, pInterfaceOut);
 	}
+}
+
+HRESULT EMB::CWorkSample::OnFirstInit()
+{
+	GetTxLogMgr()->AddNewLogFile(LOGKEY_TASKACTOR, TEXT("WorkSampleLog"));
+
+	return S_OK;
+}
+
+void EMB::CWorkSample::OnFinalRelease()
+{
+	g_pPluginInstane = NULL;
+	ReleaseTxLogMgr();
+	TRACE("\nCWorkSample::OnFinalRelease() ");
+
+	delete this;
+}
+
+BOOL EMB::CWorkSample::RunTaskLoop()
+{
+	//
+	CFWriteLog(NULL, TEXT("work started!!....."));
+	for (size_t i = 0; i <= 10; ++i)
+	{
+		Sleep(1000);
+		m_nPercent = i*10;
+		if (m_pReportCallback)
+		{
+			CString strReport;
+			ST_WORKERREPORT report;
+			report.nPercent = m_nPercent;
+			report.ToString(strReport);
+			m_pReportCallback->OnDllReportTaskProgress(strReport);
+		}
+	}
+	
+	CFWriteLog(NULL, TEXT("work end!!....."));
+	m_hThreadTask = NULL;
+		
+	return TRUE;
+
 }

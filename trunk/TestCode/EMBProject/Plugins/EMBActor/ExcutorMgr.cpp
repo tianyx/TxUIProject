@@ -6,6 +6,7 @@
 #include "FGlobal.h"
 #include "MBCTransMsg.h"
 #include "EMBCommonFunc.h"
+#include "EMBMessageDef.h"
 
 LRESULT CALLBACK ExcMgrWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL RegisterExcMgrWnd();
@@ -15,7 +16,7 @@ CExcutorMgr* g_pExcMgr = NULL;
 
 BOOL RegisterExcMgrWnd()
 {
-	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HINSTANCE hInstance = GetSelfModuleHandle();
 
 	WNDCLASSEX   wndclassex = {0};
 	wndclassex.cbSize        = sizeof(WNDCLASSEX);
@@ -45,7 +46,7 @@ BOOL RegisterExcMgrWnd()
 DWORD __stdcall ExcMgrMsgLoopThread( void* lparam )
 {
 	CExcutorMgr* pMgr = (CExcutorMgr*)lparam;
-	HINSTANCE hInstance = GetModuleHandle(NULL);
+	HINSTANCE hInstance = GetSelfModuleHandle();
 	HWND& hwnd = pMgr->m_hMessageWnd;
 	ASSERT(hwnd == NULL);
 	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
@@ -98,7 +99,7 @@ LRESULT CALLBACK ExcMgrWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 DWORD __stdcall ExcutorCreateProc(LPVOID lparam)
 {
 	CExcutorMgr* pMgr = (CExcutorMgr*)lparam;
-	if(pMgr != NULL)
+	if(pMgr == NULL)
 	{
 		return 0;
 	}
@@ -112,8 +113,9 @@ DWORD __stdcall ExcutorCreateProc(LPVOID lparam)
 DWORD __stdcall MsgPoolCheckProc(LPVOID lparam)
 {
 	CExcutorMgr* pMgr = (CExcutorMgr*)lparam;
-	if(pMgr != NULL)
+	if(pMgr == NULL)
 	{
+		ASSERT(FALSE);
 		return 0;
 	}
 
@@ -127,6 +129,12 @@ DWORD __stdcall MsgPoolCheckProc(LPVOID lparam)
 CExcutorMgr* CExcutorMgr::m_spExcMgr = NULL;
 CExcutorMgr::CExcutorMgr(void)
 {
+	nfgExcutorLaunchTimeout = 10;
+#ifdef _DEBUG
+	nfgExcutorLaunchTimeout = 9999;
+
+#endif // _DEBUG
+
 	m_nActorID = INVALID_ID;
 	m_nMinExcutorId = 0;
 	m_nMaxExcutorId = 100;
@@ -172,7 +180,7 @@ HRESULT CExcutorMgr::OnExcutorMessage( ST_EMBWNDMSG& msgIn)
 				UnPackMBCMsg(msgIn.pStr, msgIn.nBuffLen, msg);
 				if (m_pIExcCallBack)
 				{
-					m_pIExcCallBack->OnExcutorMessage((EXCUTORID)msgIn.lparam, msg.strData);
+					m_pIExcCallBack->OnExcutorMessage((EXCUTORID)msgIn.wparam, msg.strData);
 				}
 			}
 			else
@@ -182,9 +190,11 @@ HRESULT CExcutorMgr::OnExcutorMessage( ST_EMBWNDMSG& msgIn)
 		}
 
 	}
-	else if (msgIn.message == MSG_EMBEXCUTOREXIT)
+	else if (msgIn.message == MSG_EMBEXCUTORQUIT)
 	{
-		EXCUTORID excId = (EXCUTORID)msgIn.lparam;
+		EXCUTORID excId = (EXCUTORID)msgIn.wparam;
+		CFWriteLog(0, TEXT("excutor %d quit"), excId);
+
 		if (m_pIExcCallBack)
 		{
 			m_pIExcCallBack->OnExcutorExit(excId);
@@ -243,16 +253,17 @@ HRESULT CExcutorMgr::Run()
 
 	m_hMsgPoolCheckThread = CreateThread(NULL, 0, MsgPoolCheckProc, (LPVOID)this, 0, 0);
 
-	return m_hMsgLoopThread != NULL;
+	return m_hMsgLoopThread != NULL? S_OK:S_FALSE;
 }
 
-BOOL CExcutorMgr::Init( LPCTSTR strExcPathIn )
+BOOL CExcutorMgr::Init( LPCTSTR strExcPathIn, ST_ACTORCONFIG& actCfg, IExcutorMsgCallBack* pCallBack)
 {
 	if (access(strExcPathIn, 0) == -1)
 	{
 		ASSERT(FALSE);
 		return FALSE;
 	}
+	m_pIExcCallBack = pCallBack;
 	m_strExcPath = strExcPathIn;
 	int nPos = m_strExcPath.ReverseFind('\\');
 	m_strExcFolder = m_strExcPath.Left(nPos);
@@ -260,6 +271,9 @@ BOOL CExcutorMgr::Init( LPCTSTR strExcPathIn )
 	m_strExcutorWorkFolder = m_strExcFolder;
 	m_strExcutorWorkFolder +=TEXT("_work");
 	CreateDirectory(m_strExcutorWorkFolder, NULL);
+	m_nActorID = actCfg.actorId;
+	m_nMinExcutorId = actCfg.nExcutorMinId;
+	m_nMaxExcutorId = actCfg.nExcutorMaxId;
 	return TRUE;
 }
 
@@ -268,11 +282,9 @@ HRESULT CExcutorMgr::Stop()
 	if (m_hMsgLoopThread)
 	{
 
-		::DestroyWindow(m_hMessageWnd);
-		if (WaitForSingleObject(m_hMsgLoopThread, 10000)!= WAIT_OBJECT_0)
-		{
-			TerminateThread(m_hMsgLoopThread, 0);
-		}
+		::PostMessage(m_hMessageWnd, WM_QUIT,0,0);
+		WaitForSingleObject(m_hMsgLoopThread, INFINITE);
+		CloseHandle(m_hMsgLoopThread);
 		m_hMsgLoopThread = NULL;
 		m_hMessageWnd = NULL;
 	}
@@ -362,6 +374,10 @@ HRESULT CExcutorMgr::CheckExcutorLoop()
 			//check excutor state
 			CheckExcutor();
 		}
+		else
+		{
+			return S_OK;
+		}
 	}
 }
 
@@ -375,7 +391,7 @@ HRESULT CExcutorMgr::CheckExcutor()
 		for (; itb != ite; ++itb)
 		{
 			ST_EXCUTORINFO& excInfo = itb->second;
-			if (excInfo.hProcessId == NULL)
+			if (excInfo.tmLastcheck == 0)
 			{
 				//create the excutor;
 				if (!LaunchExcutorFile(itb->first, excInfo.hProcessId))
@@ -383,20 +399,32 @@ HRESULT CExcutorMgr::CheckExcutor()
 					ASSERT(FALSE);
 					vToRemove.push_back(itb->first);
 				}
+				excInfo.tmLastcheck = time(NULL);
 			}
 			else
 			{
 				if (!::IsWindow(excInfo.hwnd))
 				{
-					//crashed 
-					//terminate the process
-					HANDLE handle = OpenProcess(PROCESS_TERMINATE, TRUE, excInfo.hProcessId);
-					if (handle)
+					CTimeSpan tmSpan(time(NULL) - excInfo.tmLastcheck );
+					if (tmSpan.GetTotalSeconds() < nfgExcutorLaunchTimeout)
 					{
-						BOOL bSuc = TerminateProcess(handle, 0);
-						ASSERT(bSuc);
+						//wait a while
+						continue;
 					}
-					vToRemove.push_back(itb->first);
+					else
+					{
+						//crashed 
+						//terminate the process
+						HANDLE handle = OpenProcess(PROCESS_TERMINATE, TRUE, excInfo.hProcessId);
+						if (handle)
+						{
+							BOOL bSuc = TerminateProcess(handle, 0);
+							ASSERT(bSuc);
+						}
+						vToRemove.push_back(itb->first);
+					}
+					
+					
 				}
 				else
 				{
@@ -428,6 +456,7 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 	dwProcessId = NULL;
 	if(excId == INVALID_ID)
 	{
+		ASSERT(FALSE);
 		return FALSE;
 	}
 	if (_access(m_strExcPath, 00) == -1)
@@ -435,14 +464,15 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 		ASSERT(FALSE);
 		return FALSE;
 	}
+	CreateDirectory(m_strExcutorWorkFolder, NULL);
 	CString strDes =TEXT("\"");
 	strDes += m_strExcutorWorkFolder;
 	strDes += TEXT("\\");
 	CTxStrConvert val;
 	val.SetVal(excId);
 	strDes += val.GetAsString();
-	CreateDirectory(strDes, NULL);
-	CString strExcExePath = strDes;
+	CString strExcExePath = strDes.Mid(1);
+	CreateDirectory(strExcExePath, NULL);
 	strExcExePath += TEXT("\\");
 	strExcExePath += m_strExcName;
 	if (_access(strExcExePath, 00) == -1)
@@ -453,22 +483,56 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 		strCopyStr += TEXT("\\*.* \"");
 		strCopyStr +=strDes;
 		strCopyStr += TEXT("\" /S /C /Y");
-		HINSTANCE hIns = ShellExecute(NULL, 0, TEXT("xcopy"), strCopyStr, NULL, SW_HIDE);
-		if ((int)hIns <=32)
+// 		HINSTANCE hIns = ShellExecute(NULL, 0, TEXT("xcopy"), strCopyStr, NULL, SW_HIDE);
+// 		if ((int)hIns <=32)
+// 		{
+// 			return FALSE;
+// 		}
+		STARTUPINFO si;
+		PROCESS_INFORMATION pi;
+
+		ZeroMemory( &si, sizeof(si) );
+		si.cb = sizeof(si);
+		ZeroMemory( &pi, sizeof(pi) );
+		strCopyStr = TEXT("xcopy ") + strCopyStr;
+		CFWriteLog(0, TEXT("launch excutor %s"), strCopyStr);
+
+		// Start the child process. 
+		if( !CreateProcess( NULL,   // No module name (use command line)
+			strCopyStr.LockBuffer(),        // Command line
+			FALSE,           // Process handle not inheritable
+			NULL,           // Thread handle not inheritable
+			FALSE,          // Set handle inheritance to FALSE
+			0,              // No creation flags
+			NULL,           // Use parent's environment block
+			NULL,           // Use parent's starting directory 
+			&si,            // Pointer to STARTUPINFO structure
+			&pi )           // Pointer to PROCESS_INFORMATION structure
+			) 
 		{
-			return FALSE;
+			ASSERT(FALSE);
+			return  FALSE;
+		}
+		else
+		{
+			//close the handle
+			WaitForSingleObject(pi.hProcess, INFINITE);
+			CloseHandle(pi.hProcess);
+			CloseHandle(pi.hThread);
+			dwProcessId = pi.dwProcessId;
 		}
 	}
-	
+
 
 	//run it
 	BOOL bRet = FALSE;
 	CString strRunStr;
 	ST_EXCUTORREG regInfo;
+	regInfo.actorId = m_nActorID;
 	regInfo.guid = excId;
 	regInfo.hwndActor = m_hMessageWnd;
 	regInfo.hwndExcutor = NULL;
-	regInfo.ToString(strRunStr);
+	regInfo.ToExcParamString(strRunStr);
 	strRunStr.Insert(0, _T('\"'));
 	strRunStr += TEXT("\"");
 	if (_access(strExcExePath, 04) != -1)
@@ -490,9 +554,12 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 		si.cb = sizeof(si);
 		ZeroMemory( &pi, sizeof(pi) );
 
-		// Start the child process. 
-		if( !CreateProcess( strExcExePath,   // No module name (use command line)
-			strRunStr.GetBuffer(),        // Command line
+		// Start the child process.
+		strExcExePath += TEXT(" ");
+		strRunStr = strExcExePath + strRunStr;
+		CFWriteLog(0, TEXT("launch excutor %s"), strRunStr);
+		if( !CreateProcess( NULL,   // No module name (use command line)
+			strRunStr.LockBuffer(),        // Command line
 			FALSE,           // Process handle not inheritable
 			NULL,           // Thread handle not inheritable
 			FALSE,          // Set handle inheritance to FALSE
@@ -512,7 +579,12 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 			CloseHandle(pi.hProcess);
 			CloseHandle(pi.hThread);
 			dwProcessId = pi.dwProcessId;
+			bRet = TRUE;
 		}
+	}
+	else
+	{
+		ASSERT(FALSE);
 	}
 	
 	return bRet;
@@ -590,7 +662,7 @@ HRESULT CExcutorMgr::WndMsgPoolCheckLoop()
 
 HRESULT CExcutorMgr::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam )
 {
-	if (message == MSG_EMBTOEXCUTORMSG)
+	if (message == MSG_EMBTOACTORMSG)
 	{
 		EXCUTORID excId = (WPARAM)wparam;
 		int nLen = (LPARAM)lparam;
@@ -608,6 +680,9 @@ HRESULT CExcutorMgr::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 		if (pmemBuff != NULL)
 		{
 			ST_EMBWNDMSG msg;
+			msg.message =message;
+			msg.lparam = lparam;
+			msg.wparam = wparam;
 			msg.pStr = new char[nLen];
 			msg.hwnd = hwnd;
 			msg.nBuffLen = nLen;
@@ -625,11 +700,13 @@ HRESULT CExcutorMgr::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 		
 	}
 	else if (message == MSG_EMBEXCUTORREG
-		||message == MSG_EMBEXCUTOREXIT)
+		||message == MSG_EMBEXCUTORQUIT)
 	{
 		ST_EMBWNDMSG msg;
 		msg.wparam =wparam;
 		msg.lparam = lparam;
+		msg.wparam = wparam;
+		msg.message =message;
 		msg.hwnd = hwnd;
 		msg.pStr= NULL;
 		CAutoLock lock(&m_csMsgPool);
@@ -642,8 +719,7 @@ HRESULT CExcutorMgr::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 
 HANDLE CExcutorMgr::CreateExchangemapping( EXCUTORID excId )
 {
-	CString strMapName;
-	strMapName.Format(TEXT("actor%xToexcutor%d"),  (int)m_hMessageWnd, excId);
+	CString strMapName = GetActorMappingName(m_hMessageWnd, excId);
 	HANDLE hRecvMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE | SEC_COMMIT, 0, 1024*10, strMapName);
 	if (hRecvMap == NULL)
 	{
@@ -666,12 +742,13 @@ HRESULT CExcutorMgr::OnExcutorReg( HWND hwnd, UINT message, WPARAM wparam, LPARA
 	}
 	else
 	{
+		CFWriteLog(0, TEXT("excutor %d registed"), excID);
 		CAutoLock lock(&m_csExcutors);
 		MAPEXCUTORS::iterator itf = m_mapExcutors.find(excID);
 		if (itf != m_mapExcutors.end())
 		{
 			itf->second.hwnd = hwndExcMsg;
-			itf->second.hmemMap = CreateExchangemapping(excID);
+			//itf->second.hmemMap = CreateExchangemapping(excID);
 		}
 		//send msg backto excutor
 		::SendMessage(itf->second.hwnd, MSG_EMBEXCUTORREGED, 1,0);

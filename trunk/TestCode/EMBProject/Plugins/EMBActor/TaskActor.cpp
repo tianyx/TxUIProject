@@ -10,6 +10,9 @@ using namespace EMB;
 CTaskActor::CTaskActor(void)
 {
 	m_bRuning = FALSE;
+	m_nActiveConn = 0;
+	m_actorconnMain.SetActorConnectorCallback(this);
+	m_actorconnSlave.SetActorConnectorCallback(this);
 	m_pExcutorMgr = CExcutorMgr::GetExcutorMgr();
 	ASSERT(m_pExcutorMgr);
 }
@@ -60,6 +63,13 @@ HRESULT CTaskActor::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 		AddRef();
 		return S_OK;
 	}
+	else if (guidIn == GuidEMBPlugin_IConfig)
+	{
+		pInterfaceOut = dynamic_cast<IPluginConfigInterface*>(this);
+		AddRef();
+		return S_OK;
+
+	}
 	else
 	{
 		return __super::QueryInterface(guidIn, pInterfaceOut);
@@ -72,11 +82,14 @@ HRESULT CTaskActor::Run_Plugin()
 	SOCKADDR_IN addrLocal;
 	addrLocal.sin_family = AF_INET;
 	addrLocal.sin_port = htons(0);
-	addrLocal.sin_addr.S_un.S_addr = inet_addr( INADDR_ANY );
+	addrLocal.sin_addr.S_un.S_addr = htonl( INADDR_ANY );
 
 	m_actorconnMain.SetScokAddr(&m_ActRegInfo.addrMain, &addrLocal);
+	m_actorconnMain.SetActorId(m_ActRegInfo.actorId);
 	m_actorconnSlave.SetScokAddr(&m_ActRegInfo.addrSlave, &addrLocal);
-	m_pExcutorMgr->Init(m_ActRegInfo.strExcPath);
+	m_actorconnSlave.SetActorId(m_ActRegInfo.actorId);
+
+	m_pExcutorMgr->Init(m_ActRegInfo.strExcPath, m_ActRegInfo, this);
 	HRESULT hr = m_actorconnMain.Run();
 	MUSTBESOK(hr);
 	hr = m_actorconnSlave.Run();
@@ -94,6 +107,7 @@ HRESULT CTaskActor::Stop_Plugin()
 	m_actorconnSlave.Stop();
 	m_pExcutorMgr->Stop();
 
+
 	return S_OK;
 }
 
@@ -104,6 +118,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 	GetEmbXmlMainInfo(strInfo, mainInfo);
 	if (mainInfo.nType == embxmltype_task)
 	{
+		CFWriteLog(0, TEXT("receive task %s"),mainInfo.guid);
 		TXGUID guid = String2Guid(mainInfo.guid);
 		if (guid == GUID_NULL)
 		{
@@ -114,8 +129,11 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 		EXCUTORID excId = m_pExcutorMgr->CreateNewExcutor();
 		if (excId != INVALID_ID)
 		{
+			CFWriteLog(0, TEXT("assign task to excutor %d"),excId);
+
 			//save task to it
 			ST_TASKINACTOR task;
+			task.taskGuid = guid;
 			task.strTask = strInfo;
 			task.nCurrStep = 0;
 			task.nState = embtaskstate_dispatching;
@@ -151,7 +169,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 				if (taskInfoRef.excId != INVALID_ID)
 				{
 					report.excutorId = taskInfoRef.excId;
-					report.actorId = m_ActRegInfo.guid;
+					report.actorId = m_ActRegInfo.actorId;
 					report.nPercent = taskInfoRef.nPercent;
 					report.nStep = taskInfoRef.nCurrStep;
 					report.nState = taskInfoRef.nState;
@@ -176,6 +194,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 		//report actor state 
 		ST_SVRACTIVEINFO activeInfo;
 		activeInfo.FromString(strInfo);
+		CFWriteLog(0, TEXT("svr(%d) state change to %d"),activeInfo.nMaster,  activeInfo.nActive);
 		if (activeInfo.nActive == embSvrState_active)
 		{
 			if (activeInfo.nMaster == embSvrType_master)
@@ -215,9 +234,10 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 	}
 	else if (mainInfo.nType == embxmltype_actorState)
 	{
+		CFWriteLog(0, TEXT("svr request report actor state!"));
 		//active svr changed;
 		ST_ACTORSTATE actorInfo;
-		actorInfo.actorId = m_ActRegInfo.guid;
+		actorInfo.actorId = m_ActRegInfo.actorId;
 		actorInfo.nActorLevel = m_ActRegInfo.nActorLevel;
 		actorInfo.nConnState = embConnState_ok;
 		actorInfo.nCpuUsage = 10;//getcpuusage
@@ -228,7 +248,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 	}
 	else
 	{
-
+		ASSERT(FALSE);
 	}
 
 	return S_OK;
@@ -244,9 +264,7 @@ void EMB::CTaskActor::OnFinalRelease()
 
 HRESULT EMB::CTaskActor::OnFirstInit()
 {
-	CString strFile(GetAppPath().c_str());
-	strFile +=TEXT("\\log\\TaskActor.log");
-	GetTxLogMgr()->AddNewLogFile(LOGKEY_TASKACTOR, strFile);
+	GetTxLogMgr()->AddNewLogFile(LOGKEY_TASKACTOR, TEXT("TaskActor"));
 
 	return S_OK;
 }
@@ -267,11 +285,18 @@ HRESULT EMB::CTaskActor::SetParam( const CTaskString& szIn, CTaskString& szOut )
 	}
 	else
 	{
-		ST_ACTORREG regIn;
+		ST_ACTORCONFIG regIn;
 		regIn.FromString(szIn);
-
+		if (regIn.strExcPath.IsEmpty())
+		{
+			//set default excutor path
+			CString strPath = GetAppPath().c_str();
+			strPath += TEXT("\\exc\\EMBExternalExcutor.exe");
+			regIn.strExcPath = strPath;
+		}
+		
 		//check valid
-		if (regIn.guid  < 0
+		if (regIn.actorId  < 0
 			|| regIn.addrMain.sin_family  != AF_INET
 			|| regIn.addrSlave.sin_family != AF_INET
 			|| regIn.nExcutorMinId >= regIn.nExcutorMaxId
@@ -282,6 +307,7 @@ HRESULT EMB::CTaskActor::SetParam( const CTaskString& szIn, CTaskString& szOut )
 		else
 		{
 			m_ActRegInfo = regIn;
+			ret.nRetVal = S_OK;
 		}
 	}
 
@@ -295,11 +321,55 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 	GetEmbXmlMainInfo(szInfoIn, mainInfo);
 	if (mainInfo.nType == embxmltype_excOnIdle)
 	{
+		CFWriteLog(0, TEXT("excutor %d report idle"), excutorId);
 		OnExcutorIdle(excutorId);
 	}
 	else if (mainInfo.nType == embxmltype_taskReport)
 	{
 		//excutor report
+		CFWriteLog(0, TEXT("exc%d report %s"), excutorId, szInfoIn);
+		ST_TASKREPORT report;
+		report.FromString(szInfoIn);
+		TXGUID guid = String2Guid(report.strGuid);
+		ASSERT (guid != GUID_NULL);
+		BOOL bReport = FALSE;
+		ST_TASKINACTOR tmpReport;
+		{
+			CAutoLock lock(&m_csmapLock);
+			MAPEXCTASKS::iterator itf = m_mapExcTask.find(excutorId);
+			if (itf != m_mapExcTask.end())
+			{
+				ASSERT(itf->second == guid);
+			}
+			else
+			{
+				m_mapExcTask[excutorId] = guid;
+			}
+			//check task state that assigned to the excutor
+			MAPTASKINACTOR::iterator itftask = m_mapTaskinActor.find(guid);
+			if (itftask != m_mapTaskinActor.end())
+			{
+				ST_TASKINACTOR& taskRef = itftask->second;
+				taskRef.nCurrStep = report.nStep;
+				taskRef.nState = report.nState;
+				taskRef.nPercent = report.nPercent;
+				tmpReport = taskRef;
+				bReport = TRUE;
+				if (taskRef.nState == embtaskstate_finished)
+				{
+					CFWriteLog(0, TEXT("task finished %s"), Guid2String(taskRef.taskGuid));
+					m_mapTaskinActor.erase(itftask);
+					m_mapExcTask.erase(excutorId);
+				}
+				
+			}
+		}
+		if (bReport)
+		{
+			ReportTaskState(tmpReport);
+		}
+		
+		
 	}
 	else 
 	{
@@ -379,11 +449,12 @@ HRESULT EMB::CTaskActor::OnExcutorExit( const EXCUTORID excutorId )
 BOOL EMB::CTaskActor::ReportTaskState( ST_TASKINACTOR& infoIn )
 {
 	ST_TASKREPORT report;
-	report.actorId = m_ActRegInfo.guid;
+	report.actorId = m_ActRegInfo.actorId;
 	report.excutorId = infoIn.excId;
 	report.nState = infoIn.nState;
 	report.nPercent = infoIn.nPercent;
 	report.nStep = infoIn.nCurrStep;
+	report.strGuid = infoIn.taskGuid;
 	report.strGuid = Guid2String(infoIn.taskGuid);
 	CString strRet;
 	report.ToString(strRet);
@@ -438,6 +509,7 @@ BOOL EMB::CTaskActor::OnExcutorIdle( const EXCUTORID excutorId )
 		}
 		else
 		{
+			CFWriteLog(0, TEXT("send task to excutor %d"), excutorId);
 			m_pExcutorMgr->SendToExcutor(excutorId, strTask);
 
 		}

@@ -5,7 +5,10 @@
 #include "Rpc.h"
 #include "StrConvert.h"
 #pragma comment(lib, "Rpcrt4.lib")
+
+
 using namespace std;
+
 
 HWND g_hwndLog = NULL;
 HANDLE g_hconsoleHandle = NULL;
@@ -33,8 +36,8 @@ void CFWriteLog( LPCTSTR format,... )
 {
 	va_list ap;
 	va_start(ap, format);
-	return CFWriteLog2(g_hwndLog, format, ap);
-	
+	CFWriteLog2(g_hwndLog, format, ap);
+	return;
 	TCHAR line[LINE_BUFFER_SIZE];
 	memset(line, 0, sizeof(line));
 
@@ -110,7 +113,8 @@ void CFWriteLog2Wnd( HWND hwndIn, LPCTSTR format,... )
 	va_list ap;
 	va_start(ap, format);
 
-	return CFWriteLog2(hwndIn, format, ap);
+	CFWriteLog2(hwndIn, format, ap);
+	return;
 
 	TCHAR line[LINE_BUFFER_SIZE];
 	memset(line, 0, sizeof(line));
@@ -255,13 +259,18 @@ int GenRand()
 
 CString Guid2String(const GUID& guidIn )
 {
-	RPC_CSTR* pStr = NULL;
-	UuidToString(&guidIn, pStr);
+	RPC_CSTR pStr = NULL;
+#ifdef VC6DEFINE
+	UuidToString((GUID*)&guidIn, &pStr);
+#else
+	UuidToString(&guidIn, &pStr);
+
+#endif
 	CString strTmp;
 	if (pStr)
 	{
 		strTmp = (char*)pStr;
-		RpcStringFree(pStr);
+		RpcStringFree(&pStr);
 	}
 	return strTmp;
 }
@@ -272,14 +281,12 @@ GUID String2Guid( CString& strIn )
 		return GUID_NULL;
 	}
 	GUID guid = GUID_NULL;
-	if(UuidFromString((RPC_CSTR)strIn.GetBuffer(), &guid)== RPC_S_OK)
+	if(UuidFromString((RPC_CSTR)strIn.LockBuffer(), &guid)!= RPC_S_OK)
 	{
-		return guid;
+		ASSERT(FALSE);
 	}
-	else
-	{
-		return GUID_NULL;
-	}
+	strIn.UnlockBuffer();
+	return guid;
 }
 
 DWORD TxWaitObjWithQuit( HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut /*= INFINITE*/ )
@@ -371,4 +378,13 @@ CString GetFileExten( CString& strFile )
 
 	return strRet;
 }
+
+HINSTANCE GetSelfModuleHandle()
+{
+	MEMORY_BASIC_INFORMATION mbi;
+
+	return ((::VirtualQuery(GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0) 
+		? (HMODULE) mbi.AllocationBase : NULL);
+}
+
 

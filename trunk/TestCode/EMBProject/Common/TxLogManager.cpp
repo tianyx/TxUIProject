@@ -138,7 +138,8 @@ DWORD CTxLogManager::AddNewLogFile( DWORD dwLogKey, CString strFileIn , BOOL bAd
 			CreateDirectory(strFile, NULL);
 			strFile +=TEXT("\\");
 			strFile += strFileIn;
-			strFileIn +=TEXT(".log");
+			strFile +=TEXT(".log");
+
 		}
 		ST_LOGFILEDATA data;
 		data.dwLogKey = dwLogKey;

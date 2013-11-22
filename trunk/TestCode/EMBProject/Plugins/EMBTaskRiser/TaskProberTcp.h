@@ -10,6 +10,7 @@
 #include "taskprober.h"
 #include "MBCRemoteObj.h"
 #include "EMBDefine.h"
+#include "EMBMessageDef.h"
 
 class CTaskProberTcp :
 	public CTaskProber, public CMBCRemoteObj

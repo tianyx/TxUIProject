@@ -54,6 +54,7 @@ CEMBExternalExcutorDlg::CEMBExternalExcutorDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CEMBExternalExcutorDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_pExcObj = NULL;
 }
 
 void CEMBExternalExcutorDlg::DoDataExchange(CDataExchange* pDX)
@@ -109,6 +110,7 @@ BOOL CEMBExternalExcutorDlg::OnInitDialog()
 		ASSERT(FALSE);
 		return FALSE;
 	}
+	m_pExcObj->Start();
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -166,7 +168,12 @@ LRESULT CEMBExternalExcutorDlg::WindowProc(UINT message, WPARAM wParam, LPARAM l
 {
 	if (message == MSG_EMBKILLEXCUTOR)
 	{
+		if (m_pExcObj)
+		{
+			m_pExcObj->Stop();
+		}
 		PostMessage(WM_CLOSE, 0,0);
+		
 		return TRUE;
 	}
 	return CDialog::WindowProc(message, wParam, lParam);

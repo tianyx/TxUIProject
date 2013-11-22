@@ -34,4 +34,5 @@ public:
 	afx_msg void OnBnClickedBtnStart();
 
 
+	afx_msg void OnBnClickedBtntest();
 };

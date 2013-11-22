@@ -16,29 +16,7 @@ HMODULE g_hActorPlugin  = NULL;
 EMB::IPluginBaseInterface* g_pIActorPlugin = NULL;
 BOOL InitGlobalConfig()
 {
-	//check arg
-	int nArgC = __argc;
-	if (nArgC != 2)
-	{
-		ASSERT(FALSE);
-		return FALSE;
-	}
-
-	CString strHwnd = __argv[1];
-	g_GlobalInfo.excInfo.FromString(strHwnd);
-
-	if (!::IsWindow(g_GlobalInfo.excInfo.hwndActor))
-	{
-		ASSERT(FALSE);
-		return FALSE;
-	}
-
-	if (g_GlobalInfo.excInfo.guid == -1)
-	{
-		ASSERT(FALSE);
-		return FALSE;
-	}
-	
+		
 	g_GlobalInfo.szAppPath = GetAppPath().c_str();
 	g_GlobalInfo.szIniPath = g_GlobalInfo.szAppPath;
 	g_GlobalInfo.szIniPath += TEXT("\\EMBActorHost.xml");
@@ -70,7 +48,8 @@ BOOL InitGlobalConfig()
 		int nSize = file.Read(pbuff, nFileLen);
 		ASSERT(nSize == nFileLen);
 		strXml = pbuff;
-		
+		file.Close();
+		delete[] pbuff;
 	}
 
 
@@ -88,7 +67,7 @@ BOOL InitGlobalConfig()
 BOOL LoadActorHost(CString& strConfig)
 {
 	CString strFile = g_GlobalInfo.szAppPath;
-	strFile +=TEXT("\\EMBActor.dll");
+	strFile +=TEXT("\\plugin\\EMBActor.dll");
 	if (_access(strFile, 0) == -1)
 	{
 		ASSERT(FALSE);
@@ -109,14 +88,24 @@ BOOL LoadActorHost(CString& strConfig)
 			ASSERT(FALSE);
 			return FALSE;
 		}
+
+		CTxAutoComPtr<IPluginControlInterface> pControl;
+		g_pIActorPlugin->QueryInterface(GuidEMBPlugin_IControler, (LPVOID&) (*&pControl));
+		ASSERT(pControl);
+		pControl->Run_Plugin();
 	}
-	return FALSE;
+	return TRUE;
 }
 
 BOOL UnloadActorHost()
 {
 	if (g_pIActorPlugin)
 	{
+		CTxAutoComPtr<IPluginControlInterface> pControl;
+		g_pIActorPlugin->QueryInterface(GuidEMBPlugin_IControler, (LPVOID&) (*&pControl));
+		ASSERT(pControl);
+		pControl->Stop_Plugin();
+
 		g_pIActorPlugin->Release();
 		g_pIActorPlugin = NULL;
 	}

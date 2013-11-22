@@ -24,6 +24,9 @@ DWORD __stdcall TaskLoopProc(LPVOID parmIn)
 CTaskRiserMgr::CTaskRiserMgr()
 {
 	m_pTaskDispatcher = NULL;
+	m_hTaskCheckProc = NULL;
+	m_hQuitEvent = NULL;
+	m_hTaskEvent = NULL;
 }
 
 CTaskRiserMgr::~CTaskRiserMgr()
@@ -94,6 +97,13 @@ HRESULT CTaskRiserMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut
 		return S_OK;
 
 	}
+	else if (guidIn == GuidEMBPlugin_IConfig)
+	{
+		pInterfaceOut = dynamic_cast<IPluginConfigInterface*>(this);
+		AddRef();
+		return S_OK;
+
+	}
 	else
 	{
 		return __super::QueryInterface(guidIn, pInterfaceOut);
@@ -117,7 +127,7 @@ HRESULT CTaskRiserMgr::Run_Plugin()
 		if (m_config.vProbes[i].nType == embTaskproberType_tcp)
 		{
 			CTaskProberTcp* pProb = new CTaskProberTcp;
-			pProb->SetScokAddr(&m_config.vProbes[i].data.ipdata.addrListen, &m_config.vProbes[i].data.ipdata.addrLocal);
+			pProb->SetScokAddr(&m_config.vProbes[i].data.ipdata.addrListen, &m_config.vProbes[i].data.ipdata.addrListen);
 			pProb->SetTaskProcessor(this);
 			hr =pProb->Run_Prober();
 			ASSERT(SUCCEEDED(hr));
@@ -142,6 +152,7 @@ HRESULT CTaskRiserMgr::Stop_Plugin()
 			delete pProb;
 		}
 	}
+	m_vProbers.clear();
 
 	SetEvent(m_hQuitEvent);
 	if (m_hTaskCheckProc)

@@ -16,7 +16,7 @@
 BOOL ST_EXCUTORREG::ToString( CString& strOut )
 {
 	CTxParamString sParm(EDOC_ST_EXCUTORREG_STRUCT);
-	sParm.GoToPath(TEXT(".\\ST_EXCUTORREG"));
+	sParm.GoIntoKey(TEXT("excutorreg"));
 	CTxStrConvert strVal;
 	strVal.SetVal(guid);
 	sParm.SetAttribVal(NULL, TEXT("guid"), strVal);
@@ -35,7 +35,7 @@ BOOL ST_EXCUTORREG::ToString( CString& strOut )
 BOOL ST_EXCUTORREG::FromString( const CString& strIn )
 {
 	CTxParamString sParm(strIn);
-	sParm.GoToPath(TEXT(".\\ST_EXCUTORREG"));
+	sParm.GoIntoKey(TEXT("excutorreg"));
 	guid = sParm.GetAttribVal(NULL, TEXT("guid")).GetAsInt(INVALID_ID);
 	actorId = sParm.GetAttribVal(NULL, TEXT("actorId")).GetAsInt(INVALID_ID);
 
@@ -43,6 +43,24 @@ BOOL ST_EXCUTORREG::FromString( const CString& strIn )
 	hwndExcutor = (HWND)sParm.GetAttribVal(NULL, TEXT("hwndExcutor")).GetAsInt();
 	return TRUE;
 }
+
+BOOL ST_EXCUTORREG::ToExcParamString( CString& strOut )
+{
+	CString strTmp;
+	ToString(strTmp);
+	for (int i = 0; i < strTmp.GetLength(); ++i)
+	{
+		TCHAR ch = strTmp.GetAt(i);
+		if (ch == _T('\"'))
+		{
+			strOut += (ch);
+		}
+		strOut += (ch);
+		
+	}
+	return TRUE;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 BOOL ST_EMBRET::ToString( CString& strOut )
@@ -70,13 +88,13 @@ BOOL ST_EMBRET::FromString( const CString& strIn )
 }
 //////////////////////////////////////////////////////////////////////////
 
-BOOL ST_ACTORREG::ToString( CString& strOut )
+BOOL ST_ACTORCONFIG::ToString( CString& strOut )
 {
 	CTxParamString sParm(EDOC_ST_ACTORREG_STRUCT);
-	sParm.GoToPath(TEXT(".\\ST_ACTORREG"));
+	sParm.GoIntoKey(EK_TASKACTORCONFIG);
 	CTxStrConvert strVal;
-	strVal.SetVal(guid);
-	sParm.SetAttribVal(NULL, TEXT("guid"), strVal);
+	strVal.SetVal(actorId);
+	sParm.SetAttribVal(NULL, TEXT("actorId"), strVal);
 	strVal.SetVal(Addr2String(addrMain).c_str());
 	sParm.SetAttribVal(NULL, TEXT("addrMain"), strVal);
 	strVal.SetVal(Addr2String(addrSlave).c_str());
@@ -92,11 +110,12 @@ BOOL ST_ACTORREG::ToString( CString& strOut )
 	return TRUE;
 }
 
-BOOL ST_ACTORREG::FromString( const CString& strIn )
+BOOL ST_ACTORCONFIG::FromString( const CString& strIn )
 {
 	CTxParamString sParm(strIn);
-	sParm.GoToPath(TEXT(".\\ST_ACTORREG"));
-	guid = sParm.GetAttribVal(NULL, TEXT("guid")).GetAsInt(-1);
+	sParm.GoIntoKey(EK_MAIN);
+	sParm.GoIntoKey(EK_TASKACTORCONFIG);
+	actorId = sParm.GetAttribVal(NULL, TEXT("actorId")).GetAsInt(-1);
 	CString strAddr = sParm.GetAttribVal(NULL, TEXT("addrMain")).GetAsString();
 	addrMain = GetAddrFromStr(strAddr);
 	strAddr = sParm.GetAttribVal(NULL, TEXT("addrSlave")).GetAsString();
@@ -159,7 +178,7 @@ BOOL ST_TASKBASIC::FromString( const CString& strIn )
 	nPriority =sParm.GetAttribVal(NULL, EV_TBPRIORITY).GetAsInt(-1);
 	tmSubmit = (time_t)sParm.GetAttribVal(NULL, EV_TBSUBMIT).GetAsInt64();
 	nFixActor = sParm.GetAttribVal(NULL, EV_TBFIXACTOR).GetAsInt(INVALID_ID);
-	nStartStep = sParm.GetAttribVal(NULL, EV_TBSTARTSTEP).GetAsInt(INVALID_VALUE);
+	nStartStep = sParm.GetAttribVal(NULL, EV_TBSTARTSTEP).GetAsInt(0);
 	sParm.GetAttribVal(NULL, EV_TBSUBTASKLIST).GetAsStringArray(vSubTask);
 	return TRUE;
 }
@@ -196,8 +215,7 @@ BOOL ST_TASKRISERCONFIG::ToString( CString& strOut )
 		{
 			tmpVal.SetVal(Addr2String(vProbes[i].data.ipdata.addrListen).c_str());
 			txParam.SetAttribVal(strtmpKey, TEXT("listenIp"), tmpVal);
-			tmpVal.SetVal(Addr2String(vProbes[i].data.ipdata.addrLocal).c_str());
-			txParam.SetAttribVal(strtmpKey, TEXT("localIp"), tmpVal);
+
 		}
 
 	}
@@ -234,12 +252,9 @@ BOOL ST_TASKRISERCONFIG::FromString( const CString& strIn )
 				if(addr.sin_family == AF_INET)
 				{
 					ST_PROBERDATA tmpdata;
+					tmpdata.nType = nType;
 					tmpdata.strProberName = vList[i];
 					tmpdata.data.ipdata.addrListen = addr;
-					if (!strIPLocal.IsEmpty())
-					{
-						tmpdata.data.ipdata.addrLocal = GetAddrFromStr(strIPLocal);
-					}
 					vProbes.push_back(tmpdata);
 				}
 			}
@@ -262,6 +277,12 @@ BOOL ST_TASKDISPATCHCONFIG::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("nSvrID"), txVal);
 	txVal.SetVal(nMaster);
 	txParam.SetAttribVal(NULL, TEXT("nMaster"), txVal);
+	
+	txVal.SetVal(strIpActorHolder);
+	txParam.SetAttribVal(NULL, TEXT("IpActorHolder"), txVal);
+	txVal.SetVal(strIpMaster);
+	txParam.SetAttribVal(NULL, TEXT("IpMaster"), txVal);
+
 
 	txParam.UpdateData();
 	strOut = txParam;
@@ -274,6 +295,9 @@ BOOL ST_TASKDISPATCHCONFIG::FromString( const CString& strIn )
 	txParam.GoIntoKey(EK_TASKDISPATCHCONFIG);
 	nSvrID = txParam.GetAttribVal(NULL, TEXT("nSvrID")).GetAsInt(INVALID_ID);
 	nMaster = txParam.GetAttribVal(NULL, TEXT("nMaster")).GetAsInt(INVALID_ID);
+	strIpActorHolder = txParam.GetAttribVal(NULL, TEXT("IpActorHolder")).GetAsString();
+	strIpMaster = txParam.GetAttribVal(NULL, TEXT("IpMaster")).GetAsString();
+
 	return TRUE;
 }
 
@@ -350,6 +374,7 @@ BOOL ST_TASKREPORT::ToString( CString& strOut )
 	CString strParam;
 	strParam.Format(EDOC_TASKHEADERFMT, embxmltype_taskReport, TEXT(""));
 	CTxParamString txParam(strParam);
+	txParam.GoIntoKey(EK_MAIN);
 	CTxStrConvert val;
 	txParam.SetElemVal(EK_TASKREPORT, val);
 	txParam.GoIntoKey(EK_TASKREPORT);
@@ -399,6 +424,7 @@ BOOL ST_ACTORSTATE::ToString( CString& strOut )
 	CString strParam;
 	strParam.Format(EDOC_TASKHEADERFMT, embxmltype_actorState, TEXT(""));
 	CTxParamString txParam(strParam);
+	txParam.GoIntoKey(EK_MAIN);
 	CTxStrConvert val;
 	txParam.SetElemVal(EK_ACTORSTATE, val);
 	txParam.GoIntoKey(EK_ACTORSTATE);
@@ -466,15 +492,10 @@ BOOL ST_EMBXMLMAININFO::ToString( CString& strOut )
 BOOL ST_EMBXMLMAININFO::FromString( const CString& strIn )
 {
 	CTxParamString txParam(strIn);
-	int type = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
-	if (type != embxmltype_actorState)
-	{
-		ASSERT(FALSE);
-		return FALSE;
-	}
+	nType = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+	ASSERT(nType != -1);
 	txParam.GoIntoKey(EK_MAIN);
 	ver = txParam.GetAttribVal(NULL, TEXT("ver")).GetAsInt(INVALID_ID);
-	type = txParam.GetAttribVal(NULL, TEXT("type")).GetAsInt(embxmltype_none);
 	guid = txParam.GetAttribVal(NULL, TEXT("guid")).GetAsString();
 
 	return TRUE;
@@ -496,8 +517,38 @@ BOOL ST_SVRACTIVEINFO::FromString( const CString& strIn )
 		return FALSE;
 	}
 
-	nActive = txParam.GetAttribVal(NULL, TEXT("active")).GetAsInt(embxmltype_none);
-	nMaster = txParam.GetAttribVal(NULL, TEXT("master")).GetAsInt(embxmltype_none);
+	nActive = txParam.GetAttribVal(EK_MAIN, TEXT("active")).GetAsInt(embxmltype_none);
+	nMaster = txParam.GetAttribVal(EK_MAIN, TEXT("master")).GetAsInt(embxmltype_none);
 
 	return TRUE;
+}
+
+BOOL ST_MD5TASKINFO::ToString( CString& strOut )
+{	
+	strOut.Format(EDOC_WORKMD5FMT, strFileToCheck, strFileToWriteResult);
+	return TRUE;
+}
+
+BOOL ST_MD5TASKINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	strFileToCheck = txParam.GetAttribVal(EK_WORKMD5, EA_MD5DES).GetAsString();
+	strFileToWriteResult = txParam.GetAttribVal(EK_WORKMD5, EA_MD5WRITETO).GetAsString();
+	return TRUE;
+}
+
+BOOL ST_WORKERREPORT::ToString( CString& strOut )
+{
+	strOut.Format(EDOC_WORKREPORTFMT, nPercent, code);
+	return TRUE;
+
+}
+
+BOOL ST_WORKERREPORT::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	nPercent = txParam.GetAttribVal(EK_WORKREPORT, EA_REPORTPERCENT).GetAsInt(0);
+	code = txParam.GetAttribVal(EK_WORKREPORT, EA_REPORTCODE).GetAsInt(0);
+	return TRUE;
+
 }

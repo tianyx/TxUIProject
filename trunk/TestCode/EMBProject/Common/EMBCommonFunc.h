@@ -3,6 +3,8 @@
 #include "EmbStructDef.h"
 
 BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut);
+BOOL TxLoadPluginVC6(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut);
+
 BOOL TxUnloadPlugin(HMODULE hModuleIn);
 
 

@@ -6,6 +6,7 @@
 #include "EmbTest.h"
 #include "EmbTestDlg.h"
 #include "TxParamString.h"
+#include "EmbStructDef.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -175,6 +176,11 @@ void CEmbTestDlg::OnBnClickedButton1()
 
 void CEmbTestDlg::OnBnClickedButton2()
 {
+	ST_TASKREPORT report;
+	CString strREt;
+	report.ToString(strREt);
+
+
 	// TODO: 在此添加控件通知处理程序代码
 	CString strParm;
 	strParm = TEXT("\"f:\\111\\*.*\" \"f:\\222\\*.*\" /S /C /Y");

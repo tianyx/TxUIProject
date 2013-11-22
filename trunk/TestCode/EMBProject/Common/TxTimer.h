@@ -23,11 +23,15 @@ struct ST_TXTIMERDATA
 	HANDLE hTimer;
 	LPARAM lparam;
 	ITxTimerCallbackInterface* pCallback;
+	HANDLE hEventGo;
+	UINT nflag;
 	ST_TXTIMERDATA()
 	{
 		dwEnvent = 0;
 		hTimer = NULL;
 		lparam = NULL;
+		hEventGo =NULL;
+		nflag = 0;
 	}
 };
 

@@ -12,6 +12,7 @@
 #include "IEMBBaseInterface.h"
 #include "EmbStructDef.h"
 #include "AutoCritSec.h"
+#include "EMBMessageDef.h"
 using namespace EMB;
 struct ST_SUBTASKDATA
 {
@@ -55,6 +56,7 @@ private:
 
 	BOOL LunchTaskDll(int nTaskType);
 	BOOL UnLoadTaskDll();
+	HRESULT LaunchTask();
 
 private:
 	HANDLE CreateMappingFile();

@@ -17,7 +17,7 @@ public:
 // 		InitializeCriticalSection(&m_CritSec);
 // 	}
 
-#ifdef DEBUG
+#ifdef _DEBUG
 public:
 	DWORD   m_currentOwner;
 	DWORD   m_lockCount;

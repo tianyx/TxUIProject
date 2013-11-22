@@ -47,8 +47,9 @@ BOOL WriteMarkupString(CMarkup& markDoc, ST_MARKITEM& itemIn)
 		markDoc.AddAttrib(itb->first, itb->second);
 	}
 
-	MAPKEYVALUE::iterator itkvb = itemIn.mapChildItem.begin();
-	MAPKEYVALUE::iterator itkve = itemIn.mapChildItem.end();
+	MAPKEYVALUE& mapchild = itemIn.mapChildItem;
+	MAPKEYVALUE::iterator itkvb = mapchild.begin();
+	MAPKEYVALUE::iterator itkve = mapchild.end();
 	for (; itkvb != itkve; ++itkvb)
 	{
 		markDoc.IntoElem();
@@ -69,6 +70,7 @@ CTxParamString::CTxParamString(LPCTSTR szParamIn)
 CTxParamString::CTxParamString(const ST_MARKITEM& kvDataIn)
 {
 	m_kvData = kvDataIn;
+	m_vecCurrPath.push_back(TEXT("."));
 	m_strRealString = "";
 	m_bInited = TRUE;
 }
@@ -139,6 +141,10 @@ BOOL CTxParamString::InitLayout()
 		return FALSE;
 	}
 	m_bInited = FindMarkItem(markDoc, m_kvData);
+	if (m_vecCurrPath.size() == 0)
+	{
+		m_vecCurrPath.push_back(TEXT("."));
+	}
 	return TRUE;
 }
 
@@ -149,6 +155,8 @@ void CTxParamString::Clear()
 	m_kvData.bIsPath = TRUE;
 	m_kvData.strKey = TEXT(".");
 	m_kvData.strVal = "";
+	m_vecCurrPath.clear();
+	m_vecCurrPath.push_back(TEXT("."));
 
 }
 
@@ -373,7 +381,15 @@ BOOL CTxParamString::SetSubNodeString( LPCTSTR szRoot, CTxParamString& subParamI
 			ST_MARKITEM* pItem =FindNode(tmpPath);
 			if (pItem)
 			{
-				pItem->mapChildItem.insert(subParamIn.m_kvData.mapChildItem.begin(), subParamIn.m_kvData.mapChildItem.end());
+				MAPKEYVALUE& mapchild = pItem->mapChildItem;
+				MAPKEYVALUE& subChild = subParamIn.m_kvData.mapChildItem;
+				MAPKEYVALUE::iterator itcb = subChild.begin();
+				MAPKEYVALUE::iterator itce = subChild.end();
+				for (; itcb != itce; ++itcb)
+				{
+					mapchild[itcb->first] = itcb->second;
+				}
+				
 				m_bInited = TRUE;
 				bRet = TRUE;
 			}
@@ -400,6 +416,7 @@ BOOL CTxParamString::GoIntoKey( LPCTSTR szKey )
 		m_vecCurrPath.push_back(TEXT("."));
 	}
 	m_vecCurrPath.push_back(szKey);
+	return TRUE;
 }
 
 BOOL CTxParamString::OutofKey()
@@ -416,4 +433,39 @@ BOOL CTxParamString::OutofKey()
 
 
 
+#ifdef VC6DEFINE
 
+ST_CHILDMAP::ST_CHILDMAP()
+	{
+		pChildItem = new MAPKEYVALUE;
+	}
+
+ST_CHILDMAP::ST_CHILDMAP( ST_CHILDMAP& other )
+	{
+		pChildItem = new MAPKEYVALUE;
+		*pChildItem = *other.pChildItem;
+	}
+
+ST_CHILDMAP& ST_CHILDMAP::operator=(const ST_CHILDMAP& other )
+{
+	
+		if (&other == this)
+		{
+			return *this;
+		}
+		*pChildItem = *other.pChildItem;
+	
+}
+
+ST_MARKITEM& ST_CHILDMAP::operator[]( const CString& key )
+{
+	return (*pChildItem)[key];
+}
+
+void ST_CHILDMAP::clear()
+{
+	(*pChildItem).clear();
+}
+
+
+#endif // VC6DEFINE

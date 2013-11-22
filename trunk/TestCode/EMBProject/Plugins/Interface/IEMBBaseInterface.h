@@ -9,7 +9,15 @@
 #pragma once
 #include "EMBGuid.h"
 #include <vector>
+
+#ifdef VC6PREDEF
+typedef int EXCUTORID;
+typedef int ACTORID;
+typedef int DISPATCHID;
+#else
 #include "EMBDefine.h"
+#endif // VC6PREDEF
+
 using namespace std;
 typedef CString CTaskString;
 
@@ -29,12 +37,12 @@ enum ENUM_PLUGINTYPE
 
 enum ENUM_SUBTYPE
 {
-	SubType_None		= 0x0,
-	SubType_FileTrans	= 0x1,
-	SubType_FileCodec	= 0x2,
-	SubType_FileCheck	= 0x4,
-	SubType_MD5Check	= 0x8,
-	SubType_WorkSample	=0x10
+	SubType_None		= 0,
+	SubType_FileTrans	= 1,
+	SubType_FileCodec	= 2,
+	SubType_MediaCheck	= 4,
+	SubType_MD5Check	= 8,
+	SubType_WorkSample	=16,
 
 };
 
@@ -101,6 +109,10 @@ typedef std::vector<ST_PluginInfo> VECPLUGINFOS;
 interface IPluginBaseInterface :virtual public ITxUnkown
 {
 	virtual HRESULT QueryPluginInfo(VECPLUGINFOS& vInfoOut) = 0;
+};
+interface IPluginBaseInterfaceVC6 :virtual public ITxUnkown
+{
+	virtual HRESULT QueryPluginInfo(ST_PluginInfo& infoOut) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////

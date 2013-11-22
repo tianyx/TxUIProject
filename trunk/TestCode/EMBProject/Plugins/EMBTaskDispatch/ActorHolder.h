@@ -73,7 +73,7 @@ public:
 	BOOL SetActorCallbackInterface(IEMBActorHolderCallBackInterface* pCallIn);
 	BOOL HasActor(const ACTORID actorId);
 
-	virtual HRESULT SetSvrState(int nStateIn, int nMaster);
+	virtual HRESULT SetSvrState(int nActiveStateIn, int nMaster);
 	
 
 private:

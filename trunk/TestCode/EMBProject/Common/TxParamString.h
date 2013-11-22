@@ -15,8 +15,75 @@ struct ST_MARKITEM;
 typedef map<CString, CString> MAPKEYATTRIB;
 typedef map<CString, ST_MARKITEM> MAPKEYVALUE;
 
+
+
+#ifdef VC6DEFINE
+struct ST_CHILDMAP
+{
+	MAPKEYVALUE* pChildItem;
+	ST_CHILDMAP();
+
+	~ST_CHILDMAP()
+	{
+
+	}
+	ST_CHILDMAP(ST_CHILDMAP& other);
+
+
+	ST_CHILDMAP& operator =(const ST_CHILDMAP& other);
+
+
+	operator MAPKEYVALUE&(){return *pChildItem;}
+	ST_MARKITEM& operator [](const CString& key);
+//  	MAPKEYVALUE::iterator begin(){return (*pChildItem).begin();}
+//  	MAPKEYVALUE::iterator end(){return (*pChildItem).end();}
+	void clear();
+	//void insert(MAPKEYVALUE::iterator& itb, MAPKEYVALUE::iterator& ite){return (*pChildItem).insert(itb, ite);}
+};
 struct ST_MARKITEM
 {
+	BOOL bIsPath;
+	CString strKey;
+	CString strVal;
+	ST_CHILDMAP mapChildItem;
+	MAPKEYATTRIB mapAttrib;
+public:
+	ST_MARKITEM()
+	{
+		bIsPath = FALSE;
+	}
+	
+	ST_MARKITEM(const ST_MARKITEM& other)
+	{
+		if (&other == this)
+		{
+			return;
+		}
+		bIsPath = other.bIsPath;
+		strKey = other.strKey;
+		strVal = other.strVal;
+		mapChildItem = other.mapChildItem;
+		mapAttrib = mapAttrib;
+	}
+	ST_MARKITEM& operator =(const ST_MARKITEM& other)
+	{
+		if (&other == this)
+		{
+			return *this;
+		}
+		bIsPath = other.bIsPath;
+		strKey = other.strKey;
+		strVal = other.strVal;
+		mapChildItem = other.mapChildItem;
+		mapAttrib = mapAttrib;
+	}
+	
+};
+
+#else
+struct ST_MARKITEM
+{
+
 	BOOL bIsPath;
 	CString strKey;
 	CString strVal;
@@ -27,6 +94,8 @@ struct ST_MARKITEM
 		bIsPath = FALSE;
 	}
 };
+#endif // _DEBUG
+
 
 
 class CTxParamString 

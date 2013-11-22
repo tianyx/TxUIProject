@@ -111,13 +111,15 @@ CString ANSI2CStr( const string& szIn )
 
 std::string CStr2Ansi( CString& strIn )
 {
-	wstring wszTmp = strIn.GetBuffer();
+	wstring wszTmp = strIn.LockBuffer();
+	strIn.UnlockBuffer();
 	return W2Ansi(wszTmp);
 }
 #else
 std::wstring CStr2W(CString& strIn)
 {
-	string szTmp = strIn.GetBuffer();
+	string szTmp = strIn.LockBuffer();
+	strIn.UnlockBuffer();
 	return Ansi2W(szTmp);
 }
 

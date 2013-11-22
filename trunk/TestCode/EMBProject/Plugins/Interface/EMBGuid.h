@@ -6,13 +6,17 @@ extern const GUID GuidEMBPlugin_PTaskDispatch;
 
 extern const GUID GuidEMBPlugin_PTaskStorage;
 extern const GUID GuidEMBPlugin_PActor;
-
+extern const GUID GuidEMBPlugin_PWorkerSample;
+extern const GUID GuidEMBPlugin_PWorkerMediaCheck;
+extern const GUID GuidEMBPlugin_PWorkerMD5;
 
 
 //define plugin interface
 
 extern const GUID GuidEMBPlugin_IUnknow;
 extern const GUID GuidEMBPlugin_IBase;
+extern const GUID GuidEMBPlugin_IBaseVC6;
+
 extern const GUID GuidEMBPlugin_IConfig;
 
 

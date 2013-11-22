@@ -31,22 +31,23 @@
 #define EMBERR_SUBTASKTYPEERR	0x800A0008
 #define EMBERR_SUBTASKTEXT	0x800A0009
 #define EMBERR_SUBTASKLOADDLL	0x800A000a
+#define EMBERR_WORKERBUSY	0x800A000B
+#define EMBERR_FILEACCESS	0x800A000C
 
 //////////////////////////////////////////////////////////////////////////
 //tcp msg  trans type
 #define embmsgstate_Q 1
 #define embmsgstate_A 2
 
-#define embmsgtype_None				10
-#define embmsgtype_TaskIncoming		11
+#define embmsgtype_None					10
+#define embmsgtype_TaskIncoming			11
 #define embmsgtype_ActorReportGuid		12
-#define embmsgtype_ActorToDispatchMsg			13
+#define embmsgtype_ActorToDispatchMsg	13
 
-#define embmsgtype_ActorToDispath		14
 #define embmsgtype_ExcutorToActorMsg	15
 #define embmsgtype_ActorToExcutorMsg	16
-#define embmsgtype_DispatchToActorMsg			17
-#define embmsgtype_max				100
+#define embmsgtype_DispatchToActorMsg	17
+#define embmsgtype_max					100
 //////////////////////////////////////////////////////////////////////////
 #define embxmltype_none				0
 #define embxmltype_task				1
@@ -102,6 +103,8 @@
 #define embSvrState_active	 1
 #define embSvrState_deactive 0
 //////////////////////////////////////////////////////////////////////////
+#define embStorageType_mem	0
+#define embStorageType_db	1
 //////////////////////////////////////////////////////////////////////////
 #define embTaskproberType_tcp 1
 
@@ -114,9 +117,10 @@
 #define MSG_EMBEXCUTORREG WM_USER+1890
 #define MSG_EMBKILLEXCUTOR WM_USER+1891
 #define MSG_EMBEXCUTORREGED WM_USER+1892
-#define MSG_EMBEXCUTOREXIT WM_USER+1893
+#define MSG_EMBEXCUTORQUIT WM_USER+1893
 
-#define MSG_EMBMSGMAX	WM_USER +1700
+
+#define MSG_EMBMSGMAX	WM_USER +2000
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -125,67 +129,3 @@ typedef int EXCUTORID;
 typedef int ACTORID;
 typedef int DISPATCHID;
 
-struct ST_EMBTRANSMSG :public ST_TXMSGBASE
-{
-	CString strGuid;
-	CString strData;
-	ST_EMBTRANSMSG(int nMsgTypeIn)
-	{
-		nMsgType = nMsgTypeIn;
-	}
-
-	virtual BOOL operator <<( CTxSerialize& ar) const
-	{
-		ST_TXMSGBASE::operator <<(ar);
-		ar << strGuid;
-		ar << strData;
-		return TRUE;
-	}
-
-	virtual BOOL operator >>(CTxSerialize& ar)
-	{
-		ST_TXMSGBASE::operator >>(ar);
-		ar >> strGuid;
-		ar >> strData;
-		return TRUE;
-	}
-};
-
-class CEMBAutoBuffer
-{
-public:
-	CEMBAutoBuffer(ST_EMBTRANSMSG& msgIn)
-	{
-		//calc the needed size
-#ifdef _UNICODE
-		m_nBuffSize = 256+(msgIn.strGuid.GetLength()+msgIn.strData.GetLength())*2;
-#else
-		m_nBuffSize = 256+msgIn.strGuid.GetLength()+msgIn.strData.GetLength();
-
-#endif
-		m_pBuff = new char[m_nBuffSize];
-
-	}
-
-	CEMBAutoBuffer(int nLen)
-	{
-		m_pBuff = new char[nLen];
-	}
-
-
-	~CEMBAutoBuffer()
-	{
-		if (m_pBuff)
-		{
-			delete[] m_pBuff;
-			m_pBuff = NULL;
-		}
-	}
-
-	operator char*(){return m_pBuff;}
-	operator LONG_PTR (){return (LONG_PTR)m_pBuff;}
-	int GetSize(){return m_nBuffSize;}
-private:
-	int m_nBuffSize;
-	char* m_pBuff;
-};

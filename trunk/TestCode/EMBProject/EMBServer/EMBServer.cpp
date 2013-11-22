@@ -6,6 +6,7 @@
 #include "EMBServer.h"
 #include "EMBServerDlg.h"
 #include "MainDef.h"
+#include "FGlobal.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -59,6 +60,8 @@ BOOL CEMBServerApp::InitInstance()
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+	
+	MACRO_CREATEOUTPUTCONSOLE
 
 	GetTxLogMgr()->AddNewLogFile(LOGKEYMAIN, "EMBServer.log");
 
@@ -103,5 +106,6 @@ int CEMBServerApp::ExitInstance()
 	UnInitServer();
  	UnLoadPluginManager();
 	ReleaseTxLogMgr();
+	MACRO_CREATEOUTPUTCONSOLE
 	return CWinAppEx::ExitInstance();
 }

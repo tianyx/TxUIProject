@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edoc_main>
+	<TaskActorConfig actorId = "1" addrMain="192.168.1.104:5001" addrSlave = "192.168.1.104:5002" nExcutorMinId = "1" nExcutorMaxId = "100" >
+	</TaskActorConfig>
+</edoc_main>

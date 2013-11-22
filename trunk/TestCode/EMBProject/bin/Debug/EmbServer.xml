@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edoc_main>
+	<TaskRiserConfig proberList="prober1">
+		<prober1 type="1" listenIp="192.168.1.104:4001"/>
+	</TaskRiserConfig>
+	<TaskStorageConfig type = "1">
+		
+	</TaskStorageConfig>
+	<TaskDispatchConfig nSvrID = "1" nMaster = "1" IpActorHolder = "192.168.1.104:5001" IpMaster = "192.168.1.104:6001">
+	</TaskDispatchConfig>
+	<TaskActorConfig actorId = "1" addrMain="192.168.1.104:5001" addrSlave = "192.168.1.104:5002" nExcutorMinId = "1" nExcutorMaxId = "100" >
+	</TaskActorConfig>
+</edoc_main>

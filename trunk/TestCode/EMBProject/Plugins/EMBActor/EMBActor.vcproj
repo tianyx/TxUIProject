@@ -5,6 +5,10 @@
 	Name="EMBActor"
 	ProjectGUID="{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}"
 	RootNamespace="EMBActor"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -103,12 +107,13 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)\BuildLog.htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -131,7 +136,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_AFXEXT"
+				AdditionalIncludeDirectories="..\interface; ..\..\common"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;_AFXEXT;_AFXEXT;EMBPLUGIN_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
@@ -152,12 +158,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\EMBActor.def"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(SolutionDir)pdb\$(ConfigurationName)\$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary="$(SolutionDir)lib\$(ConfigurationName)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
