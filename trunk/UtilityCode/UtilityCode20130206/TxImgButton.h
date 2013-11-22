@@ -11,8 +11,7 @@
 
 
 // CTxImgButton
-#include "GdiPlusNewHeader.h"
-#include "preDef.h"
+#include "GDIDrawFunc.h"
 #include <vector>
 using namespace Gdiplus;
 
@@ -46,7 +45,7 @@ struct ST_TXBTNINFO
 		nBmpHeight = 0;
 		nSubBmpWidth = 0;
 		nStretchType = TXBMP_STRETCH_NONE;
-		rcEdge = g_globalInfo.txDrawParam.rcStretchEdge;
+		rcEdge = CRect(5,5,5,5);
 		m_pFont = NULL;
 	}
 

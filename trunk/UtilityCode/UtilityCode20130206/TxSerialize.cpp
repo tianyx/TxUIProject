@@ -291,7 +291,7 @@ BOOL CTxSerialize::operator<<( const SOCKADDR_IN& data )
 }
 
 
-BOOL CTxSerialize::Serialize( TCHAR* data, LONG& szlenInOut )
+BOOL CTxSerialize::Serialize( char* data, LONG& szlenInOut )
 {
 	BOOL bRet = TRUE;
 	if (m_bOut)
@@ -299,7 +299,7 @@ BOOL CTxSerialize::Serialize( TCHAR* data, LONG& szlenInOut )
 		//write out
 		LONG nLen = 0;
 		operator>>(nLen);
-		if (nLen > (szlenInOut * sizeof(TCHAR)))
+		if (nLen > (szlenInOut * sizeof(char)))
 		{
 			ASSERT(FALSE);
 			bRet = FALSE;
@@ -314,7 +314,7 @@ BOOL CTxSerialize::Serialize( TCHAR* data, LONG& szlenInOut )
 	else
 	{
 		//save in
-		LONG nLen = szlenInOut * sizeof(TCHAR);
+		LONG nLen = szlenInOut * sizeof(char);
 		AutoIncreaseBuffer(nLen);
 		operator<<(nLen);
 		if (nLen > 0)

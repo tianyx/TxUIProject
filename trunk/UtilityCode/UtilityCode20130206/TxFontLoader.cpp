@@ -9,13 +9,50 @@
 *********************************************************************/
 #include "StdAfx.h"
 #include "TxFontLoader.h"
+#include "shlwapi.h"
+#pragma comment(lib, "shlwapi.lib")
 
-CTxFontLoader::CTxFontLoader(void)
+CFont	g_fontBase;
+LOGFONT	g_logfont;
+
+
+CTxFontLoader::CTxFontLoader()
 {
+	if (::SystemParametersInfo(SPI_GETICONTITLELOGFONT,
+		sizeof (g_logfont), &g_logfont, 0))
+	{
+		g_logfont.lfHeight = -12;
+		//		VERIFY(g_fontBase.CreateFontIndirect(&logfont));
+		//		logfont.lfHeight = -30;
+		//		VERIFY(g_fontBig.CreateFontIndirect(&logfont));
+
+	}
+	else
+	{
+		memset(&g_logfont, 0, sizeof(g_logfont));
+		g_logfont.lfHeight = -12;
+		g_logfont.lfCharSet = DEFAULT_CHARSET;
+		g_logfont.lfOutPrecision = OUT_DEFAULT_PRECIS;
+		g_logfont.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+		g_logfont.lfQuality = DEFAULT_QUALITY;
+		g_logfont.lfPitchAndFamily = DEFAULT_PITCH;
+		StrCpy(g_logfont.lfFaceName, TEXT("system"));
+		//VERIFY(g_fontBase.CreateFontIndirect(&g_logfont));
+		//VERIFY(g_fontBig.CreateFontIndirect(&g_logfont));
+
+	}
+
+	CString strfontLanTxt= TEXT("Arial");
+	StrCpy(g_logfont.lfFaceName, strfontLanTxt);
+	g_fontBase.CreateFontIndirect(&g_logfont);
+
+	AddFont(g_logfont);
+
 }
 
-CTxFontLoader::~CTxFontLoader(void)
+CTxFontLoader::~CTxFontLoader()
 {
+	Release();
 }
 
 int CTxFontLoader::AddFont( LOGFONT& lf )

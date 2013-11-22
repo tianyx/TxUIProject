@@ -23,6 +23,7 @@ Log::Log(int mode, int level, LPCTSTR filename, bool append)
     m_todebug = false;
     m_toconsole = false;
     m_tofile = false;
+	m_bAutoAddTimeToFileName = false;
 	InitializeCriticalSection( &m_criLock );
 	
 	SetLevel( level );
@@ -66,6 +67,20 @@ int Log::GetLevel() {
 	return m_level;
 }
 
+BOOL BackFile(CString& strFileIn)
+{
+	CString strBackFile = strFileIn;
+	int nPos = strFileIn.ReverseFind('.');
+	if (nPos)
+	{
+		CTime tm(time(NULL));
+		CString strTime = tm.Format(TEXT("%Y%m%d-%H%M%S"));
+		strFileIn.Insert(nPos, strTime);
+		return CopyFile(strFileIn, strBackFile, FALSE);
+	}
+	return FALSE;
+}
+
 void Log::SetFile(LPCTSTR filenameIn, bool append) 
 {
 	if( !filenameIn )
@@ -77,13 +92,17 @@ void Log::SetFile(LPCTSTR filenameIn, bool append)
 
 	m_strOrgFileName = filenameIn;
 	CString strFile = filenameIn;
-	int nPos = strFile.ReverseFind('.');
-	if (nPos)
+	if (m_bAutoAddTimeToFileName)
 	{
-		CTime tm(time(NULL));
-		CString strTime = tm.Format(TEXT("%Y%m%d-%H%M%S"));
-		strFile.Insert(nPos, strTime);
+		int nPos = strFile.ReverseFind('.');
+		if (nPos)
+		{
+			CTime tm(time(NULL));
+			CString strTime = tm.Format(TEXT("%Y%m%d-%H"));
+			strFile.Insert(nPos, strTime);
+		}
 	}
+	
 	LPCTSTR filename =strFile;
 
 
@@ -101,7 +120,7 @@ void Log::SetFile(LPCTSTR filenameIn, bool append)
 		if (tmpfile)
 		{
 			DWORD lfSize = GetFileSize(tmpfile, NULL);
-			if (lfSize > 1024*1024)
+			if (lfSize > 1024*1024*10)
 			{
 				bOverSized = true;
 			}
@@ -109,16 +128,23 @@ void Log::SetFile(LPCTSTR filenameIn, bool append)
 		}
 
 	}
+	CString strFileNew;
     if (!append || bOverSized)
 	{
 		// Build the backup filename
-		TCHAR backupfilename[MAX_PATH];
-		lstrcpy(backupfilename, filename );
-		lstrcat(backupfilename, _TEXT(".bak"));
- 		// Attempt the move and replace any existing backup
-		// Note that failure is silent - where would we log a message to? ;)
- 		DeleteFile(backupfilename);
- 		MoveFile(filename, backupfilename);
+		BOOL bSucBack = FALSE;
+		if(BackFile(strFile))
+		{
+			bSucBack = DeleteFile(filename);
+		}
+		if (!bSucBack)
+		{
+			//back file failed
+			//create new filename
+			strFileNew = filename;
+			strFileNew.Format(TEXT("%s+%d"), filename, rand(), TEXT(".bak"));
+			filename = strFileNew;
+		}
 	}
 
     hlogfile = CreateFile(
@@ -229,7 +255,7 @@ void Log::ReallyPrint(LPCTSTR format, va_list ap)
 		{
 			CloseFile();
 			CString strNewFile = m_strOrgFileName;
-			SetFile(strNewFile);
+			SetFile(strNewFile, false);
 		}
 
 	}

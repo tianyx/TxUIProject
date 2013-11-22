@@ -9,9 +9,20 @@
 *********************************************************************/
 #pragma once
 #include "GdiPlusNewHeader.h"
-#include "preDef.h"
 using namespace Gdiplus;
 //
+
+extern CRect g_rcDefStretchEdge;
+
+enum ENUM_TXBMPSTRETCHTYPE
+{
+	TXBMP_STRETCH_NONE	= 0,
+	TXBMP_STRETCH_LR	= 1,
+	TXBMP_STRETCH_TB	= 2,
+	TXBMP_STRETCH_MID_LR =3,
+	TXBMP_STRETCH_MID_TB =4,
+	TXBMP_STRETCH_MID_LRTB	= 5
+};
 
 //check if rc1 in rc2
 BOOL IsInRect(CRect& rcSmall, CRect& rcBig);
@@ -48,3 +59,6 @@ void GPDrawStretchImage(Graphics& gc, Bitmap* pImage, CRect& rcDes, CRect* prcIm
 
 //FillSlashFrame
 void GPCreateFlashFrame(Bitmap& bmpSrc, CRect& rcBegin, CRect& rcEnd, Bitmap& bmpDes, CRect& rcDes, double dPercent);
+
+//gdiplus create  roundrect path
+void GPCreateRoundRect(Rect& rcIn, int nRidum, GraphicsPath& pathOut);

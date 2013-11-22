@@ -59,39 +59,39 @@ std::string W2Ansi( const wstring& wszIn )
 	return szRet;
 }
 
-void LTrim( wstring& wsInOut )
+void LTrim( txstring& wsInOut )
 {
-	size_t nPos = wsInOut.find_first_not_of(L" \n\r\t");
-	if (nPos!= wstring::npos)
+	size_t nPos = wsInOut.find_first_not_of(TEXT(" \n\r\t"));
+	if (nPos!= txstring::npos)
 	{
 		wsInOut = wsInOut.substr(nPos); 
 	}
 }
 
-void RTrim( wstring& wsInOut )
+void RTrim( txstring& wsInOut )
 {
-	size_t nPos = wsInOut.find_last_not_of(L" \n\r\t");
-	if (nPos!= wstring::npos)
+	size_t nPos = wsInOut.find_last_not_of(TEXT(" \n\r\t"));
+	if (nPos!= txstring::npos)
 	{
 		wsInOut = wsInOut.substr(0, nPos+1); 
 	}
 }
-void Trim( wstring& wsInOut )
+void Trim( txstring& wsInOut )
 {
 	RTrim(wsInOut);
 	LTrim(wsInOut); 
 }
 
-void RTrim( wstring& wsInOut , LPCWSTR lpChars)
+void RTrim( txstring& wsInOut , TCHAR* lpChars)
 {
-	if (lpChars == NULL || lpChars[0] == '\0')
+	if (lpChars == NULL)
 	{
 		return;
 	}
 	size_t nPos = wsInOut.find_last_not_of(lpChars);
-	if (nPos!= wstring::npos)
+	if (nPos!= txstring::npos)
 	{
-		wsInOut.substr(0,nPos); 
+		wsInOut = wsInOut.substr(0,nPos); 
 	}
 }
 
@@ -111,13 +111,15 @@ CString ANSI2CStr( const string& szIn )
 
 std::string CStr2Ansi( CString& strIn )
 {
-	wstring wszTmp = strIn.GetBuffer();
+	wstring wszTmp = strIn.LockBuffer();
+	strIn.UnlockBuffer();
 	return W2Ansi(wszTmp);
 }
 #else
 std::wstring CStr2W(CString& strIn)
 {
-	string szTmp = strIn.GetBuffer();
+	string szTmp = strIn.LockBuffer();
+	strIn.UnlockBuffer();
 	return Ansi2W(szTmp);
 }
 
@@ -128,3 +130,214 @@ CString W2CStr( const wstring& wszIn )
 }
 
 #endif // UNICODE
+
+
+
+BOOL SplitteStrings( const char* szIn , vector<string>& vOut, char chSeperator/* = ','*/)
+{
+	string szData = szIn;
+	if (szData.size() == 0)
+	{
+		return FALSE;
+	}
+
+	size_t nBegin = 0;
+	for (size_t i = 0; i < szData.size();++i)
+	{
+		if (szData[i] == chSeperator)
+		{
+			if (i > nBegin)
+			{
+				std::string tmp = szData.substr(nBegin, i - nBegin);
+				Trim(tmp);
+				if (tmp.size() != 0)
+				{
+					vOut.push_back(tmp);
+				}
+			}
+			nBegin = i+1;
+		}		
+	}
+
+	if (nBegin < szData.size())
+	{
+		vOut.push_back(szData.substr(nBegin, szData.size() - nBegin));
+	}
+	return TRUE;
+}
+
+
+
+
+
+
+int CTxStrConvert::GetAsInt( int nDefault /*= 0*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return nDefault;
+	}
+
+	int nRet  = nDefault;
+	int nSuc = sscanf_s(m_szParam, TEXT("%d"), &nRet);
+	return nSuc> 0? nRet:nDefault;
+}
+
+
+int CTxStrConvert::GetAsUInt( unsigned int nDefault /*= 0*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return nDefault;
+	}
+
+	int nRet  = nDefault;
+	int nSuc = sscanf_s(m_szParam, TEXT("%u"), &nRet);
+	return nSuc> 0? nRet:nDefault;
+}
+
+INT64 CTxStrConvert::GetAsInt64( INT64 nDefault /*= 0*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return nDefault;
+	}
+
+	INT64 nRet = nDefault;
+	int nSuc = sscanf_s(m_szParam, TEXT("%I64d"), &nRet);
+	return nSuc> 0? nRet:nDefault;nDefault;
+}
+
+bool CTxStrConvert::GetAsBOOL( bool bDefault /*= FALSE*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return bDefault;
+	}
+
+	CString strTmp(m_szParam);
+	strTmp.MakeLower();
+	BOOL bFind = FALSE;
+	int nRet = 0;
+	if (strTmp.Compare("true") == 0 )
+	{
+		bFind = TRUE;
+		nRet = 1;
+	}
+	else if (strTmp.Compare("false") == 0)
+	{
+		bFind = TRUE;
+		nRet = 0;
+	}
+
+	if (bFind)
+	{
+		return nRet != 0;
+	}
+	else
+	{
+		int nRet  = 0;
+		int nSuc = sscanf_s(m_szParam, TEXT("%d"), &nRet);
+		return nSuc> 0? (nRet != 0):bDefault;
+	}
+}
+
+CString CTxStrConvert::GetAsString( LPCTSTR szDefault /*= "" */ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return CString(szDefault);
+	}
+	else
+	{
+		return m_szParam;
+	}
+
+}
+
+
+BOOL CTxStrConvert::GetAsStringArray( VECSTRINGS& vOut, TCHAR separator /*= ','*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return FALSE;
+	}
+
+	std::vector<std::string> vecstr;
+	SplitteStrings(m_szParam, vecstr, separator);
+	for (size_t i = 0; i < vecstr.size(); ++i)
+	{
+		vOut.push_back(CString(vecstr[i].c_str()));
+	}
+	return TRUE;
+}
+
+void CTxStrConvert::SetVal( unsigned int nVal )
+{
+	m_szParam.Format(TEXT("%u"), nVal);
+}
+
+void CTxStrConvert::SetVal( int nVal )
+{
+	m_szParam.Format(TEXT("%d"), nVal);
+}
+
+void CTxStrConvert::SetVal( INT64 nVal )
+{
+	m_szParam.Format(TEXT("%I64d"), nVal);
+}
+
+void CTxStrConvert::SetVal( bool bVal )
+{
+	m_szParam.Format(TEXT("%d"), bVal? 1:0);
+}
+
+void CTxStrConvert::SetVal( LPCTSTR szVal )
+{
+	m_szParam = szVal;
+}
+
+void CTxStrConvert::SetVal( VECSTRINGS& vVal )
+{
+	m_szParam.Empty();
+	for (size_t i = 0; i < vVal.size(); ++i)
+	{
+		if (i != 0)
+		{
+			m_szParam += TEXT(",");
+		}
+		m_szParam += vVal[i];
+	}
+}
+
+void CTxStrConvert::SetVal( VECINTS& vVal )
+{
+	m_szParam.Empty();
+	for (size_t i = 0; i < vVal.size(); ++i)
+	{
+		if (i != 0)
+		{
+			m_szParam += TEXT(",");
+		}
+		CString strVal;
+		strVal.Format(TEXT("%d"), vVal[i]);
+		m_szParam +=strVal;
+	}
+}
+
+BOOL CTxStrConvert::GetAsIntArray( VECINTS& vOut, TCHAR separator /*= ','*/ )
+{
+	if (m_szParam.IsEmpty())
+	{
+		return FALSE;
+	}
+
+	std::vector<std::string> vecstr;
+	SplitteStrings(m_szParam, vecstr, separator);
+	for (size_t i = 0; i < vecstr.size(); ++i)
+	{
+		vOut.push_back(atoi(vecstr[i].c_str()));
+	}
+	return TRUE;
+}
+

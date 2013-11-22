@@ -11,6 +11,10 @@
 
 #include <vector>
 #include "GdiPlusNewHeader.h"
+
+extern CFont	g_fontBase;
+extern LOGFONT					g_logfont;
+
 using namespace Gdiplus;
 struct  ST_TXFONT
 {
@@ -26,8 +30,8 @@ typedef std::vector<ST_TXFONT> VECFONTS;
 class CTxFontLoader
 {
 public:
-	CTxFontLoader(void);
-	~CTxFontLoader(void);
+	CTxFontLoader();
+	~CTxFontLoader();
 	CFont* GetCFont(int nId);
 	Gdiplus::Font* GetFont(int nId);
 	int AddFont(LOGFONT& lf);

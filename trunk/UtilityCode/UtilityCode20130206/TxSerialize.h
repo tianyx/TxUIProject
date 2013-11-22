@@ -50,7 +50,7 @@ public:
 	BOOL operator >>(SOCKADDR_IN& data);
 
 
-	BOOL Serialize(TCHAR* data, LONG& lenInOut);
+	BOOL Serialize(char* data, LONG& lenInOut);
 	BOOL Serialize(BYTE* data, LONG& lenInOut);
 
 	//write data (at curr pos) to file; 

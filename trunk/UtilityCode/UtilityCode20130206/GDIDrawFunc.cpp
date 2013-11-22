@@ -11,6 +11,9 @@
 #include "GDIDrawFunc.h"
 #include "GdiPlusNewHeader.h"
 
+
+extern CRect g_rcDefStretchEdge(8,8,8,8);
+
 using namespace Gdiplus;
 
 Rect CRect2Rect( const CRect& rcIn )
@@ -285,7 +288,7 @@ void GPDrawStretchImage( Graphics& gc, Bitmap* pImage, CRect& rcDes, CRect* prcI
 		rcImgUse = *prcImgUseIn;
 	}
 
-	CRect rcEdgeUse = g_globalInfo.txDrawParam.rcStretchEdge;
+	CRect rcEdgeUse = g_rcDefStretchEdge;
 	if (prcEdgeIn != NULL)
 	{
 		rcEdgeUse = *prcEdgeIn;
@@ -474,5 +477,28 @@ void GPCreateFlashFrame( Bitmap& bmpSrc, CRect& rcBegin, CRect& rcEnd, Bitmap& b
 BOOL IsInRect( CRect& rcSmall, CRect& rcBig )
 {
 	return rcSmall.left >= rcBig.left && rcSmall.top >= rcBig.top && rcSmall.right <= rcBig.right && rcSmall.bottom <= rcBig.bottom;
+}
+
+void GPCreateRoundRect( Rect& rcIn, int nRidum, GraphicsPath& pathOut )
+{
+
+
+	Rect rcArc(rcIn.X,rcIn.Y, nRidum*2,nRidum*2);
+	rcArc.Offset(rcIn.Width -nRidum*2, 0);
+	pathOut.AddArc(rcArc, 270,90);
+	pathOut.AddLine(rcIn.GetRight(), rcIn.Y + nRidum, rcIn.GetRight(), rcIn.GetBottom() -nRidum);
+	rcArc.Offset(0, rcIn.Height - nRidum*2);
+	pathOut.AddArc(rcArc, 0,90);
+	pathOut.AddLine(rcIn.GetRight() -nRidum, rcIn.GetBottom(), rcIn.X + nRidum, rcIn.GetBottom());
+	rcArc.Offset(-rcIn.Width+nRidum*2, 0);
+	pathOut.AddArc(rcArc, 90,90);
+	pathOut.AddLine(rcIn.X, rcIn.GetBottom() - nRidum, rcIn.X, rcIn.Y + nRidum);
+	rcArc.Offset(0, -rcIn.Height +nRidum*2);
+	pathOut.AddArc(rcArc, 180,90);
+	pathOut.AddLine(rcIn.X+ nRidum, rcIn.Y , rcIn.GetRight()- nRidum,  rcIn.Y);
+
+
+	
+
 }
 

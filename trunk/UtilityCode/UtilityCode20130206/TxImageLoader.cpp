@@ -9,6 +9,8 @@
 *********************************************************************/
 #include "StdAfx.h"
 #include "TxImageLoader.h"
+#include "io.h"
+#include "FGlobal.h"
 
 CTxImageLoader::CTxImageLoader(void)
 {
@@ -25,7 +27,9 @@ Bitmap* CTxImageLoader::LoadBitmap( LPCTSTR szFileIn )
 	CString strFile(szFileIn);
 	if (_access(strFile,  04) == -1)
 	{
-		strFile = GetFullFilePath(strFile);
+		CString strPath = GetAppPath().c_str();
+		strPath +=TEXT("\\");
+		strFile = strPath + strFile;
 		if (_access(strFile, 04) == -1)
 		{
 			ASSERT(FALSE);
@@ -46,7 +50,7 @@ Bitmap* CTxImageLoader::LoadBitmap( LPCTSTR szFileIn )
 		if (!pImage || pImage->GetLastStatus() != Ok)
 		{
 			ASSERT(FALSE);
-			TxMACRO_WriteLog(TEXT("LoadBitmap"), TEXT("failed load %s"), strFile);
+			CFWriteLog(TEXT("LoadBitmap"), TEXT("failed load %s"), strFile);
 			if (pImage)
 			{
 				delete pImage;

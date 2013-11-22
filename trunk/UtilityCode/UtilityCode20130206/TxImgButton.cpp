@@ -11,7 +11,6 @@
 //
 
 #include "stdafx.h"
-#include "ClipImportMonitor.h"
 #include "TxImgButton.h"
 #include "TxImageLoader.h"
 #include "GDIDrawFunc.h"

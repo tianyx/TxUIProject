@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:06
+	filename: 	TxLogManager.h
+	author:		tianyx
+	
+	purpose:	
+*********************************************************************/
 #pragma once
 
 #include <map>
@@ -5,6 +13,9 @@
 #include "AutoCritSec.h"
 #include "Log.h"
 #include <vector>
+#include "LogKeyDef.h"
+
+
 using namespace std;
 
 
