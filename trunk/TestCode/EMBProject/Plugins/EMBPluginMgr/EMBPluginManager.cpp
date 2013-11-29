@@ -4,6 +4,8 @@
 #include "EMBCommonFunc.h"
 #include "TxLogManager.h"
 #include "StrConvert.h"
+#include "TxAutoComPtr.h"
+
 using namespace EMB;
 CEMBPluginManager::CEMBPluginManager(void)
 {
@@ -107,10 +109,10 @@ void CEMBPluginManager::Init()
 		}
 		if (vtmpInfos.size() > 0)
 		{
-
 			for (size_t i = 0; i < vtmpInfos.size(); ++i)
 			{
 				ST_PLUGINMGRDATA mgrdata;
+				mgrdata.bV6 = bVC6Dll;
 				mgrdata.strFile = strDllFile;
 				mgrdata.plugInfo = vtmpInfos[i];
 				TXGUID strGuid = mgrdata.plugInfo.pluginGuid;
@@ -147,7 +149,7 @@ HRESULT CEMBPluginManager::FindPlugin( const UINT nPluginType, const UINT nSubTy
 	return hr;
 }
 
-HANDLE CEMBPluginManager::LoadPlugin( const GUID guidIn, IPluginBaseInterface*& pInterfaceOut )
+HANDLE CEMBPluginManager::LoadPlugin( const GUID guidIn, ITxUnkown*& pInterfaceOut )
 {
 	TXGUID guid = guidIn;
 	MAPPLUGINMAGRDATAS::iterator itf = m_mapPluginInfo.find(guid);
@@ -155,7 +157,26 @@ HANDLE CEMBPluginManager::LoadPlugin( const GUID guidIn, IPluginBaseInterface*& 
 	{
 		//load new;
 		HMODULE hModule = NULL;
-		::TxLoadPlugin(itf->second.strFile, hModule, (LPVOID&)pInterfaceOut);
+		if (itf->second.bV6)
+		{
+			CTxAutoComPtr<IPluginBaseInterfaceVC6> pTem;
+			::TxLoadPluginVC6(itf->second.strFile, hModule, (LPVOID&)pTem);
+
+			if (pTem)
+			{
+				pTem->QueryInterface(GuidEMBPlugin_IUnknow, (LPVOID&)pInterfaceOut);
+			}
+		}
+		else
+		{
+			CTxAutoComPtr<IPluginBaseInterface> pTem = NULL;
+			::TxLoadPlugin(itf->second.strFile, hModule, (LPVOID&)pTem);
+			if (pTem)
+			{
+				pTem->QueryInterface(GuidEMBPlugin_IUnknow, (LPVOID&)pInterfaceOut);
+			}
+		}
+		
 		if (hModule)
 		{
 			itf->second.vModules[hModule] = hModule;

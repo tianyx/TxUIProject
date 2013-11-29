@@ -1,5 +1,11 @@
-// dllmain.cpp : 定义 DLL 的初始化例程。
-//
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:04
+	filename: 	dllmain.cpp
+	author:		tianyx
+	
+	purpose:	定义 DLL 的初始化例程。
+*********************************************************************/
 
 #include "stdafx.h"
 #include <afxwin.h>
@@ -10,6 +16,7 @@
 #define new DEBUG_NEW
 #endif
 
+//EMBTaskRiser DLL 模块状态记录变量
 static AFX_EXTENSION_MODULE EMBTaskRiserDLL = { NULL, NULL };
 
 extern "C" int APIENTRY

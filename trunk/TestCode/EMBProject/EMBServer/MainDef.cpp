@@ -9,19 +9,32 @@
 #include "TxAutoComPtr.h"
 using namespace EMB;
 
+// 全局信息存储变量？尽量少用全局变量
 ST_GLOBAL g_GlobalInfo;
+// 管理插件动态库指针
 HMODULE g_hModulePluginMgr = NULL;
+// 插件管理插件指针
 EMB::IPluginBaseInterface* g_pIPluginMgr = NULL;
+
+/*
+*Description：初始化配置文件
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL InitGlobalConfig()
 {
+	//任务管理配置文件
 	g_GlobalInfo.szAppPath = GetAppPath().c_str();
 	g_GlobalInfo.szIniPath = g_GlobalInfo.szAppPath;
 	g_GlobalInfo.szIniPath += TEXT("\\EMBServer.xml");
+	//日志配置文件
 	g_GlobalInfo.szLogFile	 = g_GlobalInfo.szAppPath;
 	g_GlobalInfo.szLogFile	 += TEXT("\\Log");
 	CreateDirectory(g_GlobalInfo.szLogFile, NULL);
 	g_GlobalInfo.szLogFile	 += TEXT("\\MainLog.log");
 
+	//插件配置文件
 	g_GlobalInfo.szPluginPath = g_GlobalInfo.szAppPath;
 	g_GlobalInfo.szPluginPath +=TEXT("\\Plugin");
 	if (_access(g_GlobalInfo.szIniPath, 04) == -1)
@@ -33,8 +46,15 @@ BOOL InitGlobalConfig()
 	return TRUE;
 }
 
+/*
+*Description：加载插件管理插件动态库
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL LoadPluginManager()
 {
+	//插件管理动态库
 	CString strFile = g_GlobalInfo.szAppPath;
 	strFile +=TEXT("\\plugin\\EMBPluginMgr.dll");
 	if (_access(strFile, 0) == -1)
@@ -44,6 +64,7 @@ BOOL LoadPluginManager()
 		return FALSE;
 	}
 	
+	// 从文件路径加载
 	TxLoadPlugin(strFile, g_hModulePluginMgr, (LPVOID&)g_pIPluginMgr);
 	if (g_pIPluginMgr)
 	{
@@ -59,6 +80,12 @@ BOOL LoadPluginManager()
 	return (g_hModulePluginMgr != NULL && g_pIPluginMgr != NULL);
 }
 
+/*
+*Description：注销插件管理插件动态库
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL UnLoadPluginManager()
 {
 	if (g_pIPluginMgr)
@@ -75,9 +102,15 @@ BOOL UnLoadPluginManager()
 }
 
 
-
+/*
+*Description：初始化任务管理相应服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL InitServer()
 {
+	//读取配置文件
 	CFile xmlfile;
 	CString strParam;
 	if (xmlfile.Open(g_GlobalInfo.szIniPath, CFile::modeRead, NULL))
@@ -100,6 +133,7 @@ BOOL InitServer()
 
 	CTxParamString txParam(strParam);
 	//find plugin config
+	// 获取接收任务插件配置
 	CString strKeyPath = EPATH_MAIN;
 	strKeyPath += TEXT("\\");
 	strKeyPath += EK_TASKRISERCONFIG;
@@ -107,6 +141,7 @@ BOOL InitServer()
 	txParam.GetSubNodeString(strKeyPath, strTaskRiserConfig);
 	ASSERT(!strTaskRiserConfig.IsEmpty());
 	
+	// 获取存储任务插件配置
 	strKeyPath = EPATH_MAIN;
 	strKeyPath += TEXT("\\");
 	strKeyPath +=EK_TASKSTORAGECONFIG;
@@ -114,6 +149,7 @@ BOOL InitServer()
 	txParam.GetSubNodeString(strKeyPath, strTaskStorageConfig);
 	ASSERT(!strTaskStorageConfig.IsEmpty());
 
+	// 获取分配任务插件配置
 	strKeyPath = EPATH_MAIN;
 	strKeyPath += TEXT("\\");
 	strKeyPath +=EK_TASKDISPATCHCONFIG;
@@ -128,6 +164,7 @@ BOOL InitServer()
 		return FALSE;
 	}
 
+	//加载任务接收、任务存储、任务分配插件，并连接他们
 	ST_LOADEDPLUGIN tmpPlugin;
 	if (LoadPluginByPluginMgr(PluginType_TaskRiser, SubType_None, g_pIPluginMgr, tmpPlugin))
 	{
@@ -172,6 +209,12 @@ BOOL InitServer()
 	return TRUE;
 }
 
+/*
+*Description：注销任务管理相应服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL UnInitServer()
 {
 	if (g_GlobalInfo.vPlugins.size() == 0)
@@ -198,6 +241,12 @@ BOOL UnInitServer()
 	return TRUE;
 }
 
+/*
+*Description：启动各插件服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL RunServer( BOOL bRun )
 {
 	for (size_t i = 0; i < g_GlobalInfo.vPlugins.size(); ++i)

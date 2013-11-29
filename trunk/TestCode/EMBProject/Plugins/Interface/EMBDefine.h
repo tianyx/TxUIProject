@@ -3,7 +3,7 @@
 	created:	8:11:2013   18:08
 	filename: 	EMBDefine.h
 	author:		tianyx
-	
+	history:    添加注释     刘博       13.11.25
 	purpose:	emb type def
 *********************************************************************/
 #pragma once
@@ -12,7 +12,7 @@
 ///
 #define INVALID_ID -1
 #define INVALID_VALUE -1
-//////////////////////////////////////////////////////////////////////////
+//共用返回值类型定义
 #define EMB_OK			S_OK
 #define EMB_FAIL		E_FAIL
 #define EMBERR_INVALIDARG	E_INVALIDARG
@@ -20,7 +20,7 @@
 #define EMBERR_HANDLE	E_HANDLE
 #define EMBERR_ABORT	E_ABORT
 #define EMBERR_NOTIMPL	E_NOTIMPL
-//custom def
+//自定义消息类型
 #define EMBERR_NOTREADY 0x800A0001
 #define EMBERR_FULL		0x800A0002
 #define EMBERR_EXISTED	0x800A0003
@@ -33,9 +33,10 @@
 #define EMBERR_SUBTASKLOADDLL	0x800A000a
 #define EMBERR_WORKERBUSY	0x800A000B
 #define EMBERR_FILEACCESS	0x800A000C
+#define EMBERR_TASKSUBMIT	0x800A000D		// 任务提交失败：xml格式不正确
 
 //////////////////////////////////////////////////////////////////////////
-//tcp msg  trans type
+//TCP消息类型
 #define embmsgstate_Q 1
 #define embmsgstate_A 2
 
@@ -48,7 +49,7 @@
 #define embmsgtype_ActorToExcutorMsg	16
 #define embmsgtype_DispatchToActorMsg	17
 #define embmsgtype_max					100
-//////////////////////////////////////////////////////////////////////////
+//XML消息类型
 #define embxmltype_none				0
 #define embxmltype_task				1
 #define embxmltype_ret				2
@@ -67,7 +68,7 @@
 #define embtaskupdatetype_del		2
 #define mebtaskupdatetype_changepri	3
 //////////////////////////////////////////////////////////////////////////
-//task excute state
+//任务执行状态
 #define embtaskstate_none			-1
 #define embtaskstate_zero			0
 #define embtaskstate_dispatching	1
@@ -81,17 +82,17 @@
 #define embActorLevel_normal		0
 #define embActorLevel_high			1
 
-//	////////////////////////////////////////////////////////////////////////
+//	执行任务类型
 #define embexcuteType_none			-1
 #define embexcuteType_filetrans		1
 #define embexucteType_md5check		2
 #define embexcuteType_filecode		3
 #define embexcuteType_filecheck		4
 #define embexcuteType_db			5
-//////////////////////////////////////////////////////////////////////////
+//连接状态
 #define embConnState_ok		1
 #define embConnState_error	0
-//////////////////////////////////////////////////////////////////////////
+//Actor连接状态
 #define embActorConnState_none 0
 #define embActorConnState_conn 1
 #define embActorConnState_ok	2

@@ -16,19 +16,36 @@ CTaskProber::~CTaskProber(void)
 {
 }
 
-
+/*
+*Description：启动接收任务功能
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProber::Run_Prober()
 {
-	return TRUE;
+	return S_OK;
 }
 
+/*
+*Description：停止接收任务功能
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProber::Stop_Prober()
 {
 	
-	return TRUE;
+	return S_OK;
 }
 
-
+/*
+*Description：添加任务
+*Input Param：
+*      taskIn ：EMB任务XML描述
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProber::AddTask( CString& taskIn )
 {
 	if (!m_pTaskProcessor)
@@ -39,8 +56,13 @@ HRESULT CTaskProber::AddTask( CString& taskIn )
 	return S_OK;
 }
 
-
-
+/*
+*Description：设置回调函数接口
+*Input Param：
+*      pProcessor ：回调函数指针
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL CTaskProber::SetTaskProcessor( ITaskCollectCallbackInterface* pProcessor )
 {
 	ASSERT(m_pTaskProcessor == NULL);

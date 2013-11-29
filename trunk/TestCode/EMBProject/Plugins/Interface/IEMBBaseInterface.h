@@ -47,7 +47,7 @@ enum ENUM_SUBTYPE
 };
 
 
-
+//接口基类
 interface ITxUnkown
 {
 	int m_nRef;
@@ -110,6 +110,7 @@ interface IPluginBaseInterface :virtual public ITxUnkown
 {
 	virtual HRESULT QueryPluginInfo(VECPLUGINFOS& vInfoOut) = 0;
 };
+//VC6.0接口
 interface IPluginBaseInterfaceVC6 :virtual public ITxUnkown
 {
 	virtual HRESULT QueryPluginInfo(ST_PluginInfo& infoOut) = 0;
@@ -144,7 +145,7 @@ interface IPluginManagerInterface:virtual public ITxUnkown
 {
 	virtual HRESULT InitPluginsSearch(BOOL bSearchDeep, LPCTSTR szFileExtern) = 0;
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut) = 0;
-	virtual HANDLE LoadPlugin(const GUID guidIn, IPluginBaseInterface*& pInterfaceOut) = 0;
+	virtual HANDLE LoadPlugin(const GUID guidIn, ITxUnkown*& pInterfaceOut) = 0;
 	//this will unload the plugin library, if handle = NULL, unload all plugin that same guid
 	virtual HRESULT UnloadPlugin(const GUID guidIn, HANDLE handle) = 0;
 };

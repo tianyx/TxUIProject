@@ -74,23 +74,55 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 		{
 			pBuff++;
 			int nMsgLen = *((int*)pBuff);
-			ASSERT(nMsgLen > 5 && nMsgLen < MAXRECVBUFF);
+			ASSERT(nMsgLen > 5 && nMsgLen < MAXINT);
+			char* pRealUsedBuffer = szbuff;
+			char* pLargeBuff = NULL;
+			if (nMsgLen > MAXRECVBUFF)
+			{
+				//buffer not enough!
+				pLargeBuff = new char[nMsgLen];
+				pRealUsedBuffer = pLargeBuff;
+				memcpy(pLargeBuff,  szbuff, 5);
+				pBuff = pLargeBuff;
+				pBuff ++;
+			}
 			pBuff += 4;
 			int nMsgRead = recv(socRecv, pBuff, nMsgLen-5, 0);
+			while(nMsgRead < nMsgLen -5)
+			{
+				int nTmpRead =recv(socRecv, pBuff, nMsgLen-5 - nMsgRead, 0);
+				if (nTmpRead == SOCKET_ERROR)
+				{
+					break;
+				}
+				else
+				{
+					nMsgRead += nTmpRead;
+				}
+			}
+
 			if (nMsgRead == nMsgLen-5)
 			{
-				int nMsgType =  GetMBCMsgType(szbuff, nMsgLen);
+				int nMsgType =  GetMBCMsgType(pRealUsedBuffer, nMsgLen);
 				if (nMsgType != msgtype_NONE)
 				{
-					ProcessIncomingMsg(pMBCSock, nMsgType, szbuff, nMsgLen);
+					ProcessIncomingMsg(pMBCSock, nMsgType, pRealUsedBuffer, nMsgLen);
 					//CFWriteLog2Wnd(m_hLogWnd, "msg ReadData, sock = %d, len = %d", (int)wParam, nMsgRead+5);
-
 				}
 			}
 			else
 			{
 				ASSERT(FALSE);
 				bSafeEnd = FALSE;
+			}
+
+			if (pLargeBuff)
+			{
+				delete[] pLargeBuff;
+				pLargeBuff = NULL;
+			}
+			if (!bSafeEnd)
+			{
 				break;
 			}
 
@@ -99,6 +131,7 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 		{
 			ASSERT(FALSE);
 			bSafeEnd = FALSE;
+			break;
 		}
 		nHeadRead = recv(socRecv, szbuff, 5, 0);
 	}

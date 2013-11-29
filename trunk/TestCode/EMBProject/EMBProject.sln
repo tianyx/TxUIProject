@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBServer", "EMBServer\EMBServer.vcproj", "{9BB7CE29-FB44-46B2-831F-A135699D2971}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBCommonLib", "EMBCommonLib\EMBCommonLib.vcproj", "{140354A3-4FE4-4FE3-A7E5-E6641EE4A647}"
 EndProject
@@ -14,81 +18,137 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EMBPlugin", "EMBPlugin", "{290E8B99-F17F-47E8-BD16-FF2A6131275E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBPluginMgr", "Plugins\EMBPluginMgr\EMBPluginMgr.vcproj", "{B598D976-8214-432E-A15C-EA1EB1F9F4AA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBClient", "EMBClient\EMBClient.vcproj", "{775A4664-EEB7-4C3B-8B1F-1C6596669199}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBExternalExcutor", "EMBExternalExcutor\EMBExternalExcutor.vcproj", "{8D5811C4-8C6C-4813-BAED-39A02EB486B8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBGuidLib", "Plugins\EMBGuidLib\EMBGuidLib.vcproj", "{DCC7535A-832B-4EBB-BE6C-98ED6DF77757}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EMBTest", "EMBTest", "{B0692929-1F47-4692-83C7-759809CCD4D5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EmbTest", "EmbTest\EmbTest.vcproj", "{8FDBC5C7-676D-438E-919F-471D51BEFC9E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskRiser", "Plugins\EMBTaskRiser\EMBTaskRiser.vcproj", "{57248819-1B2D-422C-B349-86D3BC87B461}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskDispatch", "Plugins\EMBTaskDispatch\EMBTaskDispatch.vcproj", "{C09F0BBD-BFA6-47BD-B051-11BEC2DE3A6B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActor", "Plugins\EMBActor\EMBActor.vcproj", "{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActorHost", "EMBActorHost\EMBActorHost.vcproj", "{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskStorage", "Plugins\EMBTaskStorage\EMBTaskStorage.vcproj", "{288D42E6-88C4-4D32-8B5A-88D8D67BF000}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WorkPlugin", "WorkPlugin", "{ABB079B5-C076-4B39-BF5E-A703CD05DEB1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginSample", "Plugins\WorkPluginSample\WorkPluginSample.vcproj", "{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginMediaCheck", "Plugins\WorkPluginMediaCheck\WorkPluginMediaCheck.vcproj", "{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginMD5", "Plugins\WorkPluginMD5\WorkPluginMD5.vcproj", "{886BD864-AE82-449F-9611-44566EBF6D45}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
 		SccNumberOfProjects = 16
 		SccLocalPath0 = .
-		SccProjectUniqueName1 = EMBServer\\EMBServer.vcproj
+		SccProjectUniqueName1 = Plugins\\EMBTaskRiser\\EMBTaskRiser.vcproj
 		SccProjectTopLevelParentUniqueName1 = EMBProject.sln
-		SccLocalPath1 = EMBServer
-		SccProjectUniqueName2 = EMBCommonLib\\EMBCommonLib.vcproj
+		SccLocalPath1 = Plugins\\EMBTaskRiser
+		SccProjectUniqueName2 = EMBServer\\EMBServer.vcproj
 		SccProjectTopLevelParentUniqueName2 = EMBProject.sln
-		SccLocalPath2 = .
-		SccProjectFilePathRelativizedFromConnection2 = EMBCommonLib\\
-		SccProjectUniqueName3 = Plugins\\EMBPluginMgr\\EMBPluginMgr.vcproj
+		SccLocalPath2 = EMBServer
+		SccProjectUniqueName3 = Plugins\\EMBTaskDispatch\\EMBTaskDispatch.vcproj
 		SccProjectTopLevelParentUniqueName3 = EMBProject.sln
-		SccLocalPath3 = .
-		SccProjectFilePathRelativizedFromConnection3 = Plugins\\EMBPluginMgr\\
-		SccProjectUniqueName4 = EMBClient\\EMBClient.vcproj
+		SccLocalPath3 = Plugins
+		SccProjectFilePathRelativizedFromConnection3 = EMBTaskDispatch\\
+		SccProjectUniqueName4 = Plugins\\EMBTaskStorage\\EMBTaskStorage.vcproj
 		SccProjectTopLevelParentUniqueName4 = EMBProject.sln
-		SccLocalPath4 = EMBClient
-		SccProjectUniqueName5 = EMBExternalExcutor\\EMBExternalExcutor.vcproj
+		SccLocalPath4 = Plugins
+		SccProjectFilePathRelativizedFromConnection4 = EMBTaskStorage\\
+		SccProjectUniqueName5 = EMBCommonLib\\EMBCommonLib.vcproj
 		SccProjectTopLevelParentUniqueName5 = EMBProject.sln
-		SccLocalPath5 = EMBExternalExcutor
-		SccProjectUniqueName6 = Plugins\\EMBGuidLib\\EMBGuidLib.vcproj
+		SccLocalPath5 = .
+		SccProjectFilePathRelativizedFromConnection5 = EMBCommonLib\\
+		SccProjectUniqueName6 = Plugins\\EMBPluginMgr\\EMBPluginMgr.vcproj
 		SccProjectTopLevelParentUniqueName6 = EMBProject.sln
 		SccLocalPath6 = .
-		SccProjectFilePathRelativizedFromConnection6 = Plugins\\EMBGuidLib\\
-		SccProjectUniqueName7 = EmbTest\\EmbTest.vcproj
+		SccProjectFilePathRelativizedFromConnection6 = Plugins\\EMBPluginMgr\\
+		SccProjectUniqueName7 = EMBClient\\EMBClient.vcproj
 		SccProjectTopLevelParentUniqueName7 = EMBProject.sln
-		SccLocalPath7 = EmbTest
-		SccProjectUniqueName8 = Plugins\\EMBTaskRiser\\EMBTaskRiser.vcproj
+		SccLocalPath7 = .
+		SccProjectFilePathRelativizedFromConnection7 = EMBClient\\
+		SccProjectUniqueName8 = EMBExternalExcutor\\EMBExternalExcutor.vcproj
 		SccProjectTopLevelParentUniqueName8 = EMBProject.sln
-		SccLocalPath8 = Plugins\\EMBTaskRiser
-		SccProjectUniqueName9 = Plugins\\EMBTaskDispatch\\EMBTaskDispatch.vcproj
+		SccLocalPath8 = .
+		SccProjectFilePathRelativizedFromConnection8 = EMBExternalExcutor\\
+		SccProjectUniqueName9 = Plugins\\EMBGuidLib\\EMBGuidLib.vcproj
 		SccProjectTopLevelParentUniqueName9 = EMBProject.sln
-		SccLocalPath9 = Plugins\\EMBTaskDispatch
-		SccProjectUniqueName10 = Plugins\\EMBActor\\EMBActor.vcproj
+		SccLocalPath9 = .
+		SccProjectFilePathRelativizedFromConnection9 = Plugins\\EMBGuidLib\\
+		SccProjectUniqueName10 = EmbTest\\EmbTest.vcproj
 		SccProjectTopLevelParentUniqueName10 = EMBProject.sln
-		SccLocalPath10 = Plugins\\EMBActor
-		SccProjectUniqueName11 = EMBActorHost\\EMBActorHost.vcproj
+		SccLocalPath10 = .
+		SccProjectFilePathRelativizedFromConnection10 = EmbTest\\
+		SccProjectUniqueName11 = Plugins\\EMBActor\\EMBActor.vcproj
 		SccProjectTopLevelParentUniqueName11 = EMBProject.sln
-		SccLocalPath11 = EMBActorHost
-		SccProjectUniqueName12 = Plugins\\EMBTaskStorage\\EMBTaskStorage.vcproj
+		SccLocalPath11 = .
+		SccProjectFilePathRelativizedFromConnection11 = Plugins\\EMBActor\\
+		SccProjectUniqueName12 = EMBActorHost\\EMBActorHost.vcproj
 		SccProjectTopLevelParentUniqueName12 = EMBProject.sln
-		SccLocalPath12 = Plugins\\EMBTaskStorage
+		SccLocalPath12 = .
+		SccProjectFilePathRelativizedFromConnection12 = EMBActorHost\\
 		SccProjectUniqueName13 = Plugins\\WorkPluginSample\\WorkPluginSample.vcproj
 		SccProjectTopLevelParentUniqueName13 = EMBProject.sln
-		SccLocalPath13 = Plugins\\WorkPluginSample
+		SccLocalPath13 = .
+		SccProjectFilePathRelativizedFromConnection13 = Plugins\\WorkPluginSample\\
 		SccProjectUniqueName14 = Plugins\\WorkPluginMediaCheck\\WorkPluginMediaCheck.vcproj
 		SccProjectTopLevelParentUniqueName14 = EMBProject.sln
 		SccLocalPath14 = .

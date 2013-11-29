@@ -1,6 +1,10 @@
-
-// EMBClientDlg.h : 头文件
-//
+/********************************************************************
+	created:	2013/11/23
+	filename: 	EMBClientDlg.h
+	author:		tianyx
+	purpose:	对话框
+    History: 
+*********************************************************************/
 
 #pragma once
 
@@ -15,7 +19,7 @@ public:
 // 对话框数据
 	enum { IDD = IDD_EMBCLIENT_DIALOG };
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
 

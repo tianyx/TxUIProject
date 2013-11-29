@@ -5,6 +5,9 @@
 	author:		tianyx
 	
 	purpose:	timer not use wnd
+	usage:		1.create a CTXTimer instance
+				2.call SetTimer to start
+				3.call KillTimer to stop
 *********************************************************************/
 #pragma once
 #include <map>
@@ -48,6 +51,11 @@ public:
 	HANDLE m_hQueue;
 	ST_TXTIMERDATA m_tData;
 
+	
+	//*Description: start a timer
+	//*Input Param: nflag: see CreateTimerQueueTimer in msdn
+	//*Return Param: 
+	//*History: 
 	BOOL SetTimer(DWORD dwTimerId, DWORD dwInterval, ITxTimerCallbackInterface* pCallback, LPARAM lparam, int nflag = WT_EXECUTEDEFAULT, int nstartbeforeNow = 0);
 	void KillTimer();
 };

@@ -3,6 +3,8 @@
 //
 
 #pragma once
+#include "afxcmn.h"
+#include "MainDef.h"
 
 
 // CEMBActorHostDlg 对话框
@@ -18,6 +20,15 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
+private:
+	void InitUI();
+	/*
+    Description：查询执行者进程信息
+	Input：		m_arrExecutors 运行中的Executor.exe
+	Return:		
+	History：
+	*/
+	void GetExecutors(CArray<tagExecutorProcess, tagExecutorProcess>& m_arrExecutors); 
 
 // 实现
 protected:
@@ -31,4 +42,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnDestroy();
+	CListCtrl m_lstExecutor;
+	afx_msg void OnBnClickedButtonRefresh();
+	afx_msg void OnClose();
+	afx_msg void OnBnClickedLuanchexec();
 };

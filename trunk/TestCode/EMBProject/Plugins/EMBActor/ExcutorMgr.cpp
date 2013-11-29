@@ -563,7 +563,7 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 			FALSE,           // Process handle not inheritable
 			NULL,           // Thread handle not inheritable
 			FALSE,          // Set handle inheritance to FALSE
-			0,              // No creation flags
+			CREATE_NEW_CONSOLE,         
 			NULL,           // Use parent's environment block
 			NULL,           // Use parent's starting directory 
 			&si,            // Pointer to STARTUPINFO structure
@@ -626,6 +626,7 @@ HRESULT CExcutorMgr::WndMsgPoolCheckLoop()
 {
 	while(TRUE)
 	{
+		// 等待消息
 		DWORD dwRet = TxWaitObjWithQuit(m_hEventPoolMsgArrival, m_hEventQuitLoop, INFINITE);
 		if (dwRet == WAIT_OBJECT_0)
 		{
@@ -638,6 +639,7 @@ HRESULT CExcutorMgr::WndMsgPoolCheckLoop()
 				ResetEvent(m_hEventPoolMsgArrival);
 			}
 
+			// 消息处理
 			for (size_t i = 0; i < vMsgs.size(); ++i)
 			{
 				//process the msg

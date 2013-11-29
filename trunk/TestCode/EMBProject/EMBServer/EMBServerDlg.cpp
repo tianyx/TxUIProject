@@ -8,6 +8,7 @@
 #include "EmbStructDef.h"
 #include "MainDef.h"
 #include "TxParamString.h"
+#include "Resource.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,6 +70,7 @@ BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_START, &CEMBServerDlg::OnBnClickedBtnStart)
 	ON_BN_CLICKED(IDC_BTNTEST, &CEMBServerDlg::OnBnClickedBtntest)
+	ON_BN_CLICKED(IDC_BUTTON_XML, &CEMBServerDlg::OnBnClickedButtonXml)
 END_MESSAGE_MAP()
 
 
@@ -104,6 +106,7 @@ BOOL CEMBServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+	InitUI();
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -157,7 +160,12 @@ HCURSOR CEMBServerDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
+/*
+*Description：手动启动服务按钮
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 void CEMBServerDlg::OnBnClickedBtnStart()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -174,12 +182,25 @@ void CEMBServerDlg::OnBnClickedBtnStart()
 	GetDlgItem(IDC_BTN_START)->SetWindowText(m_bRunning? TEXT("Stop"):TEXT("Start"));
 }
 
+/*
+*Description：手动测试添加一条任务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 void CEMBServerDlg::OnBnClickedBtntest()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	CString strfile =GetAppPath().c_str();
+	CString strfile;
+	UpdateData();
+	GetDlgItemText(IDC_EDIT_TESTXML, strfile);
 
-	strfile += TEXT("\\testTask.xml");
+	if (strfile.IsEmpty())
+	{
+		MessageBox("请选择测试xml文件");
+		return;
+	}
+	
 	CFile file;
 	BOOL bOPen =file.Open(strfile, CFile::modeRead, NULL);
 	CString strTask;
@@ -201,4 +222,26 @@ void CEMBServerDlg::OnBnClickedBtntest()
 	}
 
 
+}
+
+void CEMBServerDlg::InitUI()
+{
+	CString strfile =GetAppPath().c_str();
+	strfile += TEXT("\\testTask.xml");
+
+	SetDlgItemText(IDC_EDIT_TESTXML, strfile);
+	UpdateData(FALSE);
+}
+
+void CEMBServerDlg::OnBnClickedButtonXml()
+{
+	// 选择 XML File
+	CFileDialog xmlFileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("Xml File (*.xml)|*.xml"), (CWnd *)this, 0);
+
+	if (IDOK == xmlFileDlg.DoModal() )
+	{
+		CString xmlFile = xmlFileDlg.GetPathName();
+		SetDlgItemText(IDC_EDIT_TESTXML, xmlFile);
+		UpdateData(FALSE);
+	}
 }

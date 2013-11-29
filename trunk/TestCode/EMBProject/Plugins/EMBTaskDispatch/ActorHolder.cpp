@@ -17,6 +17,12 @@ CActorHolder::~CActorHolder(void)
 {
 }
 
+/*
+*Description：启动TCP SERVER服务，等待执行端连接
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CActorHolder::Run()
 {
 
@@ -37,6 +43,12 @@ HRESULT CActorHolder::Run()
 	return hr;
 }
 
+/*
+*Description：停止TCP SERVER服务，断开所有连接
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CActorHolder::Stop()
 {
 	
@@ -46,7 +58,7 @@ HRESULT CActorHolder::Stop()
 	MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
 	for (; itb != ite; ++itb)
 	{
-		delete (itb->first);
+		CMBCSocket::ReleaseSock(itb->first);
 	}
 	m_mapSockIns.clear();
 	m_mapActorMirrs.clear();
@@ -54,13 +66,14 @@ HRESULT CActorHolder::Stop()
 	return  __super::Stop();
 }
 
+// 连接方会收到的返回消息
 HRESULT CActorHolder::NetCall_Connect( CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lParam )
 {
 	ASSERT(FALSE);
 	return CMBCBaseObj::NetCall_Connect(pMBCSock, wParam, lParam);
 
 }
-
+// 连接方会收到的返回消息
 HRESULT CActorHolder::NetCall_Close( CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lParam )
 {
 	//only process incoming sock
@@ -68,6 +81,7 @@ HRESULT CActorHolder::NetCall_Close( CMBCSocket* pMBCSock, WPARAM wParam, LPARAM
 	return CMBCBaseObj::NetCall_Close(pMBCSock, wParam, lParam);
 }
 
+// ActorHolder当有Actor连接传入时，会收到此消息
 HRESULT CActorHolder::NetCall_Accept( CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lParam )
 {
 	int nErr =WSAGETSELECTERROR(lParam);
@@ -92,6 +106,16 @@ HRESULT CActorHolder::NetCall_Accept( CMBCSocket* pMBCSock, WPARAM wParam, LPARA
 	return S_OK;
 }
 
+/*
+*Description：接收消息函数
+*Input Param：
+*		pMBCSock ：消息通讯指针
+*	    nMsgType ：消息类型
+*       bufferIn ：消息指针
+*       nUsed    ：消息长度
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed )
 {
 	HRESULT hr = S_OK;
@@ -100,6 +124,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 	int nRetUsed = 0;
 	if (nMsgType == embmsgtype_ActorReportGuid)
 	{
+		// 为ACTOR广播消息
 		ST_EMBTRANSMSG msgIn(nMsgType);
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
 		if (!msgIn.strData.IsEmpty())
@@ -107,6 +132,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 			ACTORID actoridNew = atoi(msgIn.strData);
 			ASSERT(actoridNew != INVALID_ID);
 			//find sock
+			//如果是已经加入的ACTOR，则不处理，否则加入到ACTOR连接中
 			{
 				BOOL bFind = TRUE;
 				{
@@ -161,6 +187,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 	}
 	else if (nMsgType == embmsgtype_ActorToDispatchMsg)
 	{
+		//如果为ACTOR返回的分配任务消息？
 		ST_EMBTRANSMSG msgIn(nMsgType);
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
 		if (m_pActorCallbackInterface)
@@ -204,12 +231,26 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 	return hr;
 }
 
+/*
+*Description：设置回调函数指针
+*Input Param：
+*		pCallIn ：回调函数指针
+*Return Param：返回成功或失败
+*History：
+*/
 BOOL CActorHolder::SetActorCallbackInterface( IEMBActorHolderCallBackInterface* pCallIn )
 {
 	m_pActorCallbackInterface = pCallIn;
 	return TRUE;
 }
 
+/*
+*Description：移除连接
+*Input Param：
+*		pSock ：SOCKET连接指针
+*Return Param：
+*History：
+*/
 void CActorHolder::RemoveSock( CMBCSocket* pSock )
 {
 	CAutoLock lock(&m_csSockMap);
@@ -228,6 +269,13 @@ void CActorHolder::RemoveSock( CMBCSocket* pSock )
 	}
 }
 
+/*
+*Description：添加任务
+*Input Param：
+*		pSock ：添加的SOCEKT指针
+*Return Param：
+*History：
+*/
 void CActorHolder::AddSock( CMBCSocket* pSock )
 {
 	{
@@ -250,6 +298,15 @@ void CActorHolder::AddSock( CMBCSocket* pSock )
 	
 }
 
+/*
+*Description：发送SOCEKT消息
+*Input Param：
+*		pSock ：    发送的SOCEKT指针
+*       pbufferIn ：传送字符串头指针
+*       nSizeIn：   传送字符串长度
+*Return Param：
+*History：
+*/
 HRESULT CActorHolder::DoSockSend( CMBCSocket* pSock, const char* pbufferIn, const int nSizeIn )
 {
 	HRESULT hr = S_OK;
@@ -269,6 +326,14 @@ HRESULT CActorHolder::DoSockSend( CMBCSocket* pSock, const char* pbufferIn, cons
 	return hr > 0? S_OK:hr;
 }
 
+/*
+*Description：通过连接指针获取ACTORID
+*Input Param：
+*		pSock ：    SOCEKT指针
+*Return Param：
+		ACTORID ：返回ACTORID
+*History：
+*/
 ACTORID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 {
 	CAutoLock loc(&m_csSockMap);
@@ -284,13 +349,21 @@ ACTORID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 	}
 }
 
+/*
+*Description：根据ACTORID发送消息给ACTOR
+*Input Param：
+*		actorId ：执行端ID
+*       szMsg   ：消息内容
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CActorHolder::SendToActor(const ACTORID actorId, CString& szMsg )
 {
 	HRESULT hr = S_OK;
 	CMBCSocket* pSock = NULL;
 	SOCKET sock = INVALID_SOCKET;
 	{//to auto release lock
-
+		//通过ID寻找pSock指针
 
 		CAutoLock loc(&m_csSockMap);
 		MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
@@ -313,6 +386,7 @@ HRESULT CActorHolder::SendToActor(const ACTORID actorId, CString& szMsg )
 
 	if (sock != INVALID_SOCKET)
 	{
+		//发送消息
 		ST_EMBTRANSMSG msg(embmsgtype_DispatchToActorMsg);
 		msg.nMsgState = msgState_Q;
 		msg.strData = szMsg;
@@ -340,6 +414,13 @@ HRESULT CActorHolder::SendToActor(const ACTORID actorId, CString& szMsg )
 	return hr;
 }
 
+/*
+*Description：ACTOR连接中是否有此ACTORID连接
+*Input Param：  
+*		actorId ：执行端ID
+*Return Param：有返回TRUE，没有返回FALSE
+*History：
+*/
 BOOL CActorHolder::HasActor( const ACTORID actorId )
 {
 	CAutoLock lock(&m_csSockMap);
@@ -348,9 +429,17 @@ BOOL CActorHolder::HasActor( const ACTORID actorId )
 
 }
 
+/*
+*Description：设置任务管理状态
+*Input Param：  
+*		nStateIn ：当前状态
+*       nMaster：默认本身逻辑是主还是备
+*Return Param：有返回TRUE，没有返回FALSE
+*History：
+*/
 HRESULT CActorHolder::SetSvrState( int nStateIn, int nMaster)
 {
-	//broadcast to all actors whatever
+	//broadcast to all actors whatever？
 	m_nMaster = nMaster;
 	m_nSvrActive = nStateIn;
 	ST_SVRACTIVEINFO info;
@@ -362,6 +451,13 @@ HRESULT CActorHolder::SetSvrState( int nStateIn, int nMaster)
 	return S_OK;
 }
 
+/*
+*Description：定向广播，向所有ACTOR发送相同消息
+*Input Param：  
+*		szMsg ：消息内容
+*Return Param：返回状态
+*History：
+*/
 HRESULT CActorHolder::BroadcastToActor( CString& szMsg )
 {
 	vector<ST_SOCKMBCSOCK> vSocks;

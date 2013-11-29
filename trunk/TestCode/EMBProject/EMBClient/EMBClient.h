@@ -1,6 +1,10 @@
-
-// EMBClient.h : PROJECT_NAME 应用程序的主头文件
-//
+/********************************************************************
+	created:	2013/11/23
+	filename: 	EMBClient.h
+	author:		tianyx
+	purpose:	exe; 输入任务信息（迁移，转码，技审，MD5）, 将信息提交给Actor.exe
+    History: 
+*********************************************************************/
 
 #pragma once
 
@@ -21,7 +25,7 @@ public:
 	CEMBClientApp();
 
 // 重写
-	public:
+public:
 	virtual BOOL InitInstance();
 
 // 实现

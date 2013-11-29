@@ -7,7 +7,7 @@
 	file ext:	h
 	author:		tian_yuanxin
 	
-	purpose:	
+	purpose:	string utility function
 *********************************************************************/
 #pragma once
 #include <string>
@@ -32,7 +32,7 @@ typedef wstring txstring;
 #else
 typedef string txstring;
 #endif
-
+//trim characters of TEXT(" \n\r\t")
 void LTrim(txstring& wsInOut);
 void RTrim(txstring& wsInOut);
 void Trim(txstring& wsInOut);
@@ -45,7 +45,7 @@ BOOL SplitteStrings( const char* szIn , std::vector<std::string>& vOut, char chS
 typedef vector<CString> VECSTRINGS;
 typedef vector<int> VECINTS;
 
-
+//string convert utility. can convert many type from/to string
 class CTxStrConvert
 {
 public:
@@ -61,6 +61,7 @@ public:
 	CString GetAsString(LPCTSTR szDefault = TEXT(""));
 	BOOL GetAsStringArray(VECSTRINGS& vOut, TCHAR separator = ',');
 	BOOL GetAsIntArray(VECINTS& vOut, TCHAR separator = ',');
+	double GetAsDouble(double nDefault = 0.0);
 
 	void SetVal(int nVal);
 	void SetVal(unsigned int nVal);
@@ -69,5 +70,6 @@ public:
 	void SetVal(LPCTSTR szVal);
 	void SetVal(VECSTRINGS& vVal);
 	void SetVal(VECINTS& vVal);
-
+	void SetVal(double fVal);
+	void SetValX(int nVal); // 16½øÖÆ
 };

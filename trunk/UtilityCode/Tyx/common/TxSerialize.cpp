@@ -234,7 +234,64 @@ BOOL CTxSerialize::operator <<( const CString& data )
 }
 
 
-BOOL CTxSerialize::Serialize( TCHAR* data, LONG& szlenInOut )
+BOOL CTxSerialize::operator >>( INT64& data )
+{
+	if (!m_bOut /*|| !CanWriteOut(data)*/)
+	{
+		return FALSE;
+	}
+	long nlen = sizeof(data);
+	memcpy(&data, m_pPos, sizeof(data));
+	m_pPos += nlen;
+	m_lUsed += nlen;
+	return TRUE;
+}
+
+BOOL CTxSerialize::operator <<( const INT64 data )
+{
+	if (m_bOut /*|| !CanSaveIn(data)*/)
+	{
+		return FALSE;
+	}
+
+	long nLen = sizeof(data);
+	AutoIncreaseBuffer(nLen);
+	memcpy(m_pPos, &data, sizeof(data));
+	m_pPos += nLen;
+	m_lUsed += nLen;
+	return TRUE;
+}
+
+
+BOOL CTxSerialize::operator>>( SOCKADDR_IN& data )
+{
+	LONG lLen = sizeof(SOCKADDR_IN);
+	if (!m_bOut || (m_lmaxlen - m_lUsed < lLen))
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	return Serialize((BYTE*)&data, lLen);
+}
+
+
+BOOL CTxSerialize::operator<<( const SOCKADDR_IN& data )
+{
+	LONG lLen = sizeof(SOCKADDR_IN);
+	AutoIncreaseBuffer(lLen);
+	if (m_bOut)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	return Serialize((BYTE*)(&data), lLen);
+
+}
+
+
+BOOL CTxSerialize::Serialize( char* data, LONG& szlenInOut )
 {
 	BOOL bRet = TRUE;
 	if (m_bOut)
@@ -242,7 +299,7 @@ BOOL CTxSerialize::Serialize( TCHAR* data, LONG& szlenInOut )
 		//write out
 		LONG nLen = 0;
 		operator>>(nLen);
-		if (nLen > (szlenInOut * sizeof(TCHAR)))
+		if (nLen > (szlenInOut * sizeof(char)))
 		{
 			ASSERT(FALSE);
 			bRet = FALSE;
@@ -257,7 +314,7 @@ BOOL CTxSerialize::Serialize( TCHAR* data, LONG& szlenInOut )
 	else
 	{
 		//save in
-		LONG nLen = szlenInOut * sizeof(TCHAR);
+		LONG nLen = szlenInOut * sizeof(char);
 		AutoIncreaseBuffer(nLen);
 		operator<<(nLen);
 		if (nLen > 0)

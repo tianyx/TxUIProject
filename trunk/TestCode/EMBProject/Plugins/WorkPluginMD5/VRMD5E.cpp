@@ -152,7 +152,6 @@ int CVRMD5E::GetProgress()
 	}
 	else
 	{
-		ASSERT(FALSE);
 		return 0;
 	}
 }

@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/27
+	filename: 	MainDef.h
+	author:		zhangjianchao
+	purpose:	数据定义：执行者进程信息
+    History: 
+*********************************************************************/
+
 #pragma once
 #include "TxLogManager.h"
 #include "IEMBBaseInterface.h"
@@ -21,8 +29,16 @@ struct ST_GLOBAL
 	{
 		guid = GUID_NULL;
 	}
+};
 
-
+// 执行者进程信息
+struct tagExecutorProcess
+{
+	CString m_strName;  // 名称
+	CString m_strID;    // 标识
+	CString m_strState; // 状态：迁移,转码，技审，MD5 
+	CString m_strTaskGuid; // 任务标识
+	int		m_nPercent;    // 进度
 };
 
 BOOL InitGlobalConfig();

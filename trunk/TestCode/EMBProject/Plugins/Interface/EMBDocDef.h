@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////
 #define EMBVER 1
 #define EMBTYPE_FILETASK 1
-//////////////////////////////////////////////////////////////////////////
+//XML消息头
 #define EDOC_MAINHEADERFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"></edoc_main>")
 #define EDOC_COMMONRETFMT TEXT("<edoc_main ver=\"1\" type=\"%d\" guid=\"%s\"><ret>%d</ret></edoc_main>")
 #define EDOC_TASKHEADERFMT TEXT("<edoc_main ver=\"1\" type=\"%d\" guid=\"%s\"></edoc_main>")
@@ -21,7 +21,7 @@
 #define EDOC_WORKMD5FMT TEXT("<md5 desfile=\"%s\" writeto =\"%s\"></md5>")
 #define EDOC_WORKREPORTFMT TEXT("<workReport percent=\"%d\" code =\"%d\"></workReport>")
 
-//////////////////////////////////////////////////////////////////////////
+//消息头字符串
 #define EK_MAIN TEXT("edoc_main")
 #define EA_MAIN_VER TEXT("ver")
 #define EA_MAIN_TYPE TEXT("type")	//see
@@ -74,3 +74,6 @@
 #define EK_WORKREPORT		TEXT("workReport")
 #define EA_REPORTPERCENT		TEXT("percent")
 #define EA_REPORTCODE			TEXT("code")
+//技审头
+#define EK_FCVSTASKCONFIG TEXT("FCVSConfig")
+#define EK_FCVSTASK TEXT("FCVSTask")

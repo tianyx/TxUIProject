@@ -7,7 +7,9 @@
 	file ext:	
 	author:		tian_yuanxin
 	
-	purpose:	serialize
+	purpose:	serialize class, can serialize a struct from/to a buffer 
+	usage:		1. create a CTxSerialize instance
+				2. use >>, << function to serialize
 *********************************************************************/
 #pragma once
 
@@ -17,7 +19,17 @@
 class CTxSerialize
 {
 public:
+	
+	//*Description: default for serialize a buffer to struct
+	//*Input Param: bOut: TRUE for buffer-> struct, FALSE for struct -> buffer
+	//*Return Param: 
+	//*History: 
 	CTxSerialize(void* pDataIn, LONG lLenIn, BOOL bOut = TRUE); //out use this 
+
+	//*Description: default for serialize a  struct to buffer
+	//*Input Param: bOut: TRUE for buffer-> struct, FALSE for struct -> buffer
+	//*Return Param: 
+	//*History: 
 	CTxSerialize(); //in use this
 public:
 	virtual ~CTxSerialize(void);
@@ -36,13 +48,21 @@ public:
 	BOOL operator <<(const INT data);
 	BOOL operator >>(INT& data);
 
+	BOOL operator <<(const INT64 data);
+	BOOL operator >>(INT64& data);
+
+
 	BOOL operator <<(const CString& data);
 	BOOL operator >>(CString& data);
 
 	BOOL operator <<(const bool& data);
 	BOOL operator >>(bool& data);
 
-	BOOL Serialize(TCHAR* data, LONG& lenInOut);
+	BOOL operator <<(const SOCKADDR_IN& data);
+	BOOL operator >>(SOCKADDR_IN& data);
+
+
+	BOOL Serialize(char* data, LONG& lenInOut);
 	BOOL Serialize(BYTE* data, LONG& lenInOut);
 
 	//write data (at curr pos) to file; 
@@ -186,7 +206,7 @@ public:
 
 public:
 	//template for all struct, if T operator <<() or T::operator >>() not public, 
-	//use friend CIMSerialize;
+	//use friend CTxSerialize;
 	template<typename T> BOOL operator <<(const T& data)
 	{
 		if (m_bOut)

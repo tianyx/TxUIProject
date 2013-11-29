@@ -1,0 +1,9 @@
+<edoc_main ver="1.0" type="1" guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067">
+	<basic guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067" priority="1" actor = "" excList="step1" />
+	<step1 acttype="1" actname="TransferTaskRequestType">
+		<TransferTaskRequestType TaskId="0102">
+<SourceFile Type="disk" FilePath="C:\workdir" FileName="streamDB.bak" IP="192.168.1.202" User="sa" Pwd="123" Port="21">源文件</SourceFile>
+<DestFile Type="ftp" FilePath="" FileName="streamDB.bak" IP="192.168.1.202" User="sa02" Pwd="123" Port="21">目标文件</DestFile>
+		</TransferTaskRequestType>
+	</step1>
+</edoc_main>

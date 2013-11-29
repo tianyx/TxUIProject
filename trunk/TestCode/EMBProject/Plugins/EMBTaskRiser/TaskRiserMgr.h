@@ -4,12 +4,13 @@
 	filename: 	TaskRiserMgr.h
 	author:		tianyx
 	
-	purpose:	main taskriser class
+	purpose:	主任务接收类
 *********************************************************************/
 #pragma once
 #include "IEMBBaseInterface.h"
 #include "TaskProbertcp.h"
 
+//任务接收接口列表，支持多接收接口同时工作
 typedef vector<CTaskProber*> VECPROBERPTR;
 namespace EMB{
 
@@ -25,7 +26,9 @@ public:
 	virtual ~CTaskRiserMgr(void);
 
 	//interface for Iunknow
+	//插件释放函数
 	virtual void	OnFinalRelease();
+	//插件初始化函数
 	virtual HRESULT OnFirstInit();
 	//interface for IPluginBaseInterface
 	virtual HRESULT QueryPluginInfo(VECPLUGINFOS& vInfoInOut);
@@ -55,16 +58,23 @@ public:
 
 private:
 	CAutoCritSec m_lockTask;
+	//退出事件
 	HANDLE m_hQuitEvent;
+	//接收任务时间
 	HANDLE m_hTaskEvent;
+	//接收线程句柄
 	HANDLE m_hTaskCheckProc;
 
+	//可接收最大任务数
 	int m_nMaxTaskLimit;
+	//EMB接收到的任务列表
 	VECTASKDATAS m_vTasks;
+	//接收接口列表（TCP,WEBSERVICE等）
 	VECPROBERPTR m_vProbers;
-	IPluginTaskCommit* m_pTaskDispatcher;
-	BOOL m_bRunning;
+	//任务存储插件指针
+	IPluginTaskCommit* m_pTaskStorage;
 
+	//配置文件结构体
 	ST_TASKRISERCONFIG m_config;
 
 };

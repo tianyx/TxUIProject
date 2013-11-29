@@ -6,6 +6,8 @@
 #include "EMBCommonFunc.h"
 #include "TxParamString.h"
 #include "EMBDocDef.h"
+#include "Util.h"
+
 using namespace EMB;
 CTaskActor::CTaskActor(void)
 {
@@ -15,6 +17,12 @@ CTaskActor::CTaskActor(void)
 	m_actorconnSlave.SetActorConnectorCallback(this);
 	m_pExcutorMgr = CExcutorMgr::GetExcutorMgr();
 	ASSERT(m_pExcutorMgr);
+
+	// -------------------------
+	m_strTaskXmlPath = GetAppPath().c_str(); // 执行程序目录
+	m_strTaskXmlPath += "\\TaskXml";
+	CreateDirectory(m_strTaskXmlPath, NULL); // 创建目录
+	// -----------------------------
 }
 
 CTaskActor::~CTaskActor(void)
@@ -116,6 +124,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 	//getxmltype
 	ST_EMBXMLMAININFO mainInfo;
 	GetEmbXmlMainInfo(strInfo, mainInfo);
+	// 提交任务
 	if (mainInfo.nType == embxmltype_task)
 	{
 		CFWriteLog(0, TEXT("receive task %s"),mainInfo.guid);
@@ -126,6 +135,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			return EMBERR_INVALIDARG;
 		}
 		//dispatched a task
+		// 启动执行者进程
 		EXCUTORID excId = m_pExcutorMgr->CreateNewExcutor();
 		if (excId != INVALID_ID)
 		{
@@ -152,12 +162,13 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 
 		//process task
 	}
-	else if (mainInfo.nType == embxmltype_taskReport)
+	else if (mainInfo.nType == embxmltype_taskReport) // 查询任务
 	{
 		//report task progress
 		ST_TASKREPORT report;
-		TXGUID guid = String2Guid(report.strGuid);
 		report.FromString(strInfo);
+		TXGUID guid = String2Guid(report.strGuid);
+
 		if (guid != GUID_NULL)
 		{
 			CAutoLock lock(&m_csmapLock);
@@ -182,14 +193,25 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			else
 			{
 				//no task return error state
-				report.nState = embtaskstate_error;
+				// 存在情况：管理Server.exe临时退出了，Actor.exe 正常运行，任务结束后从m_mapTaskinActor删除了任务；
+				//           Server.exe启动后，查询任务状态时，对应任务已不存在于m_mapTaskinActor
+				// 此时查询TaskXml\目录中是否有对应的xml文件?
+				ST_TASKREPORT tskInfor;
+				if (QueryXmlFile(guid, tskInfor))
+				{
+					report = tskInfor;
+				}
+				else
+				{
+					report.nState = embtaskstate_error;
+				}
 			}
 
 			//report
 			report.ToString(strRet);
 		}
 	}
-	else if (mainInfo.nType == embxmltype_svrActive)
+	else if (mainInfo.nType == embxmltype_svrActive) // 任务状态改变
 	{
 		//report actor state 
 		ST_SVRACTIVEINFO activeInfo;
@@ -232,7 +254,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			ASSERT(FALSE);
 		}
 	}
-	else if (mainInfo.nType == embxmltype_actorState)
+	else if (mainInfo.nType == embxmltype_actorState) // 查询Actor.exe状态
 	{
 		CFWriteLog(0, TEXT("svr request report actor state!"));
 		//active svr changed;
@@ -319,12 +341,12 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 {
 	ST_EMBXMLMAININFO mainInfo;
 	GetEmbXmlMainInfo(szInfoIn, mainInfo);
-	if (mainInfo.nType == embxmltype_excOnIdle)
+	if (mainInfo.nType == embxmltype_excOnIdle) // 执行者进程空闲
 	{
 		CFWriteLog(0, TEXT("excutor %d report idle"), excutorId);
 		OnExcutorIdle(excutorId);
 	}
-	else if (mainInfo.nType == embxmltype_taskReport)
+	else if (mainInfo.nType == embxmltype_taskReport) // 任务状态更新
 	{
 		//excutor report
 		CFWriteLog(0, TEXT("exc%d report %s"), excutorId, szInfoIn);
@@ -353,23 +375,41 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 				taskRef.nCurrStep = report.nStep;
 				taskRef.nState = report.nState;
 				taskRef.nPercent = report.nPercent;
+				taskRef.nSubErrorCode = report.nSubErrorCode; // 具体错误
+
 				tmpReport = taskRef;
 				bReport = TRUE;
-				if (taskRef.nState == embtaskstate_finished)
+				if (taskRef.nState == embtaskstate_finished) // 任务完成，m_mapTaskinActor 删除任务
 				{
 					CFWriteLog(0, TEXT("task finished %s"), Guid2String(taskRef.taskGuid));
 					m_mapTaskinActor.erase(itftask);
 					m_mapExcTask.erase(excutorId);
+
+					// 保存任务结果
+					TaskResultSaveXmlFile(report);
 				}
-				
+				else if (embtaskstate_error == taskRef.nState)
+				{
+					// 不需重置任务
+					if (!report.NeedResetTask())
+					{
+						CFWriteLog(0, TEXT("task submit error: %s SubError:%X"), 
+							Guid2String(taskRef.taskGuid), report.nSubErrorCode);
+						m_mapTaskinActor.erase(itftask);
+						m_mapExcTask.erase(excutorId);
+					}
+
+					// 保存任务结果
+					TaskResultSaveXmlFile(report);
+				}
 			}
 		}
+
 		if (bReport)
 		{
+			// 更新任务状态
 			ReportTaskState(tmpReport);
 		}
-		
-		
 	}
 	else 
 	{
@@ -456,6 +496,8 @@ BOOL EMB::CTaskActor::ReportTaskState( ST_TASKINACTOR& infoIn )
 	report.nStep = infoIn.nCurrStep;
 	report.strGuid = infoIn.taskGuid;
 	report.strGuid = Guid2String(infoIn.taskGuid);
+	report.nSubErrorCode = infoIn.nSubErrorCode;   // 具体错误
+
 	CString strRet;
 	report.ToString(strRet);
 	CActorConnector* pActor = GetActiveActorConnector();
@@ -516,4 +558,41 @@ BOOL EMB::CTaskActor::OnExcutorIdle( const EXCUTORID excutorId )
 	}
 
 	return TRUE;
+}
+
+bool EMB::CTaskActor::TaskResultSaveXmlFile( ST_TASKREPORT& tskReport )
+{
+	CString strXml;
+	tskReport.ToString(strXml);
+
+	CString strFileName;
+	strFileName.Format("%s\\%s.xml", m_strTaskXmlPath, tskReport.strGuid);
+
+	return CUtil::SaveXmlFile(strFileName, strXml);
+}
+
+bool EMB::CTaskActor::QueryXmlFile( const CString& strTaskGuid, ST_TASKREPORT& tskInfor )
+{
+	CString strFileName;
+	strFileName.Format("%s\\%s.xml", m_strTaskXmlPath, strTaskGuid);
+
+	// 文件不存在
+	if (_access(strFileName, 0) == -1)
+	{
+		return false;
+	}
+
+	CMarkup xmlMark;
+	bool suc = xmlMark.Load(strFileName);
+
+	if (!suc)
+	{
+		return false;
+	}
+
+	// 解析xml信息
+	CString xmlContent = xmlMark.GetDoc();
+	suc = tskInfor.FromString(xmlContent);
+
+	return suc;
 }

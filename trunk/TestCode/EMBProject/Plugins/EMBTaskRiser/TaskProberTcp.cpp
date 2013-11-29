@@ -13,6 +13,16 @@ CTaskProberTcp::~CTaskProberTcp(void)
 {
 }
 
+/*
+*Description：进程间通讯接收消息函数
+*Input Param：
+*      pMBCSock ：EMB任务XML描述
+*      nMsgType ：消息类型 ， 请参考EMBDefine.h头文件定义
+*      bufferIn ：XML内容字符串信息指针，此BUFFER需要通过UnPackMBCMsg解析后得到
+*      nUsed    ：XML字符串内容有效长度
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed )
 {
 	HRESULT hr = S_OK;
@@ -23,7 +33,7 @@ HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, 
 		int nLen = 0;
 		int nRetUsed = 0;
 
-		//extract msg
+		//解析数据
 		ST_EMBTRANSMSG msgIn(nMsgType);
 		if(UnPackMBCMsg(bufferIn, nUsed, msgIn) != 0)
 		{
@@ -57,6 +67,14 @@ HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, 
 	}
 }
 
+/*
+*Description：分解消息并将任务信息（XML方式）添加到任务列表中
+*Input Param：
+*      msgIn ：
+*      msgRet ：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProberTcp::TransTask( ST_EMBTRANSMSG& msgIn, ST_EMBTRANSMSG& msgRet )
 {
 	msgRet.nMsgState = embmsgstate_A;
@@ -82,11 +100,23 @@ HRESULT CTaskProberTcp::TransTask( ST_EMBTRANSMSG& msgIn, ST_EMBTRANSMSG& msgRet
 
 }
 
+/*
+*Description：启动接收任务功能
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProberTcp::Run_Prober()
 {
 	return CMBCRemoteObj::Run();
 }
 
+/*
+*Description：停止接收任务功能
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskProberTcp::Stop_Prober()
 {
 	return CMBCRemoteObj::Stop();

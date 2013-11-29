@@ -1,3 +1,12 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   17:59
+	filename: 	TaskActor.h
+	author:		tianyx
+	
+	purpose:	处理client发送的xml消息: 任务提交，状态查询
+*********************************************************************/
+
 #pragma once
 #include "IEMBBaseInterface.h"
 #include "ActorConnector.h"
@@ -15,6 +24,7 @@ struct ST_TASKINACTOR
 	EXCUTORID excId;
 	int nRetry;
 	int nPercent;
+	int nSubErrorCode; // 具体错误
 	time_t tmLastReport;
 	CString strTask;
 	ST_TASKINACTOR()
@@ -26,6 +36,7 @@ struct ST_TASKINACTOR
 		nRetry = 0;
 		excId = INVALID_ID;
 		nPercent = 0;
+		nSubErrorCode = 0;
 	}
 };
 
@@ -75,8 +86,20 @@ public:
 // 	virtual HRESULT ActCallbackProc(CTaskString& szActMsg, CTaskString& szRet);
 
 	//for IActorConnectorCallback
+	/*
+    Description：解析xml消息
+	Input：		strInfo xml格式消息, strRet 返回信息
+	Return:		S_OK 成功处理消息
+	History：
+	*/
 	virtual HRESULT OnActorConnectorMsg(CString& strInfo, CString& strRet);
 	//for IExcutorMsgCallBack
+	/*
+    Description：执行者消息处理
+	Input：		excutorId 执行进程标识 szInfoIn xml消息
+	Return:		S_OK 成功处理消息
+	History：
+	*/
 	HRESULT OnExcutorMessage(const EXCUTORID excutorId, CString& szInfoIn);
 	HRESULT OnExcutorExit(const EXCUTORID excutorId);
 
@@ -87,6 +110,15 @@ private:
 	BOOL ReportTaskState(ST_TASKINACTOR& infoIn);
 	BOOL OnExcutorIdle(const EXCUTORID excutorId);
 	CActorConnector* GetActiveActorConnector(){return (m_nActiveConn == 1)?(&m_actorconnMain):(m_nActiveConn == 2)? (&m_actorconnSlave):NULL;}
+	/*
+    Description：任务处理完后，将结果保存为xml文件
+	Input：		tskReport 任务信息 
+	Return:		true 成功
+	History：
+	*/
+	bool TaskResultSaveXmlFile(ST_TASKREPORT& tskReport);
+	bool QueryXmlFile(const CString& strTaskGuid, ST_TASKREPORT& tskInfor);
+
 private:
 	CActorConnector m_actorconnMain;
 	CActorConnector m_actorconnSlave;
@@ -100,6 +132,7 @@ private:
 	DQTASKS m_dqRecentFinishedTasks;
 	BOOL m_bRuning;
 	int nfgRetryMax;
+	CString m_strTaskXmlPath; // 保存xml文件的路径
 };
 
 

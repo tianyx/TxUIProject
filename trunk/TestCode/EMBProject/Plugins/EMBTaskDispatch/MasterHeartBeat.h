@@ -4,7 +4,7 @@
 	filename: 	MasterHeartBeat.h
 	author:		tianyx
 	
-	purpose:	
+	purpose:	主心跳检测
 *********************************************************************/
 #pragma once
 #include "MBCRemoteObj.h"
@@ -25,7 +25,9 @@ public:
 	virtual HRESULT FillLivePack(ST_TXMSG_LIVEQA& msg);
 	virtual HRESULT OnLiveMsgIn(ST_TXMSG_LIVEQA& msg);
 
+	// 连接状态回调函数指针
 	IServerLiveInterface* m_pSvrLiveCallback;
+	// 远程连接任务管理祥光信息
 	ST_SVRLIVEINFO m_RemoteInfo;
 
 	CMBCSocket* m_pLastSock;

@@ -5,7 +5,7 @@
 	file base:	NetCommon
 	file ext:	h
 	author:		tian_yx
-	purpose:	
+	purpose:	for net function
 *********************************************************************/
 #pragma once
 

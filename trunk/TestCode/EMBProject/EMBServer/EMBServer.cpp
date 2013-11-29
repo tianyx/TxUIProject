@@ -63,18 +63,22 @@ BOOL CEMBServerApp::InitInstance()
 	
 	MACRO_CREATEOUTPUTCONSOLE
 
+	// 添加LOG日志
 	GetTxLogMgr()->AddNewLogFile(LOGKEYMAIN, "EMBServer.log");
 
+	// 初始化配置文件
 	if (!InitGlobalConfig())
 	{
 		return FALSE;
 	}
 
+	// 加载任务管理插件
 	if (!LoadPluginManager())
 	{
 		return FALSE;
 	}
 
+	// 启动服务
 	if (!InitServer())
 	{
 		UnInitServer();

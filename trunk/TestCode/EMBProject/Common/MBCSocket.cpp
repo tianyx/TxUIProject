@@ -55,6 +55,11 @@ DWORD __stdcall CreateSockWndThread( void* lparam )
 		NULL, 
 		NULL, 
 		hInstance,0);
+	if (!hwnd)
+	{
+		ASSERT(FALSE);
+		return 0;
+	}
 
 	ASSERT(::IsWindow(hwnd));
 	::SetWindowLong(hwnd,  GWL_USERDATA, (LONG)pSock);
@@ -392,6 +397,7 @@ HRESULT CMBCSocket::Init()
 	{
 		StartMsgLoopThd();
 	}
+	
 	m_nSelfState = MBCSOCKSTATE_OK;
 	
 	return S_OK;
@@ -459,9 +465,9 @@ BOOL CMBCSocket::CreateMsgWindow()
 	if (m_hWndThread)
 	{
 		int i = 0;
-		while(m_hSockWnd == 0 && i <1000)
+		while(m_hSockWnd == 0 && WaitForSingleObject(m_hWndThread, 1) != WAIT_OBJECT_0)
 		{
-			++i;
+			
 			Sleep(1);
 		}
 	}
@@ -494,6 +500,7 @@ HRESULT CMBCSocket::SockMsgCallback( WPARAM wParam, LPARAM lParam )
 			if (((m_nCreateFlag & MBCSOCKTYPE_AUTORECONNECT) != 0)
 				&& (m_nSelfState != MBCSOCKSTATE_UNINIT))
 			{
+				SetState(MBCSOCKSTATE_CLOSE);
 				TRACE("\nsock %x connect  after 5s", this);
 				m_timerReconnect.SetTimer(IDTIMER_RECONN, SOCKDOWN_RECONN_INTERVAL, this, (LPARAM)this, WT_EXECUTEONLYONCE|WT_EXECUTEDEFAULT, SOCKDOWN_RECONN_INTERVAL);
 			}
@@ -547,6 +554,12 @@ HRESULT CMBCSocket::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
 	if (dwEvent == IDTIMER_RECONN)
 	{
 		//try reconnect
+
+		if (GetState() == MBCSOCKSTATE_OK)
+		{
+			ASSERT(FALSE);
+			return S_OK;
+		}
 
 		TRACE("\nsock %x Reconnecting...", this);
 		UnInit();

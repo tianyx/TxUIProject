@@ -8,6 +8,13 @@
 
 using namespace EMB;
 
+/*
+* Description：接收任务插件主线程
+* Input Param：
+*		parmIn：调用线程指针
+* Return Param：返回成功或失败
+* History：
+*/
 DWORD __stdcall TaskLoopProc(LPVOID parmIn)
 {
 	if (parmIn == NULL)
@@ -23,7 +30,7 @@ DWORD __stdcall TaskLoopProc(LPVOID parmIn)
 
 CTaskRiserMgr::CTaskRiserMgr()
 {
-	m_pTaskDispatcher = NULL;
+	m_pTaskStorage = NULL;
 	m_hTaskCheckProc = NULL;
 	m_hQuitEvent = NULL;
 	m_hTaskEvent = NULL;
@@ -34,8 +41,15 @@ CTaskRiserMgr::~CTaskRiserMgr()
 	g_pPluginInstane = NULL;
 }
 
+/*
+*Description：初始化函数
+*Input Param：
+*Return Param：
+*History：
+*/
 HRESULT CTaskRiserMgr::OnFirstInit()
 {
+	//初始化日志
 	CString strFile(GetAppPath().c_str());
 	strFile +=TEXT("\\log\\TaskRiser.log");
 	GetTxLogMgr()->AddNewLogFile(LOGKEY_TASKRISER, strFile);
@@ -43,20 +57,33 @@ HRESULT CTaskRiserMgr::OnFirstInit()
 	return S_OK;
 }
 
+/*
+*Description：释放函数
+*Input Param：
+*Return Param：
+*History：
+*/
 void CTaskRiserMgr::OnFinalRelease()
 {
-
-	if (m_pTaskDispatcher)
+    //与下级连接插件-任务存储插件连接断开
+	if (m_pTaskStorage)
 	{
-		Disconnect(m_pTaskDispatcher);
+		Disconnect(m_pTaskStorage);
 	}
 	g_pPluginInstane = NULL;
 
+	//日志插件释放
 	ReleaseTxLogMgr();
 	TRACE("\nCTaskRiserMgr::OnFinalRelease() ");
-	delete this;
+	delete this; 
 }
 
+/*
+*Description：查询插件信息，加入到插件列表中
+*Input Param：
+*Return Param：
+*History：
+*/
 HRESULT CTaskRiserMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 {
 	ST_PluginInfo info;
@@ -67,6 +94,12 @@ HRESULT CTaskRiserMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 	return S_OK;
 }
 
+/*
+*Description：获取插件接口
+*Input Param：
+*Return Param：
+*History：
+*/
 HRESULT CTaskRiserMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 {
 	pInterfaceOut = NULL;
@@ -110,7 +143,12 @@ HRESULT CTaskRiserMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut
 	}
 }
 
-
+/*
+*Description：启动插件服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskRiserMgr::Run_Plugin()
 {
 	Stop_Plugin();
@@ -118,6 +156,7 @@ HRESULT CTaskRiserMgr::Run_Plugin()
 	m_hQuitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_hTaskEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
+	//启动监听线程
 	m_hTaskCheckProc = CreateThread(NULL, NULL, TaskLoopProc, (LPVOID)this, 0, 0);
 	ASSERT(m_hTaskCheckProc != NULL);
 	HRESULT hr = S_OK;
@@ -127,10 +166,14 @@ HRESULT CTaskRiserMgr::Run_Plugin()
 		if (m_config.vProbes[i].nType == embTaskproberType_tcp)
 		{
 			CTaskProberTcp* pProb = new CTaskProberTcp;
+			//设置地址
 			pProb->SetScokAddr(&m_config.vProbes[i].data.ipdata.addrListen, &m_config.vProbes[i].data.ipdata.addrListen);
-			pProb->SetTaskProcessor(this);
+			//设置回调函数
+			pProb->SetTaskProcessor(this);  //没明白这个设置和TaskCollectCallback如何关联在一起的，与TaskProberTcp又是如何起作用的？
+			//启动监听
 			hr =pProb->Run_Prober();
 			ASSERT(SUCCEEDED(hr));
+			//？
 			m_vProbers.push_back(pProb);
 			
 		}
@@ -140,6 +183,12 @@ HRESULT CTaskRiserMgr::Run_Plugin()
 	return S_FALSE;
 }
 
+/*
+*Description：停止插件服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CTaskRiserMgr::Stop_Plugin()
 {
 
@@ -179,23 +228,33 @@ HRESULT CTaskRiserMgr::Stop_Plugin()
 	return S_OK;
 }
 
+/*
+* Description：接收任务执行线程
+* Input Param：
+* Return Param：返回成功或失败
+* History：
+*/
 BOOL CTaskRiserMgr::TaskCheckProc()
 {
 
 		while(TRUE)
 		{
+			//等待两个事件都到位或超时：TASK接收到的事件或退出事件
 			DWORD dwWait = TxWaitObjWithQuit(m_hTaskEvent, m_hQuitEvent);
+
 			if (dwWait == WAIT_OBJECT_0)
 			{
-				//have task
+				//have one or more tasks
 				VECTASKDATAS vTasks;
+				//get task list
 				PopTask(vTasks);
 				for (size_t i = 0; i < vTasks.size(); ++i)
 				{
-					if (m_pTaskDispatcher)
+					if (m_pTaskStorage)
 					{
+						//submit task to StoragePulgIn
 						CString strRet;
-						m_pTaskDispatcher->SubmitTask(vTasks[i].taskDesc, strRet);
+						m_pTaskStorage->SubmitTask(vTasks[i].taskDesc, strRet);
 					}
 				}
 			}
@@ -210,6 +269,13 @@ BOOL CTaskRiserMgr::TaskCheckProc()
 
 }
 
+/*
+* Description：接收到任务XML回调函数
+* Input Param：
+*		taskIn：任务XML字符串
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT CTaskRiserMgr::TaskCollectCallback( CString& taskIn )
 {
 	if(taskIn.IsEmpty())
@@ -217,6 +283,7 @@ HRESULT CTaskRiserMgr::TaskCollectCallback( CString& taskIn )
 		ASSERT(FALSE);
 		return EMBERR_INVALIDARG;
 	}
+	//判断是否超过最大任务数
 	if (m_vTasks.size() == m_nMaxTaskLimit)
 	{
 		CFWriteLog(LOGKEY_TASKRISER, TEXT("task list is full!!"));
@@ -224,13 +291,22 @@ HRESULT CTaskRiserMgr::TaskCollectCallback( CString& taskIn )
 	}
 
 	CAutoLock locTask(&m_lockTask);
+	//赋值任务信息变脸
 	ST_EMBTASKDATA task;
 	task.taskDesc = taskIn;
+	//加入任务组中
 	m_vTasks.push_back(task);
 	SetEvent(m_hTaskEvent);
 	return S_OK;
 }
 
+/*
+* Description：获取任务列表
+* Input Param：
+*		vTaskOut：任务列表引用变量
+* Return Param：返回成功或失败
+* History：
+*/
 BOOL CTaskRiserMgr::PopTask( VECTASKDATAS& vTaskOut )
 {
 
@@ -242,24 +318,30 @@ BOOL CTaskRiserMgr::PopTask( VECTASKDATAS& vTaskOut )
 
 }
 
-
+/*
+* Description：连接任务存储插件
+* Input Param：
+*		pInterfaceIn：存储插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskRiserMgr::Connect( ITxUnkown* pInterfaceIn )
 {
-	if (pInterfaceIn == m_pTaskDispatcher)
+	if (pInterfaceIn == m_pTaskStorage)
 	{
 		return S_OK;
 	}
-	if (m_pTaskDispatcher)
+	if (m_pTaskStorage)
 	{
 		ASSERT(FALSE);
-		Disconnect(m_pTaskDispatcher);
-		m_pTaskDispatcher = NULL;
+		Disconnect(m_pTaskStorage);
+		m_pTaskStorage = NULL;
 	}
-	pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&) m_pTaskDispatcher);
-	if (m_pTaskDispatcher)
+	pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&) m_pTaskStorage);
+	if (m_pTaskStorage)
 	{
 		CTxAutoComPtr<IPluginConnectorInterce> pConn;
-		m_pTaskDispatcher->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&) (*&pConn));
+		m_pTaskStorage->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&) (*&pConn));
 		ASSERT(pConn);
 		pConn->OnConnect(this);
 	
@@ -271,13 +353,20 @@ HRESULT EMB::CTaskRiserMgr::Connect( ITxUnkown* pInterfaceIn )
 	}
 }
 
+/*
+* Description：断开任务存储插件
+* Input Param：
+*		pInterfaceIn：存储插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 {
 	//find if have connected this interface
 	HRESULT hr = S_FALSE;
 
 	BOOL bFound = FALSE;
-	if (m_pTaskDispatcher == pInterfaceIn)
+	if (m_pTaskStorage == pInterfaceIn)
 	{
 		bFound = TRUE;
 	}
@@ -285,7 +374,7 @@ HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 	{
 		CTxAutoComPtr<IPluginTaskCommit> pDispath;
 		if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&pDispath))
-			&& pDispath == m_pTaskDispatcher)
+			&& pDispath == m_pTaskStorage)
 		{
 			bFound = TRUE;
 		}
@@ -295,11 +384,11 @@ HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 	{
 		//found it, disconnect the interface
 		CTxAutoComPtr<IPluginConnectorInterce> pConn;
-		m_pTaskDispatcher->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&) (*&pConn));
+		m_pTaskStorage->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&) (*&pConn));
 		ASSERT(pConn);
 		pConn->OnDisconnect(this);
-		m_pTaskDispatcher->Release();
-		m_pTaskDispatcher = NULL;
+		m_pTaskStorage->Release();
+		m_pTaskStorage = NULL;
 		hr =S_OK;
 	}
 
@@ -307,15 +396,22 @@ HRESULT EMB::CTaskRiserMgr::Disconnect( ITxUnkown* pInterfaceIn )
 	return hr;
 }
 
+/*
+* Description：连接任务存储插件与传入插件？功能是否完成
+* Input Param：
+*		pInterfaceIn：接收插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskRiserMgr::OnConnect( ITxUnkown* pInterfaceIn )
 {
-	if (m_pTaskDispatcher != NULL)
+	if (m_pTaskStorage != NULL)
 	{
 		ASSERT(FALSE);
 		return E_FAIL;
 	}
-	if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&m_pTaskDispatcher))
-		&& m_pTaskDispatcher != NULL)
+	if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&m_pTaskStorage))
+		&& m_pTaskStorage != NULL)
 	{
 		return S_OK;
 	}
@@ -325,9 +421,16 @@ HRESULT EMB::CTaskRiserMgr::OnConnect( ITxUnkown* pInterfaceIn )
 	}
 }
 
+/*
+* Description：存储插件与接收插件断开
+* Input Param：
+*		pInterfaceIn：接收插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 {
-	if (m_pTaskDispatcher == NULL)
+	if (m_pTaskStorage == NULL)
 	{
 		ASSERT(FALSE);
 		return E_FAIL;
@@ -335,7 +438,7 @@ HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 
 	HRESULT hr = S_FALSE;
 	BOOL bFound = FALSE;
-	if (m_pTaskDispatcher == pInterfaceIn)
+	if (m_pTaskStorage == pInterfaceIn)
 	{
 		bFound = TRUE;
 	}
@@ -343,7 +446,7 @@ HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 	{
 		CTxAutoComPtr<IPluginTaskCommit> pDispath;
 		if (pInterfaceIn->QueryInterface(GuidEMBPlugin_ITaskCommit, (LPVOID&)(*&pDispath))
-			&& pDispath == m_pTaskDispatcher)
+			&& pDispath == m_pTaskStorage)
 		{
 			bFound = TRUE;
 		}
@@ -352,8 +455,8 @@ HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 	if (bFound)
 	{
 		//found it, disconnect the interface
-		m_pTaskDispatcher->Release();
-		m_pTaskDispatcher = NULL;
+		m_pTaskStorage->Release();
+		m_pTaskStorage = NULL;
 		hr =S_OK;
 	}
 
@@ -361,11 +464,27 @@ HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 	return hr;
 }
 
+/*
+* Description：获取插件配置函数
+* Input Param：
+*		szIn：查询参数标识
+*       szOut:返回查询结果
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskRiserMgr::GetParam( const CTaskString& szIn, CTaskString& szOut )
 {
 	return S_OK;
 }
 
+/*
+* Description：设置插件配置函数
+* Input Param：
+*		szIn：传入配置文件内容
+*       szOut:返回值
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskRiserMgr::SetParam( const CTaskString& szIn, CTaskString& szOut )
 {
 	ST_TASKRISERCONFIG tmpConfig;

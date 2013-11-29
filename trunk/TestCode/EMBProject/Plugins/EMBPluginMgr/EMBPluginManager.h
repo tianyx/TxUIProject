@@ -13,12 +13,18 @@ struct ST_PLUGINMGRDATA
 	MAPMODULES vModules;
 	CString strFile;
 	ST_PluginInfo plugInfo;
+	BOOL		  bV6;
+
+	ST_PLUGINMGRDATA()
+	{
+		bV6 = FALSE;
+	}
 };
 typedef map<TXGUID, ST_PLUGINMGRDATA> MAPPLUGINMAGRDATAS;
-
+//定义插件管理 （本身也是一个插件）
 class CEMBPluginManager: 
-	public IPluginBaseInterface,
-	public IPluginManagerInterface
+	public IPluginBaseInterface,//  插件管理本身也是一个插件
+	public IPluginManagerInterface//此接口为控制其他插件
 {
 public:
 	CEMBPluginManager(void);
@@ -33,7 +39,7 @@ public:
 	//iterface for IPluginManagerInterface
 	virtual HRESULT InitPluginsSearch(BOOL bSearchDeep, LPCTSTR szFileExtern);
 	virtual HRESULT FindPlugin(const UINT nPluginType, const UINT nSubType, GUID& guidOut);
-	virtual HANDLE  LoadPlugin(const GUID guidIn, IPluginBaseInterface*& pInterfaceOut);
+	virtual HANDLE  LoadPlugin(const GUID guidIn, ITxUnkown*& pInterfaceOut);//根据GUID，返回插件接口，GUID查询在FindPlugin（）
 	virtual HRESULT UnloadPlugin(const GUID guidIn, HANDLE handle);
 private:
 	void Init();

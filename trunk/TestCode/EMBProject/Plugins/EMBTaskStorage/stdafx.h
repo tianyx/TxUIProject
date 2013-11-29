@@ -21,13 +21,13 @@
 #include <afxdisp.h>        // MFC 自动化类
 #endif // _AFX_NO_OLE_SUPPORT
 
-#ifndef _AFX_NO_DB_SUPPORT
-#include <afxdb.h>                      // MFC ODBC 数据库类
-#endif // _AFX_NO_DB_SUPPORT
-
-#ifndef _AFX_NO_DAO_SUPPORT
-#include <afxdao.h>                     // MFC DAO 数据库类
-#endif // _AFX_NO_DAO_SUPPORT
+// #ifndef _AFX_NO_DB_SUPPORT
+// #include <afxdb.h>                      // MFC ODBC 数据库类
+// #endif // _AFX_NO_DB_SUPPORT
+// 
+// #ifndef _AFX_NO_DAO_SUPPORT
+// #include <afxdao.h>                     // MFC DAO 数据库类
+// #endif // _AFX_NO_DAO_SUPPORT
 
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h>           // MFC 对 Internet Explorer 4 公共控件的支持

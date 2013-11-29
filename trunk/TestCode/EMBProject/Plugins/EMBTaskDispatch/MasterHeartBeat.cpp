@@ -10,6 +10,16 @@ CMasterHeartBeat::~CMasterHeartBeat(void)
 {
 }
 
+/*
+*Description：接收消息函数
+*Input Param：
+*		pMBCSock ：消息通讯指针
+*	    nMsgType ：消息类型
+*       bufferIn ：消息指针
+*       nUsed    ：消息长度
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CMasterHeartBeat::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed )
 {
 	HRESULT hr = S_OK;
@@ -24,6 +34,7 @@ HRESULT CMasterHeartBeat::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType
 	int nRetUsed = 0;
 	char buffer[MAXRECVBUFF];
 
+	// 判断是否为主备心跳消息
 	if (nMsgType == msgtype_LIVEQA)
 	{
 		m_pLastSock = pMBCSock;
@@ -54,6 +65,13 @@ HRESULT CMasterHeartBeat::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType
 	return hr;
 }
 
+/*
+*Description：填写心跳消息字符串
+*Input Param：
+*		msg ：消息通讯指针
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CMasterHeartBeat::FillLivePack( ST_TXMSG_LIVEQA& msg )
 {
 	if (m_pSvrLiveCallback)
@@ -72,6 +90,13 @@ HRESULT CMasterHeartBeat::FillLivePack( ST_TXMSG_LIVEQA& msg )
 	}
 }
 
+/*
+*Description：更新远程任务管理状态
+*Input Param：
+*		msg ：远程服务端状态信息
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CMasterHeartBeat::OnLiveMsgIn( ST_TXMSG_LIVEQA& msg )
 {
 	m_RemoteInfo.nsvrId = msg.nParam1;
@@ -80,6 +105,13 @@ HRESULT CMasterHeartBeat::OnLiveMsgIn( ST_TXMSG_LIVEQA& msg )
 	return S_OK;
 }
 
+/*
+*Description：获取远程任务管理状态
+*Input Param：
+*		infoOut ：远程服务端状态信息
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT CMasterHeartBeat::GetRemoteSvrState( ST_SVRLIVEINFO& infoOut )
 {
 	infoOut = m_RemoteInfo;

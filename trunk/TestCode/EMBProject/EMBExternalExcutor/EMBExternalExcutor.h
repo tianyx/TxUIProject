@@ -1,6 +1,11 @@
+/********************************************************************
+	created:	2013/11/23
+	filename: 	EMBExternalExcutor.h
+	author:		tianyx
+	purpose:	执行者(exe) 调用功能dll,接受处理dll反馈信息
+    History: 
+*********************************************************************/
 
-// EMBExternalExcutor.h : PROJECT_NAME 应用程序的主头文件
-//
 
 #pragma once
 

@@ -4,7 +4,7 @@
 	filename: 	TaskProberTcp.h
 	author:		tianyx
 	
-	purpose:	
+	purpose:	接收任务通讯类
 *********************************************************************/
 #pragma once
 #include "taskprober.h"
@@ -18,9 +18,11 @@ class CTaskProberTcp :
 public:
 	CTaskProberTcp(void);
 	virtual ~CTaskProberTcp(void);
-	virtual HRESULT TransTask(ST_EMBTRANSMSG& msgIn, ST_EMBTRANSMSG& msgRet);
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
 
 	virtual HRESULT Run_Prober();
 	virtual HRESULT Stop_Prober();
+
+private:
+	virtual HRESULT TransTask(ST_EMBTRANSMSG& msgIn, ST_EMBTRANSMSG& msgRet);
 };

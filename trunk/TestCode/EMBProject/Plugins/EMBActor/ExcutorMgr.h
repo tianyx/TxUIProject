@@ -4,7 +4,7 @@
 	filename: 	ExcutorMgr.h
 	author:		tianyx
 	
-	purpose:	excutor manager
+	purpose:	管理Executor进程,处理Executor的消息
 *********************************************************************/
 #pragma once
 #include "fglobal.h"
@@ -37,6 +37,12 @@ public:
 	BOOL Init(LPCTSTR strExcPathIn, ST_ACTORCONFIG& actCfg, IExcutorMsgCallBack* pCallBack);
 	HRESULT Run();
 	HRESULT Stop();
+	/*
+    Description：创建执行者进程
+	Input：		
+	Return:		进程标识
+	History：
+	*/
 	EXCUTORID CreateNewExcutor();
 	BOOL StopExcutor(const EXCUTORID guidIn);
 	//interface for IExcutorMgrInterface
@@ -47,8 +53,26 @@ private:
 	HRESULT CheckExcutor();
 	BOOL LaunchExcutorFile(const EXCUTORID excId, DWORD& dwProcessId);
 public:
+	/*
+    Description：处理执行者进程发送的消息
+	Input：		msgIn 消息内容
+	Return:		S_OK 成功处理消息
+	History：
+	*/
 	HRESULT OnExcutorMessage(ST_EMBWNDMSG& msgIn);
+	/*
+    Description：将消息保存在m_vMsgPool
+	Input：		
+	Return:		S_OK 成功处理消息
+	History：
+	*/
 	HRESULT SaveMessageToPool(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+	/*
+    Description：执行者注册
+	Input：		
+	Return:		S_OK 成功处理消息
+	History：
+	*/
 	HRESULT OnExcutorReg(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 	HRESULT CheckExcutorLoop();
 	HRESULT WndMsgPoolCheckLoop();

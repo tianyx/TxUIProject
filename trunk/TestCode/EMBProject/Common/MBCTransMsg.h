@@ -4,7 +4,7 @@
 	filename: 	MBCTransMsg.h
 	author:		tianyx
 	
-	purpose:	
+	purpose:	function for process tcp trans message, the typename T must derived from ST_TXMSGBASE
 *********************************************************************/
 #pragma once
 #include "MBCCommonDef.h"
@@ -14,7 +14,7 @@
 #define MIDBUFFSIZE 1024
 #define LARGEBUFFSIZE 1024*1024
 
-
+//extract message from tcp buffer
 template <typename T>
 int UnPackMBCMsg( char* bufferIn, int nBufferSize, T& objOut )
 {
@@ -49,6 +49,7 @@ int UnPackMBCMsg( char* bufferIn, int nBufferSize, T& objOut )
 	return S_OK;
 }
 
+//pack message to tcp buffer
 template <typename T>
 int PackMBCMsg(const T& objIn, char* bufferOut, int nBufferLenIn, int& nUsedOut )
 {

@@ -61,6 +61,7 @@ BOOL CEMBActorHostApp::InitInstance()
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 	MACRO_CREATEOUTPUTCONSOLE
 
+	// 加载EMBActor.dll
 	if (!InitGlobalConfig())
 	{
 		return FALSE;

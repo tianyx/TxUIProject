@@ -4,7 +4,7 @@
 	filename: 	StorageMgr.h
 	author:		tianyx
 	
-	purpose:	
+	purpose:	ÈÎÎñ´æ´¢²å¼þ
 *********************************************************************/
 #pragma once
 #include "IEMBBaseInterface.h"

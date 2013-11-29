@@ -1,3 +1,12 @@
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:03
+	filename: 	TaskDispatchMgr.h
+	author:		tianyx
+	
+	purpose:	主心跳检测
+*********************************************************************/
+
 #pragma once
 #include "IEMBBaseInterface.h"
 #include "ActorHolder.h"
@@ -7,6 +16,8 @@
 #include "SlaveHeartBeat.h"
 #include <map>
 using namespace std;
+
+// 任务信息状态结构体
 struct ST_FILETASKDATA
 {
 	ST_TASKBASIC taskBasic;
@@ -102,19 +113,22 @@ private:
 	BOOL UpdateActorState(ST_ACTORSTATE& stateIn);
 
 private:
+	// 全部任务列表
 	MAPFILETASKS m_mapTasks;
+	// ACTOR列表
 	MAPACTORSTATES m_mapActors;
 	//for  OnActorDisConnect
+	// 未连接设备列表
 	VECACTORDISCONNCACHE m_vCachedDisconnActor;
 private:
 	CAutoCritSec m_csFTask; //lock for m_mapTasks
 	CAutoCritSec m_csActor; //lock for m_mapActors
 	CAutoCritSec m_csCacheDisActor; //lock for m_vCachedDisconnActor
 
-	CActorHolder m_actHolder;
-	IPluginStorageInterface * m_pIStorage;
-	HANDLE m_hThdFtask;
-	HANDLE m_hThdCheck;
+	CActorHolder m_actHolder;                 // ACTOR执行端控制着，控制所有ACTOR
+	IPluginStorageInterface * m_pIStorage;    // 任务存储指针
+	HANDLE m_hThdFtask;                       // 主备监听线程指针
+	HANDLE m_hThdCheck;                       // 分配任务线程指针
 	HANDLE m_hEventQuitLoop;
 	//for master/slave check
 	BOOL m_bCheckBackSvr;
@@ -124,6 +138,7 @@ private:
 	int m_nSvrId;
 
 	//for config
+	// 任务分配配置文件
 	ST_TASKDISPATCHCONFIG m_config;
 
 	int nfgTaskPoolSizeMax;

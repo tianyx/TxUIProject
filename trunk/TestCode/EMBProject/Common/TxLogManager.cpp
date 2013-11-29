@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "TxLogManager.h"
 #include "FGlobal.h"
+#include "EMBCommonFunc.h"
 
 CTxLogManager* g_pLogMgr = NULL;
 
@@ -9,7 +10,7 @@ CTxLogManager::CTxLogManager(void)
 {
 	m_hLoopThread = NULL;
 	m_hEventDataInQueue = CreateEvent(NULL, TRUE, FALSE,  NULL);
-	m_bRunning = FALSE;
+	m_hQuitEvent = CreateEvent(NULL, TRUE, FALSE,  NULL);
 	m_vLogData.reserve(MAXLOGQUEUESIZE);
 }
 
@@ -34,21 +35,25 @@ CTxLogManager::~CTxLogManager(void)
 
 void CTxLogManager::Start()
 {
-	m_bRunning = TRUE;
-	m_hLoopThread = CreateThread(NULL, NULL, LogLoopProc, (LPVOID)this, 0,0);
+	if (!m_hLoopThread)
+	{
+		ResetEvent(m_hQuitEvent);
+		m_hLoopThread = CreateThread(NULL, NULL, LogLoopProc, (LPVOID)this, 0,0);
+
+	}
 }
 
 void CTxLogManager::CheckLog()
 {
 	VECLOGDATA vData;
 	vData.reserve(MAXLOGQUEUESIZE);
-	while (m_bRunning)
+	while (TxWaitObjWithQuit(m_hEventDataInQueue ,m_hQuitEvent, INFINITE) == WAIT_OBJECT_0)
 	{
-		if(WaitForSingleObject(m_hEventDataInQueue, 500)== WAIT_OBJECT_0)
-		{
+
 			//copy to cache
 			m_qlock.Lock();	
 			vData= m_vLogData;
+			m_vLogData.clear();
 			m_qlock.Unlock();
 			ResetEvent(m_hEventDataInQueue);
 			int nSize = vData.size();
@@ -65,7 +70,6 @@ void CTxLogManager::CheckLog()
 				else
 				{
 					//write to first;
-					ASSERT(FALSE);
 					if (m_mapFileLogs.begin() != m_mapFileLogs.end())
 					{
 						pLogfile = m_mapFileLogs.begin()->second.log;
@@ -82,8 +86,6 @@ void CTxLogManager::CheckLog()
 				}
 
 			}
-
-		}
 	}
 }
 
@@ -91,10 +93,9 @@ void CTxLogManager::Stop()
 {
 	if (m_hLoopThread)
 	{
-		m_bRunning = FALSE;
-		WaitForSingleObject(m_hEventDataInQueue, 1000);
-		TerminateThread(m_hEventDataInQueue, 0);
-		m_hEventDataInQueue = NULL;
+		SetEvent(m_hQuitEvent);
+		WaitForSingleObject(m_hLoopThread, INFINITE);
+		m_hLoopThread = NULL;
 	}
 
 }
@@ -107,6 +108,7 @@ DWORD CTxLogManager::WriteLog( DWORD dwLogKey, CString strDataIn )
 	while (m_vLogData.size() >= MAXLOGQUEUESIZE)
 	{
 		ASSERT(FALSE);
+		SetEvent(m_hEventDataInQueue);
 		Sleep(10);
 	}
 	m_qlock.Lock();
@@ -162,6 +164,7 @@ CTxLogManager* GetTxLogMgr()
 	if (g_pLogMgr == NULL)
 	{
 		g_pLogMgr = new CTxLogManager();
+		g_pLogMgr->Start();
 	}
 
 	return g_pLogMgr;

@@ -9,6 +9,13 @@
 using namespace EMB;
 #define MAXACTORPALOAD 0x00FFFFFF
 //////////////////////////////////////////////////////////////////////////
+/*
+*Description：任务分配线程
+*Input Param：
+*		paramIn：传入指针
+*Return Param：
+*History：
+*/
 DWORD __stdcall  TDFTaskProc(LPVOID paramIn)
 {
 	CTaskDispatchMgr* pMgr = (CTaskDispatchMgr*)paramIn;
@@ -20,6 +27,13 @@ DWORD __stdcall  TDFTaskProc(LPVOID paramIn)
 	return 0;
 }
 
+/*
+*Description：其他任务线程
+*Input Param：
+*		paramIn：传入指针
+*Return Param：
+*History：
+*/
 DWORD __stdcall TDCheckProc(LPVOID paramIn)
 {
 	CTaskDispatchMgr* pMgr = (CTaskDispatchMgr*)paramIn;
@@ -69,6 +83,12 @@ CTaskDispatchMgr::~CTaskDispatchMgr(void)
 	g_pPluginInstane = NULL;
 }
 
+/*
+*Description：查询接收插件信息，对外提供插件管理者管理功能
+*Input Param：
+*Return Param：
+*History：
+*/
 HRESULT EMB::CTaskDispatchMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 {
 	ST_PluginInfo info;
@@ -79,6 +99,12 @@ HRESULT EMB::CTaskDispatchMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 	return S_OK;
 }
 
+/*
+*Description：查询接收插件信息，对外提供插件管理者管理功能
+*Input Param：
+*Return Param：
+*History：
+*/
 HRESULT EMB::CTaskDispatchMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 {
 	pInterfaceOut = NULL;
@@ -122,6 +148,12 @@ HRESULT EMB::CTaskDispatchMgr::QueryInterface( const GUID& guidIn, LPVOID& pInte
 	}
 }
 
+/*
+*Description：释放函数
+*Input Param：
+*Return Param：
+*History：
+*/
 void EMB::CTaskDispatchMgr::OnFinalRelease()
 {
 	g_pPluginInstane = NULL;
@@ -131,6 +163,12 @@ void EMB::CTaskDispatchMgr::OnFinalRelease()
 	delete this;
 }
 
+/*
+*Description：初始化函数
+*Input Param：
+*Return Param：
+*History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnFirstInit()
 {
 	CString strFile(GetAppPath().c_str());
@@ -140,13 +178,22 @@ HRESULT EMB::CTaskDispatchMgr::OnFirstInit()
 	return S_OK;
 }
 
+/*
+*Description：启动插件服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 {
 	Stop_Plugin();
+
+	// 启动任务分配线程
 	m_bCheckBackSvr = TRUE;
 	m_hThdCheck = CreateThread(NULL, 0, TDCheckProc,  (LPVOID)this, 0, 0);
 	ASSERT(m_hThdCheck);
 
+	// 启动主备监听线程
 	m_hThdFtask = CreateThread(NULL, 0, TDFTaskProc, (LPVOID)this, 0, 0);
 	ASSERT(m_hThdFtask);
 
@@ -194,8 +241,15 @@ HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 	}
 }
 
+/*
+*Description：停止插件服务
+*Input Param：
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT EMB::CTaskDispatchMgr::Stop_Plugin()
 {
+	//退出主备心跳、分配任务线程
 	SetEvent(m_hEventQuitLoop);
 	if (m_hThdCheck)
 	{
@@ -221,11 +275,14 @@ HRESULT EMB::CTaskDispatchMgr::Stop_Plugin()
 
 	ResetEvent(m_hEventQuitLoop);
 
+	// 清空任务和设备列表
 	m_mapTasks.clear();
 	m_mapActors.clear();
 	//finished
+	// 停止设备控制
 	SetActive(embSvrState_deactive);
 	m_actHolder.Stop();
+	// 断开远程连接
 	if (m_pIbackSvr)
 	{
 		CMBCBaseObj* pRemoteObj = dynamic_cast<CMBCBaseObj*>(m_pIbackSvr) ;
@@ -237,6 +294,14 @@ HRESULT EMB::CTaskDispatchMgr::Stop_Plugin()
 	return S_OK;
 }
 
+/*
+*Description：从任务存储容器中领取若干任务，然后提交到任务分配任务列表中
+*Input Param：
+*		szTaskIn：任务信息
+*		szRet   ：返回信息
+*Return Param：返回成功或失败
+*History：
+*/
 HRESULT EMB::CTaskDispatchMgr::SubmitTask( const CTaskString& szTaskIn, CTaskString& szRet )
 {
 	ST_AUTOUPDATEPARAM<ST_EMBRET> stRet(szRet);
@@ -284,6 +349,13 @@ HRESULT EMB::CTaskDispatchMgr::SubmitTask( const CTaskString& szTaskIn, CTaskStr
 		return S_OK;
 }
 
+/*
+* Description：连接任务存储插件
+* Input Param：
+*		pInterfaceIn：存储插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::Connect( ITxUnkown* pInterfaceIn )
 {
 	//check if have storage interface
@@ -301,6 +373,13 @@ HRESULT EMB::CTaskDispatchMgr::Connect( ITxUnkown* pInterfaceIn )
 	return S_OK;
 }
 
+/*
+* Description：断开任务存储插件
+* Input Param：
+*		pInterfaceIn：存储插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::Disconnect( ITxUnkown* pInterfaceIn )
 {
 	if (pInterfaceIn == m_pIStorage)
@@ -314,6 +393,13 @@ HRESULT EMB::CTaskDispatchMgr::Disconnect( ITxUnkown* pInterfaceIn )
 	return S_OK;
 }
 
+/*
+* Description：连接任务存储插件与传入插件
+* Input Param：
+*		pInterfaceIn：接收插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnConnect( ITxUnkown* pInterfaceIn )
 {
 	IPluginStorageInterface * pIStorage = NULL;
@@ -333,6 +419,13 @@ HRESULT EMB::CTaskDispatchMgr::OnConnect( ITxUnkown* pInterfaceIn )
 	return S_OK;
 }
 
+/*
+* Description：存储插件与接收插件断开
+* Input Param：
+*		pInterfaceIn：接收插件指针
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 {
 	if (pInterfaceIn == m_pIStorage)
@@ -343,6 +436,13 @@ HRESULT EMB::CTaskDispatchMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 	return S_OK;
 }
 
+/*
+* Description：连接设备
+* Input Param：
+*		szActorGuid：ActorID
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnActorConnect( const ACTORID& szActorGuid )
 {
 	CAutoLock lock(&m_csCacheDisActor);
@@ -356,6 +456,13 @@ HRESULT EMB::CTaskDispatchMgr::OnActorConnect( const ACTORID& szActorGuid )
 	return S_OK;
 }
 
+/*
+* Description：断开设备连接
+* Input Param：
+*		szActorGuid：ActorID
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnActorDisConnect( const ACTORID& szActorGuid )
 {
 	CAutoLock lock(&m_csCacheDisActor);
@@ -368,12 +475,22 @@ HRESULT EMB::CTaskDispatchMgr::OnActorDisConnect( const ACTORID& szActorGuid )
 	return S_OK;
 }
 
+/*
+* Description：Actor消息调用回调函数
+* Input Param：
+*		nActorIdIn    ：ActorID
+*		szActorInfoIn ：传入消息
+*		szRet         ：传出消息
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnActorMessage( const ACTORID& nActorIdIn, CString& szActorInfoIn ,  CString& szRet)
 {
 	CTxParamString txParam(szActorInfoIn);
 	int nXmlType = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
 	if (nXmlType == embxmltype_taskReport)
 	{
+		//是否为任务广播，更新任务状态
 		//CFWriteLog(0, TEXT("actor %d report %s"),nActorIdIn, szActorInfoIn);
 		//report task percent
 		ST_TASKREPORT report;
@@ -392,6 +509,7 @@ HRESULT EMB::CTaskDispatchMgr::OnActorMessage( const ACTORID& nActorIdIn, CStrin
 	}
 	else if (nXmlType == embxmltype_actorState)
 	{
+		// 是否为执行端状态，更新执行端状态
 		ST_ACTORSTATE actState;
 		actState.FromString(szActorInfoIn);
 		if (actState.actorId != INVALID_ID)
@@ -411,6 +529,14 @@ HRESULT EMB::CTaskDispatchMgr::OnActorMessage( const ACTORID& nActorIdIn, CStrin
 }
 
 
+/*
+* Description：添加媒体处理中心执行任务
+* Input Param：
+*		guidIn    ：任务ID
+*		taskIn    ：任务信息
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::CommitFileTask( TXGUID& guidIn, ST_FILETASKDATA& taskIn )
 {
 	CAutoLock lock(&m_csFTask);
@@ -425,6 +551,13 @@ HRESULT EMB::CTaskDispatchMgr::CommitFileTask( TXGUID& guidIn, ST_FILETASKDATA& 
 	return S_OK;
 }
 
+/*
+* Description：获取自身状态
+* Input Param：
+*		infoOut    ：返回自身状态存储变量
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::GetSelfState( ST_SVRLIVEINFO& infoOut )
 {
 	infoOut.nActive = m_nActive;
@@ -433,6 +566,12 @@ HRESULT EMB::CTaskDispatchMgr::GetSelfState( ST_SVRLIVEINFO& infoOut )
 	return S_OK;
 }
 
+/*
+* Description：分配任务函数
+* Input Param：
+* Return Param：返回成功或失败
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::LoopProcFileTask()
 {
 	while (WaitForSingleObject(m_hEventQuitLoop, 1000) != WAIT_OBJECT_0)
@@ -469,6 +608,17 @@ BOOL EMB::CTaskDispatchMgr::LoopProcFileTask()
 	return TRUE;
 }
 
+/*
+* Description：
+* 本函数功能：
+* 1-主备心跳
+* 2-从存储领取任务
+* 3-检查任务状态
+* 4-检查Actor状态
+* Input Param：
+* Return Param：返回成功或失败
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::LoopProcCheck()
 {
 	//wait for 4 second;
@@ -480,6 +630,7 @@ BOOL EMB::CTaskDispatchMgr::LoopProcCheck()
 	ConfirmActive();
 	while(WaitForSingleObject(m_hEventQuitLoop, 1000) != WAIT_OBJECT_0)
 	{
+		// 判断自己是否为Active
 		if (GetActive() != embSvrState_active)
 		{
 			//check backsvr
@@ -490,7 +641,6 @@ BOOL EMB::CTaskDispatchMgr::LoopProcCheck()
 				SetActive(embSvrState_active);
 			}	
 		}
-
 		CheckDisconnActorCacheList();
 		CheckActorState();
 		TryFetchTask();
@@ -498,6 +648,13 @@ BOOL EMB::CTaskDispatchMgr::LoopProcCheck()
 	return TRUE;
 }
 
+/*
+* Description：分配任务函数
+* Input Param：
+*		taskIn ：任务信息
+* Return Param：返回成功或失败
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 {
 	BOOL bRet = FALSE;
@@ -624,6 +781,14 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	return bRet;
 }
 
+/*
+* Description：获取插件配置函数
+* Input Param：
+*		szIn：
+*       szOut:
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::GetParam( const CTaskString& szIn, CTaskString& szOut )
 {
 	m_config.ToString(szOut);
@@ -631,6 +796,14 @@ HRESULT EMB::CTaskDispatchMgr::GetParam( const CTaskString& szIn, CTaskString& s
 	return S_OK;
 }
 
+/*
+* Description：设置插件配置函数
+* Input Param：
+*		szIn：
+*       szOut:
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::SetParam( const CTaskString& szIn, CTaskString& szOut )
 {
 	ST_TASKDISPATCHCONFIG tmpCfg;
@@ -650,6 +823,12 @@ HRESULT EMB::CTaskDispatchMgr::SetParam( const CTaskString& szIn, CTaskString& s
 	return S_OK;
 }
 
+/*
+* Description：主备切换逻辑函数
+* Input Param：
+* Return Param：成功表示切换成功，失败表示未切换
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::ConfirmActive()
 {
 	if (!m_pIbackSvr)
@@ -658,13 +837,16 @@ BOOL EMB::CTaskDispatchMgr::ConfirmActive()
 		return FALSE;
 	}
 
+	// 判断如果本身自己是主，则RETURN
 	if (m_nActive == embSvrState_active)
 	{
 		return FALSE;
 	}
 
+	// 如果是备，则要时刻关注主机状态
 	ST_SVRLIVEINFO backSvrInfo;
 	m_pIbackSvr->GetRemoteSvrState(backSvrInfo);
+	// 连接异常
 	if (backSvrInfo.nConnState == embConnState_error)
 	{
 		//start self
@@ -674,6 +856,7 @@ BOOL EMB::CTaskDispatchMgr::ConfirmActive()
 	}
 	else 
 	{
+		// 连接正常，但已经不工作
 		if (backSvrInfo.nActive == embSvrState_deactive)
 		{
 			if (m_nMaster == embSvrType_master)
@@ -690,6 +873,13 @@ BOOL EMB::CTaskDispatchMgr::ConfirmActive()
 
 }
 
+/*
+* Description：设置本机工作章台
+* Input Param：
+*		nActive ：活动或非活动状态
+* Return Param：
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::SetActive( int nActive )
 {
 	if (nActive != embSvrState_active
@@ -711,6 +901,12 @@ BOOL EMB::CTaskDispatchMgr::SetActive( int nActive )
 	return TRUE;
 }
 
+/*
+* Description：主备状态切换
+* Input Param：
+* Return Param：返回切换成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 {
 	HRESULT hr = S_OK;
@@ -768,6 +964,12 @@ HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 	return S_OK;
 }
 
+/*
+* Description：执行端心跳状态
+* Input Param：
+* Return Param：返回成功或失败
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::ExamActor( ST_ACTORSTATE& actorStateIn )
 {
 	BOOL bRet = FALSE;
@@ -812,6 +1014,13 @@ BOOL EMB::CTaskDispatchMgr::ExamActor( ST_ACTORSTATE& actorStateIn )
 	return bRet;
 }
 
+/*
+* Description：移除ACTOR
+* Input Param：
+*		nActorid : ActorID
+* Return Param：返回成功或失败
+* History：
+*/
 HRESULT EMB::CTaskDispatchMgr::OnRemoveActor( const ACTORID nActorid )
 {
 	//revert all task that assign to the actor
@@ -829,6 +1038,14 @@ HRESULT EMB::CTaskDispatchMgr::OnRemoveActor( const ACTORID nActorid )
 	return TRUE;
 }
 
+/*
+* Description：获取空闲ACTOR信息
+* Input Param：
+*		nDesiredActor : 
+*       nPriority ：优先级
+* Return Param：返回ACTORID
+* History：
+*/
 ACTORID EMB::CTaskDispatchMgr::GetFirstIdleActor( const ACTORID nDesiredActor, int nPriority )
 {
 	CAutoLock lock(&m_csActor);
@@ -891,6 +1108,14 @@ ACTORID EMB::CTaskDispatchMgr::GetFirstIdleActor( const ACTORID nDesiredActor, i
 	return nActorRet;
 }
 
+/*
+* Description：刷新检查未连接ACTOR状态
+* Input Param：
+*		nDesiredActor : 
+*       nPriority ：优先级
+* Return Param：返回ACTORID
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::CheckDisconnActorCacheList()
 {
 	//check actor disconn list
@@ -922,6 +1147,12 @@ BOOL EMB::CTaskDispatchMgr::CheckDisconnActorCacheList()
 	return TRUE;
 }
 
+/*
+* Description：检查Actor状态
+* Input Param：
+* Return Param：
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::CheckActorState()
 {
 	//check act state;
@@ -951,6 +1182,12 @@ BOOL EMB::CTaskDispatchMgr::CheckActorState()
 	return TRUE;
 }
 
+/*
+* Description：分配任务主函数
+* Input Param：
+* Return Param：
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::TryFetchTask()
 {
 	if (GetActive() != embSvrState_active)
@@ -1005,6 +1242,13 @@ int EMB::CTaskDispatchMgr::CalcActorPayload( ST_ACTORSTATE& actInfo )
 	return (actInfo.nCpuUsage* nfgCpuWeight + actInfo.nMemUsage* nfgMemWeight + actInfo.nDiscUsage * nfgDiskWeight);
 }
 
+/*
+* Description：更新执行任务状态
+* Input Param：
+*		reportIn：状态报告信息
+* Return Param：
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 {
 	TXGUID guid = String2Guid(reportIn.strGuid);
@@ -1022,10 +1266,25 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 		if (reportIn.nState == embtaskstate_error)
 		{
 			ASSERT(reportIn.actorId == taskRun.actorId);
-			//reset the task
-			taskRun.nState = embtaskstate_zero;
-			taskRun.actorId = INVALID_ID;
-			taskRun.excId = INVALID_ID;	
+			// 判断具体错误，是否重置任务?
+			if (reportIn.NeedResetTask())
+			{
+				//reset the task
+				CFWriteLog(0, TEXT("reset task"));
+				taskRun.nState = embtaskstate_zero;
+				taskRun.actorId = INVALID_ID;
+				taskRun.excId = INVALID_ID;
+			}
+			else
+			{
+				// 不需要重置, 结束任务
+				taskRun.nState = embtaskstate_finished;
+				taskRun.nPercent = reportIn.nPercent;
+				taskRun.nCurrStep = reportIn.nStep;
+				taskRun.tmLastReport = time(NULL);
+				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task finished (%s), nSubErrorCode:%X"), 
+					reportIn.actorId, reportIn.excutorId, reportIn.strGuid, reportIn.nSubErrorCode);
+			}	
 		}
 		else if (reportIn.nState == embtaskstate_dispatched)
 		{
@@ -1079,6 +1338,13 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 	return TRUE;
 }
 
+/*
+* Description：更新ACTOR状态
+* Input Param：
+*		stateIn：状态报告信息
+* Return Param：
+* History：
+*/
 BOOL EMB::CTaskDispatchMgr::UpdateActorState( ST_ACTORSTATE& stateIn )
 {
 	CAutoLock lock(&m_csActor);

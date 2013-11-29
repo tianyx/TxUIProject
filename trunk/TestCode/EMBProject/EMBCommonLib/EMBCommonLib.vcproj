@@ -164,6 +164,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Common\EMBTask.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -191,6 +195,10 @@
 			>
 			<File
 				RelativePath="..\Common\EmbStructDef.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBTask.h"
 				>
 			</File>
 			<File
@@ -240,18 +248,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Common\GDIDrawFunc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\GDIDrawFunc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\GdiPlusNewHeader.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Common\Log.cpp"
 				>
 			</File>
@@ -296,6 +292,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Common\MBCRemoteObj.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Common\MBCSocket.cpp"
 				>
 			</File>
@@ -336,30 +336,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Common\TxFontLoader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxFontLoader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxImageLoader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxImageLoader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxImgButton.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxImgButton.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Common\TxLogManager.cpp"
 				>
 			</File>
@@ -384,19 +360,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Common\TxSlashCtrl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\TxSlashCtrl.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Common\TxTimer.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\Common\TxTimer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\Util.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\Util.h"
 				>
 			</File>
 		</Filter>

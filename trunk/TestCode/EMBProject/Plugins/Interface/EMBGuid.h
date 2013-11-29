@@ -22,7 +22,7 @@ extern const GUID GuidEMBPlugin_PWorkerMD5;
 
 
 //define plugin interface
-//插件接口
+//插件接口GUID
 extern const GUID GuidEMBPlugin_IUnknow;
 extern const GUID GuidEMBPlugin_IBase;
 extern const GUID GuidEMBPlugin_IBaseVC6;

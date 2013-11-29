@@ -1,4 +1,11 @@
-
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:04
+	filename: 	EMBServer.h
+	author:		zhouliang
+	
+	purpose:	任务管理启动类
+*********************************************************************/
 // EMBServer.h : PROJECT_NAME 应用程序的主头文件
 //
 
@@ -13,7 +20,7 @@
 
 // CEMBServerApp:
 // 有关此类的实现，请参阅 EMBServer.cpp
-//
+// 
 
 class CEMBServerApp : public CWinAppEx
 {

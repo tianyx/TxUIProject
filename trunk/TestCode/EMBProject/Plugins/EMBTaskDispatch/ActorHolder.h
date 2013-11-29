@@ -4,7 +4,7 @@
 	filename: 	ActorHolder.h
 	author:		tianyx
 	
-	purpose:	
+	purpose:	执行端连接通讯类
 *********************************************************************/
 #pragma once
 #include "MBCBaseObj.h"
@@ -15,22 +15,30 @@ using namespace std;
 
 interface IEMBActorHolderCallBackInterface
 {
+	// 执行端连接回调函数
 	virtual HRESULT OnActorConnect(const ACTORID& szActorGuid) = 0;
+	// 执行端断开连接回调函数
 	virtual HRESULT OnActorDisConnect(const ACTORID& szActorGuid) = 0;
+	// 执行端发送消息给任务管理回调函数
 	virtual HRESULT OnActorMessage(const ACTORID& szActorGuid, CString& szActorInfoIn,  CString& szRet) = 0;
 };
 
 interface IEMBActorSenderInterface
 {
+	// 任务管理发送消息给执行端函数接口
 	virtual HRESULT SendToActor(const ACTORID szActorGuid, CString& szMsg) = 0;
 };
 
+// 执行端信息结构体
 struct ST_ACTORDATA
 {
+	// 执行端GUID
 	ACTORID strGuid;
+	// 执行端连接状态
 	int  nActorConnState;
+	// 执行端SOCKET连接指针
 	CMBCSocket* pSock;
-
+    // 构造函数
 	ST_ACTORDATA()
 	{
 		pSock = NULL;
@@ -39,8 +47,11 @@ struct ST_ACTORDATA
 	}
 };
 
+// 从SOCKET连接到ACTOR数据的对应图
 typedef map<CMBCSocket*, ST_ACTORDATA> MAPSOCKACTORS;
+// 从ACTOR ID到SOCKET连接数据的对应图
 typedef map<ACTORID, CMBCSocket*> MAPACTORSOCKS;
+
 
 struct ST_SOCKMBCSOCK
 {
@@ -87,6 +98,9 @@ private:
 	MAPACTORSOCKS m_mapActorMirrs;
 	CAutoCritSec m_csSockMap;
 	
+	// 任务管理当前状态，是否为主
 	int m_nSvrActive;
+
+	// 任务管理初始化状态，配置文件中是否为主
 	int m_nMaster;
 };

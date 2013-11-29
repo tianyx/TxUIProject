@@ -1,6 +1,11 @@
-
-// EMBServerDlg.h : 头文件
-//
+/********************************************************************
+	created:	2013/11/08
+	created:	8:11:2013   18:04
+	filename: 	EMBServerDlg.h
+	author:		zhouliang
+	
+	purpose:	任务管理对话框
+*********************************************************************/
 
 #pragma once
 
@@ -17,9 +22,13 @@ public:
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
+
+private:
+	void InitUI();
+
 public:
 
-	BOOL m_bRunning;
+	BOOL m_bRunning;    //是否正在运行
 // 实现
 protected:
 	HICON m_hIcon;
@@ -35,4 +44,5 @@ public:
 
 
 	afx_msg void OnBnClickedBtntest();
+	afx_msg void OnBnClickedButtonXml();
 };

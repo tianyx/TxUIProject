@@ -104,13 +104,19 @@ BOOL CEMBExternalExcutorDlg::OnInitDialog()
 
 	// TODO: 在此添加额外的初始化代码
 	SetWindowText(g_GlobalInfo.strGuid);
-	m_pExcObj = CExcutorObj::GetExcutorObj(g_GlobalInfo.excInfo.guid, g_GlobalInfo.excInfo.actorId, g_GlobalInfo.excInfo.hwndActor, this->GetSafeHwnd());
+	// CExcutorObj 初始化
+	m_pExcObj = CExcutorObj::GetExcutorObj(g_GlobalInfo.excInfo, this->GetSafeHwnd());
 	if (!m_pExcObj)
 	{
 		ASSERT(FALSE);
 		return FALSE;
 	}
-	m_pExcObj->Start();
+
+	if (!m_pExcObj->Start())
+	{
+		OutputDebugString("CExcutorObj::Start() 失败");
+	}
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 

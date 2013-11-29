@@ -15,6 +15,7 @@ CActorConnector::~CActorConnector(void)
 
 HRESULT CActorConnector::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed )
 {
+	// Actor处理
 	if (nMsgType == embmsgtype_DispatchToActorMsg)
 	{
 		ST_EMBTRANSMSG msgIn(nMsgType);
@@ -22,6 +23,7 @@ HRESULT CActorConnector::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType,
 		if (m_pITaskCommit)
 		{
 			CString strRet;
+			// 解析消息类型
 			m_pITaskCommit->OnActorConnectorMsg(msgIn.strData, strRet);
 			if (!strRet.IsEmpty())
 			{

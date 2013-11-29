@@ -11,7 +11,7 @@
 
 using namespace std;
 extern EMB::CWorkSample* g_pPluginInstane = NULL;
-
+//若为执行插件，必须实现此接口
 extern "C" int EMBPLUGIN_API GetPluginInstance( LPVOID& pInterface )
 {
 	if (!g_pPluginInstane)

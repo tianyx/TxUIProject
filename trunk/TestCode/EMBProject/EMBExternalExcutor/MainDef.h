@@ -1,3 +1,11 @@
+/********************************************************************
+	created:	2013/11/23
+	filename: 	MainDef.h
+	author:		tianyx
+	purpose:	全局函数定义
+    History: 
+*********************************************************************/
+
 #pragma once
 #include "TxLogManager.h"
 #include "IEMBBaseInterface.h"
@@ -16,8 +24,6 @@ struct ST_GLOBAL
 	ST_GLOBAL()
 	{
 	}
-
-
 };
 
 BOOL InitGlobalConfig();

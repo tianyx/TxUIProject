@@ -1,22 +1,75 @@
 /********************************************************************
 	created:	2011/08/10
 	created:	10:8:2011   15:26
-	filename: 	e:\Source\EZIM\Src\EZMessenger\common\StrConvert.h
-	file path:	e:\Source\EZIM\Src\EZMessenger\common
+	filename: 	StrConvert.h
+	file path:	
 	file base:	StrConvert
 	file ext:	h
 	author:		tian_yuanxin
 	
-	purpose:	
+	purpose:	string utility function
 *********************************************************************/
 #pragma once
 #include <string>
-
-LONG String2Wstring(std::string& strIn, std::wstring& wstrOut); 
-LONG Wstring2String(std::wstring& wstrIn, std::string& strOut);
-
+#include <vector>
+using namespace std;
 LONG Char2Wchar(const char* pszChar, wchar_t* pwszChar, int nwSize);  //nwSize = sizeof wchar in byte
 LONG Wchar2Char(const wchar_t* pwszChar, char* pszChar, int nwSize); //nwSize = sizeof char in byte
-//nSubchar is the character size you what to get
-//make sure the nChar2Size > 2* nSubCharIn
-LONG IMGetSubString(const char* pszChar, int nSubCharIn, char* pszChar2, int nChar2Size);
+
+wstring Ansi2W(const string& szIn);
+string W2Ansi(const wstring& wszIn);
+
+#ifdef UNICODE
+CString ANSI2CStr(const string& szIn);
+string CStr2Ansi(CString& strIn);
+#else
+CString W2CStr(const wstring& wszIn);
+wstring CStr2W(CString& strIn);
+#endif // UNICODE
+
+#ifdef UNICODE
+typedef wstring txstring;
+#else
+typedef string txstring;
+#endif
+//trim characters of TEXT(" \n\r\t")
+void LTrim(txstring& wsInOut);
+void RTrim(txstring& wsInOut);
+void Trim(txstring& wsInOut);
+
+void RTrim( txstring& wsInOut , TCHAR* lpChars);
+
+BOOL SplitteStrings( const char* szIn , std::vector<std::string>& vOut, char chSeperator = ',');
+
+
+typedef vector<CString> VECSTRINGS;
+typedef vector<int> VECINTS;
+
+//string convert utility. can convert many type from/to string
+class CTxStrConvert
+{
+public:
+	CTxStrConvert(){}
+	CTxStrConvert(LPCTSTR szParamIn){m_szParam = szParamIn;}
+	~CTxStrConvert(){};
+	CString m_szParam;
+public:
+	int GetAsInt(int nDefault = 0);
+	int GetAsUInt(unsigned int nDefault = 0);
+	INT64 GetAsInt64(INT64 nDefault = 0);
+	bool GetAsBOOL(bool bDefault = FALSE);
+	CString GetAsString(LPCTSTR szDefault = TEXT(""));
+	BOOL GetAsStringArray(VECSTRINGS& vOut, TCHAR separator = ',');
+	BOOL GetAsIntArray(VECINTS& vOut, TCHAR separator = ',');
+	double GetAsDouble(double nDefault = 0.0);
+
+	void SetVal(int nVal);
+	void SetVal(unsigned int nVal);
+	void SetVal(INT64 nVal);
+	void SetVal(bool bVal);
+	void SetVal(LPCTSTR szVal);
+	void SetVal(VECSTRINGS& vVal);
+	void SetVal(VECINTS& vVal);
+	void SetVal(double fVal);
+	void SetValX(int nVal); // 16½øÖÆ
+};

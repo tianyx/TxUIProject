@@ -1,6 +1,10 @@
-
-// EMBActorHost.h : PROJECT_NAME 应用程序的主头文件
-//
+/********************************************************************
+	created:	2013/11/23
+	filename: 	EMBActorHost.h
+	author:		tianyx
+	purpose:	Actor(exe) 负责excutor注册，启动，关闭; 向excutor提交任务，接受反馈信息 
+    History: 
+*********************************************************************/
 
 #pragma once
 

@@ -69,6 +69,7 @@ HRESULT CMBCRemoteObj::ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, ch
 			ST_TXMSG_LIVEQA msgIn;
 			UnPackMBCMsg(bufferIn, nUsed, msgIn);
 			//get live info
+			msgIn.nMsgState = msgState_A;
 			ST_MBCCHANNELINFO_FORVC6 chInfos[50];
 			int nChUsed = 0;
 			m_pIRemoteCallInterface->GetLiveInfo(msgIn,msgIn.nRemoteState, msgIn.nSelfType, chInfos, 50, nChUsed);

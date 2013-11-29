@@ -1,6 +1,10 @@
-
-// EMBExternalExcutorDlg.h : 头文件
-//
+/********************************************************************
+	created:	2013/11/23
+	filename: 	EMBExternalExcutorDlg.h
+	author:		tianyx
+	purpose:	执行者dlg
+    History: 
+*********************************************************************/
 
 #pragma once
 #include "ExcutorObj.h"

@@ -10,8 +10,15 @@
 #endif
 
 using namespace std;
-extern EMB::CTaskRiserMgr* g_pPluginInstane = NULL;
+extern EMB::CTaskRiserMgr* g_pPluginInstane = NULL;  //全局变量名称一样是否规范？
 
+/*
+* Description：外部获取插件连接指针
+* Input Param：
+*		pInterface：接收插件实例指针
+* Return Param：成功返回0
+* History：
+*/
 extern "C" int EMBPLUGIN_API GetPluginInstance( LPVOID& pInterface )
 {
 	if (!g_pPluginInstane)

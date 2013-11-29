@@ -7,10 +7,11 @@
 #include "EMBDocDef.h"
 #include "EMBDefine.h"
 #include "TxParamString.h"
+#include "Util.h"
 
 LRESULT CALLBACK ExcObjectWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL RegisterExcObjectWnd();
-BOOL g_bRegisterExcMgrWnd = RegisterExcObjectWnd();
+BOOL		 RegisterExcObjectWnd();
+BOOL		 g_bRegisterExcMgrWnd = RegisterExcObjectWnd();
 static TCHAR g_szSockWndClsName[] = TEXT ("ExcObjectMsgWnd");
 CExcutorObj* g_pExcObject = NULL;
 
@@ -32,11 +33,10 @@ BOOL RegisterExcObjectWnd()
 	wndclassex.lpszClassName = g_szSockWndClsName;
 	wndclassex.hIconSm       = wndclassex.hIcon;
 
-	if ( 0== RegisterClassEx (&wndclassex))
+	if ( 0 == RegisterClassEx (&wndclassex))
 	{
 		HRESULT hr = GetLastError();
 		ASSERT(FALSE);
-
 	}
 
 	return TRUE;
@@ -67,7 +67,7 @@ DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 
 	ShowWindow (hwnd, SW_HIDE);
 	UpdateWindow (hwnd);
-
+	
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -80,24 +80,25 @@ DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 
 LRESULT CALLBACK ExcObjectWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if (message > MSG_EMBMSGMIN
-		&&message < MSG_EMBMSGMAX)
+	if (message > MSG_EMBMSGMIN && message < MSG_EMBMSGMAX)
 	{
 		if (g_pExcObject)
 		{
+			// put msg into m_vMsgPool
 			g_pExcObject->SaveMessageToPool(hwnd, message, wParam, lParam);
 		}
 
 		return 0;
 	}
 	
-	
+	// Window msg
 	return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
 DWORD __stdcall ExcMsgPoolCheckProc(LPVOID lparam)
 {
 	CExcutorObj* pMgr = (CExcutorObj*)lparam;
+
 	if(pMgr == NULL)
 	{
 		ASSERT(FALSE);
@@ -105,6 +106,7 @@ DWORD __stdcall ExcMsgPoolCheckProc(LPVOID lparam)
 	}
 
 	pMgr->WndMsgPoolCheckLoop();
+
 	return 0;
 }
 
@@ -116,7 +118,9 @@ DWORD __stdcall ExcTaskCheckProc(LPVOID lparam)
 		ASSERT(FALSE);
 		return 0;
 	}
+
 	pMgr->TaskCheckLoop();
+
 	return 0;
 }
 //////////////////////////////////////////////////////////////////////////
@@ -137,7 +141,6 @@ CExcutorObj::CExcutorObj( )
 	nfgIdleReportInterval = 10;
 	nfgIdleTimeoutForQuit = 60;
 
-
 	ASSERT(g_pExcObject == NULL);
 	g_pExcObject  = this;
 	LoadPluginManager();
@@ -152,8 +155,10 @@ CExcutorObj::~CExcutorObj()
 BOOL CExcutorObj::Start()
 {
 	Stop();
+
+	// 创建MappingFile: 用于Actor.exe 与 Executor.exe通信
 	m_hMapping = CreateMappingFile();
-	m_strActorMappingName = GetActorMappingName(m_hwndActor, m_ExcutorGuid);
+	// 接受消息线程
 	m_hThreadMsgLoop = CreateThread(NULL, 0, ExcObjMsgLoopThread, (LPVOID)this, 0, 0);
 	if (m_hThreadMsgLoop)
 	{
@@ -164,14 +169,18 @@ BOOL CExcutorObj::Start()
 			Sleep(1);
 		}
 	}
+	else
+	{
+		return FALSE;
+	}
 
 	m_hThreadMsgPoolCheck = CreateThread(NULL, 0, ExcMsgPoolCheckProc, (LPVOID)this, 0, 0);
 
-
 	if (m_hwndExcMsg)
 	{
-		CFWriteLog(0, TEXT("send reg msg to actor %x"), m_hwndActor);
-		::SendMessage(m_hwndActor, MSG_EMBEXCUTORREG, (WPARAM)m_ExcutorGuid,  (LPARAM)m_hwndExcMsg);
+		CFWriteLog(0, TEXT("send reg msg to actor %x"), m_executorReg.hwndActor);
+		// 向Actor发送 注册信息
+		::SendMessage(m_executorReg.hwndActor, MSG_EMBEXCUTORREG, (WPARAM)m_executorReg.guid,  (LPARAM)m_hwndExcMsg);
 	}
 
 	//create taskcheck loop
@@ -181,17 +190,13 @@ BOOL CExcutorObj::Start()
 
 BOOL CExcutorObj::Stop()
 {
-	return TRUE;
-
 	if (m_hThreadMsgLoop)
 	{
-
 		::PostMessage(m_hwndExcMsg, WM_QUIT, 0,0);
 		WaitForSingleObject(m_hThreadMsgLoop, INFINITE);
 		CloseHandle(m_hThreadMsgLoop);
 		m_hThreadMsgLoop = NULL;
 		m_hwndExcMsg = NULL;
-
 	}
 
 	if (m_hThreadMsgPoolCheck)
@@ -207,31 +212,32 @@ BOOL CExcutorObj::Stop()
 	ResetEvent(m_hEventPoolMsgArrival);
 	ResetEvent(m_hEventQuitLoop);
 	ClearMsgPool();
+
 	if (m_hMapping)
 	{
 		CloseHandle(m_hMapping);
 		m_hMapping = NULL;
 	}
-}
 
-BOOL CExcutorObj::Init( const EXCUTORID& guidIn,ACTORID actorId,  HWND hActor, HWND hMain )
-{
-	m_ExcutorGuid = guidIn;
-	m_hwndActor = hActor;
-	m_hwndMain = hMain;
-	m_actorId = actorId;
 	return TRUE;
 }
 
-CExcutorObj* CExcutorObj::GetExcutorObj( const EXCUTORID& guidIn,ACTORID actorID, HWND hActor, HWND hMain )
+BOOL CExcutorObj::Init( ST_EXCUTORREG& tExecutorReg, HWND hMain )
+{
+	m_executorReg = tExecutorReg;
+	m_hwndMain = hMain;
+
+	return TRUE;
+}
+
+CExcutorObj* CExcutorObj::GetExcutorObj( ST_EXCUTORREG& tExecutorReg, HWND hMain )
 {
 	if (!m_spExcObj)
 	{
 		m_spExcObj = new CExcutorObj;
-		if(!m_spExcObj->Init(guidIn, actorID, hActor, hMain))
+		if(!m_spExcObj->Init(tExecutorReg, hMain))
 		{
-			delete m_spExcObj;
-			m_spExcObj = NULL;
+			PTRDELETE(m_spExcObj);
 		}
 	}
 	else
@@ -243,33 +249,31 @@ CExcutorObj* CExcutorObj::GetExcutorObj( const EXCUTORID& guidIn,ACTORID actorID
 	return m_spExcObj;
 }
 
-
-
 BOOL CExcutorObj::Release()
 {
-	if (m_spExcObj)
-	{
-		delete m_spExcObj;
-		m_spExcObj = NULL;
-	}
+	PTRDELETE(m_spExcObj);
 
 	return TRUE;
 }
 
 BOOL CExcutorObj::OnExcutorRegistered( )
 {
-	//query task
+	// 向Actor.exe 发送消息
 	CFWriteLog(0, TEXT("send idle msg to actor."));
+	CTxStrConvert strVal;
+	strVal.SetVal(m_executorReg.guid);
+
 	CString strMsg;
-	strMsg.Format(EDOC_MAINHEADERFMT, 1, embxmltype_excOnIdle, TEXT(""));
+	strMsg.Format(EDOC_MAINHEADERFMT, 1, embxmltype_excOnIdle,  strVal);
 	m_bRegistered = TRUE;
 	SendToActor(strMsg);
+
 	return TRUE;
 }
 
 BOOL CExcutorObj::SendToActor( CString& strMsg )
 {
-	if (m_hwndActor && ::IsWindow(m_hwndActor)
+	if (m_executorReg.hwndActor && ::IsWindow(m_executorReg.hwndActor)
 		&& m_hMapping != NULL)
 	{
 		ST_EMBTRANSMSG msg(embmsgtype_ExcutorToActorMsg);
@@ -277,13 +281,15 @@ BOOL CExcutorObj::SendToActor( CString& strMsg )
 		CEMBAutoBuffer szbuff(msg);
 		int nUsed = 0;
 		PackMBCMsg(msg, szbuff, szbuff.GetSize(), nUsed);
+		
 		CAutoLock m_LocPipe(&m_csPipeWrite);
 		char* pmapBuff = (char*)MapViewOfFile(m_hMapping, FILE_MAP_WRITE,0,0,nUsed);
 		if (pmapBuff)
 		{
 			memcpy(pmapBuff, szbuff, nUsed);
 			UnmapViewOfFile(pmapBuff);
-			::SendMessage(m_hwndActor, MSG_EMBTOACTORMSG, (WPARAM)m_ExcutorGuid, (LPARAM)nUsed);
+			// SendMessage 消息处理后才返回
+			::SendMessage(m_executorReg.hwndActor, MSG_EMBTOACTORMSG, (WPARAM)(m_executorReg.guid), (LPARAM)nUsed);
 		}
 		else
 		{
@@ -301,7 +307,7 @@ BOOL CExcutorObj::SendToActor( CString& strMsg )
 
 BOOL CExcutorObj::Quit()
 {
-	SendMessage(m_hwndActor, MSG_EMBEXCUTORQUIT, (WPARAM)m_ExcutorGuid, 0);
+	SendMessage(m_executorReg.hwndActor, MSG_EMBEXCUTORQUIT, (WPARAM)(m_executorReg.guid), 0);
 	::PostMessage(m_hwndMain, MSG_EMBKILLEXCUTOR, 0,0);
 	return TRUE;
 }
@@ -310,29 +316,27 @@ BOOL CExcutorObj::Quit()
 
 HANDLE CExcutorObj::CreateMappingFile()
 {
-	CString strMapName = GetExcutorMappingName(m_ExcutorGuid, m_hwndActor);
+	CString strMapName = GetExcutorMappingName(m_executorReg.guid, m_executorReg.hwndActor);
 	HANDLE hRecvMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE | SEC_COMMIT, 0, 1024*10, strMapName);
-	if (hRecvMap == NULL)
+	if (hRecvMap == NULL || GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		ASSERT(FALSE);
 	}
-	if (GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		ASSERT(FALSE);
-	}
+
 	return hRecvMap;
 }
 
 
 HRESULT CExcutorObj::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam )
 {
+	// 从 file mapping object 读取消息内容
 	if (message == MSG_EMBTOEXCUTORMSG)
 	{
 		HWND hactorWnd = (HWND)wparam;
-		ASSERT(hactorWnd == m_hwndActor);
+		ASSERT(hactorWnd == m_executorReg.hwndActor);
 		int nLen = (LPARAM)lparam;
 
-		CString strMappingName = GetActorMappingName(m_hwndActor, m_ExcutorGuid);
+		CString strMappingName = GetActorMappingName(m_executorReg.hwndActor, m_executorReg.guid);
 		HANDLE hMapping = OpenFileMapping(FILE_MAP_READ, FALSE, strMappingName);
 		if (hMapping == NULL)
 		{
@@ -384,38 +388,36 @@ HRESULT CExcutorObj::WndMsgPoolCheckLoop()
 	while(TRUE)
 	{
 		DWORD dwRet = TxWaitObjWithQuit(m_hEventPoolMsgArrival, m_hEventQuitLoop, INFINITE);
-		if (dwRet == WAIT_OBJECT_0)
-		{
-			VECWNDMSG vMsgs;
-			//check pool
-			{
-				CAutoLock lock(&m_csMsgPool);
-				vMsgs = m_vMsgPool;
-				m_vMsgPool.clear();
-				ResetEvent(m_hEventPoolMsgArrival);
-			}
 
-			for (size_t i = 0; i < vMsgs.size(); ++i)
-			{
-				//process the msg
-				ST_EMBWNDMSG& msg = vMsgs[i];
-				OnActorMessage(msg);
-				if (msg.pStr)
-				{
-					delete[] msg.pStr;
-					msg.pStr = NULL;
-				}
-			}
+		if (WAIT_OBJECT_0 != dwRet)
+		{
+			break;
 
 		}
-		else
+
+		VECWNDMSG vMsgs;
+		//check pool
 		{
-			//quit
-			break;
+			CAutoLock lock(&m_csMsgPool);
+			vMsgs = m_vMsgPool;
+			m_vMsgPool.clear();
+			ResetEvent(m_hEventPoolMsgArrival);
+		}
+
+		for (size_t i = 0; i < vMsgs.size(); ++i)
+		{
+			//process the msg
+			ST_EMBWNDMSG& msg = vMsgs[i];
+			OnActorMessage(msg);
+			if (msg.pStr)
+			{
+				delete[] msg.pStr;
+				msg.pStr = NULL;
+			}
 		}
 	}
-	return S_OK;
 
+	return S_OK;
 }
 
 HRESULT CExcutorObj::OnActorMessage( ST_EMBWNDMSG& msgIn )
@@ -430,7 +432,7 @@ HRESULT CExcutorObj::OnActorMessage( ST_EMBWNDMSG& msgIn )
 		if (msgIn.pStr && msgIn.nBuffLen > 0)
 		{
 			int nType = GetMBCMsgType(msgIn.pStr, msgIn.nBuffLen);
-			if (nType ==embmsgtype_ActorToExcutorMsg)
+			if (nType == embmsgtype_ActorToExcutorMsg) // Actor.exe 发送的消息
 			{
 				ST_EMBTRANSMSG msgActor(nType);
 				UnPackMBCMsg(msgIn.pStr, msgIn.nBuffLen, msgActor);
@@ -451,9 +453,8 @@ HRESULT CExcutorObj::OnActorMessage( ST_EMBWNDMSG& msgIn )
 		{
 			ASSERT(FALSE);
 		}
-		CString strInfo;
-
 	}
+
 	return S_OK;
 }
 
@@ -461,15 +462,15 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 {
 	ST_EMBXMLMAININFO mainInfo;
 	GetEmbXmlMainInfo(strInfo, mainInfo);
-	if (mainInfo.nType == embxmltype_task)
+	if (mainInfo.nType == embxmltype_task) // 提交任务
 	{
 		CFWriteLog(0, TEXT("receive task %s"), mainInfo.guid);
-		if (!m_strTask.IsEmpty())
+		if (!m_strTask.IsEmpty()) // 是否有正在执行的任务?
 		{
 			//report state error
 			ST_TASKREPORT report;
-			report.actorId = m_actorId;
-			report.excutorId = m_ExcutorGuid;
+			report.actorId = m_executorReg.actorId;
+			report.excutorId = m_executorReg.guid;
 			report.strGuid = mainInfo.guid;
 			report.nState = embtaskstate_error;
 			report.ToString(strRet);
@@ -483,20 +484,20 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 
 		}
 	}
-	else if (mainInfo.nType == embxmltype_taskReport)
+	else if (mainInfo.nType == embxmltype_taskReport) // 查询任务状态
 	{
 		CFWriteLog(0, TEXT("actor ask taskReport."));
 		ST_TASKREPORT report;
 		report.FromString(strInfo);
 		TXGUID guid = String2Guid(report.strGuid);
-		if (m_runState.guid != guid)
+		if (m_runState.guid != guid) // 当前执行的任务不是指定的查询任务
 		{
 			//error guid
 			ASSERT(FALSE);
 			report.nState = embtaskstate_error;
 			report.nSubErrorCode = EMBERR_NOTMYTASK;
-			report.excutorId = m_ExcutorGuid;
-			report.actorId = m_actorId;
+			report.excutorId = m_executorReg.guid;
+			report.actorId = m_executorReg.actorId;
 		}
 		else
 		{
@@ -519,9 +520,8 @@ HRESULT CExcutorObj::TaskCheckLoop()
 
 	while(TRUE)
 	{
-
-
-		if (WaitForSingleObject(m_hEventQuitLoop, 1000)!= WAIT_OBJECT_0)
+		// to do 可能超时，将跳过分步任务处理
+		if (WaitForSingleObject(m_hEventQuitLoop, 1000) != WAIT_OBJECT_0)
 		{
 			BOOL bIdle = TRUE;
 			if (m_bRegistered)
@@ -541,12 +541,11 @@ HRESULT CExcutorObj::TaskCheckLoop()
 						if (m_runState.nPercent == 100)
 						{
 							//start next step
-							m_runState.nCurrStep++;
+							m_runState.nCurrStep++;  // 当前处理步骤
 							m_runState.nPercent = 0;
 							//change dll, and send sub task info
 							LaunchTask();
 						}
-						
 					}
 					
 					// task 
@@ -564,6 +563,7 @@ HRESULT CExcutorObj::TaskCheckLoop()
 							if (nTaskCheckTime == 0 && m_pTaskDllInterface)
 							{
 								int nPercent = 0;
+								// 查询任务执行状态信息
 								HRESULT hr = m_pTaskDllInterface->GetTaskProgress(szInfo);
 								ASSERT(hr == S_OK);
 								bReport = TRUE;
@@ -610,8 +610,6 @@ HRESULT CExcutorObj::TaskCheckLoop()
 			//quit
 			break;
 		}
-
-
 	}
 
 	return S_OK;
@@ -634,15 +632,16 @@ void CExcutorObj::ClearMsgPool()
 HRESULT CExcutorObj::OnDllReportTaskProgress( const CTaskString& szInfo )
 {
 	ST_WORKERREPORT workreport;
-	workreport.FromString(szInfo);
+	workreport.FromString(szInfo); // xml msg to data
 	int nPercent = workreport.nPercent;
-	if (nPercent == -1 || FAILED(workreport.code))
+
+	if (nPercent == -1 || FAILED(workreport.code)) // 任务失败
 	{
 		nPercent = -1;
-		ASSERT(FALSE);
+		//ASSERT(FALSE);
 	}
 
-	OnTaskProgress(nPercent);
+	OnTaskProgress(nPercent); // 进度信息
 	return S_OK;
 }
 
@@ -661,7 +660,7 @@ HRESULT CExcutorObj::InitTask()
 	CString strPath = EPATH_TASKBASIC;
 	CTxParamString txBasicStr;
 	txParam.GetSubNodeString(strPath, txBasicStr);
-	basicInfo.FromString(txBasicStr);
+	basicInfo.FromString(txBasicStr); // xml to Task
 	if (txBasicStr.IsEmpty() ||basicInfo.strGuid.IsEmpty())
 	{
 		ASSERT(FALSE);
@@ -682,6 +681,7 @@ HRESULT CExcutorObj::InitTask()
 	}
 	else
 	{
+		// 分步任务处理
 		for (size_t i = 0; i< basicInfo.vSubTask.size(); ++i)
 		{
 			CTxParamString txsubTask;
@@ -718,6 +718,8 @@ HRESULT CExcutorObj::InitTask()
 				hr = EMBERR_SUBTASKTEXT;
 				break;
 			}
+
+			// 将分步任务放入 m_vSubTasks
 			m_vSubTasks.push_back(subData);
 		}
 	}
@@ -725,12 +727,12 @@ HRESULT CExcutorObj::InitTask()
 	if (hr == S_OK)
 	{
 		m_runState.guid = String2Guid(basicInfo.strGuid);
-		m_runState.actorId = m_actorId;
-		m_runState.excId = m_ExcutorGuid;
+		m_runState.actorId = m_executorReg.actorId;
+		m_runState.excId = m_executorReg.guid;
 		m_runState.nCurrStep = basicInfo.nStartStep;
 
-		//LoadTaskDll and run it
-		hr =LaunchTask();
+		// 启动媒体处理分步任务
+		hr = LaunchTask();
 	}
 	if (hr != S_OK)
 	{
@@ -741,7 +743,7 @@ HRESULT CExcutorObj::InitTask()
 		ST_TASKREPORT report;
 		report.nState = embtaskstate_error;
 		report.strGuid = basicInfo.strGuid;
-		report.nSubErrorCode = hr;
+		report.nSubErrorCode = hr;	// 具体错误信息
 		CString strRet;
 		report.ToString(strRet);
 		SendToActor(strRet);
@@ -754,13 +756,14 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 	CFWriteLog(0, TEXT("task %s step %d, percent %d"), Guid2String(m_runState.guid), m_runState.nCurrStep, nPercent);
 	if (nPercent < 0 || nPercent > 100)
 	{
-		ASSERT(FALSE);
+		//ASSERT(FALSE);
 	}
 
 	CAutoLock lock(&m_csTaskInfo);
 	m_runState.nPercent = nPercent;
 	if (nPercent >= 100)
 	{
+		// 当前分步任务是否为 最后一步的任务?
 		if (m_runState.nCurrStep >= (int)m_vSubTasks.size()-1)
 		{
 			//task finished
@@ -783,18 +786,19 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 
 	ST_TASKREPORT report;
 	report.strGuid = Guid2String(m_runState.guid);
-	report.actorId = m_actorId;
-	report.excutorId = m_ExcutorGuid;
+	report.actorId = m_executorReg.actorId;
+	report.excutorId = m_executorReg.guid;
 	report.nState = m_runState.nState;
 	report.nStep = m_runState.nCurrStep;
 	report.nPercent = m_runState.nPercent;
 	CString strRet;
 	report.ToString(strRet);
-	SendToActor(strRet);
+	SendToActor(strRet); // 向Actor.exe 反馈任务状态信息
 }
 
 BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 {
+	BOOL ok = FALSE;
 	CFWriteLog(0, TEXT("lunch task dll type = %d"), nTaskType);
 	ST_LOADEDPLUGIN tmpPlugin;
 	if (LoadPluginByPluginMgr(PluginType_Wroker, nTaskType, g_pIPluginMgr, tmpPlugin))
@@ -804,13 +808,14 @@ BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 		if (!m_pTaskDllInterface)
 		{
 			UnLoadTaskDll();
-			ASSERT(FALSE);
 		}
-		
+		else
+		{
+			ok = TRUE;
+		}
 	}
 
-	return TRUE;
-
+	return ok;
 }
 
 BOOL CExcutorObj::UnLoadTaskDll()
@@ -834,22 +839,34 @@ HRESULT CExcutorObj::LaunchTask()
 	CFWriteLog(0, TEXT("start launch workdll"));
 	//LoadTaskDll and run it
 	UnLoadTaskDll();
-	LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
+
+	// 根据分步任务类型，加载对应的功能dll
+	BOOL ok = LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
+	if (!ok)
+	{
+		OutputDebugString("---未加载功能dll");
+		return EMBERR_SUBTASKLOADDLL; // 未加载功能dll
+	}
+
 	CString strRet;
+
 	if (m_pTaskDllInterface)
 	{
+		// 向功能dll提交分步任务
 		hr = m_pTaskDllInterface->DoTask(m_vSubTasks[m_runState.nCurrStep].strSubTask, strRet, this);
 		if (hr != S_OK)
 		{
-			ASSERT(FALSE);
+			hr = EMBERR_TASKSUBMIT; // 提交失败
+			//ASSERT(FALSE);
 		}
 		CFWriteLog(0, TEXT("end launch workdll"));
 	}
 	else
 	{
-		ASSERT(FALSE);
+		//ASSERT(FALSE);
 		hr = EMBERR_SUBTASKLOADDLL;
 	}
+
 	return hr;
 }
 

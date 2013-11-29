@@ -1,3 +1,13 @@
+/********************************************************************
+	created:	2013/11/25
+	created:	$2013:11:25
+	filename: 	MBCCommonDef.h
+	file base:	MBCCommonDef
+	file ext:	h
+	author:		tianyx
+	
+	purpose:	message struct define 
+*********************************************************************/
 #pragma once
 
 #include "txSerialize.h"
@@ -6,10 +16,6 @@ using namespace std;
 enum ENUM_MBCOBJTYPE
 {
 	MBCOBJTYPE_BASE = -1,
-
-
-	MBCOBJTYPE_SVR = 0,
-	MBCOBJTYPE_CLIENT = 1,
 
 	MBCOBJTYPE_REMOTEHOST = 200,
 };
@@ -36,15 +42,16 @@ enum ENUM_MBCSTATE
 #define MBCSENDINGPACKSIZE	64
 #pragma pack(4)
 
+//base message struct for tcp trans
 struct ST_TXMSGBASE
 {
 protected:
-	int nMsgType;
+	int nMsgType;			//message type see msgtype_xxxxx
 public:
-	INT64 nMsgId;
-	LONG nRequestSendTime;
-	LONG nReplySendTime;
-	int nMsgState;
+	INT64 nMsgId;			//message id
+	LONG nRequestSendTime;	//time when send
+	LONG nReplySendTime;	//time when send back
+	int nMsgState;			//see msgState_xxxx
 
 	ST_TXMSGBASE():nMsgType(msgtype_NONE)
 	{
@@ -70,7 +77,7 @@ struct ST_MBCMSG_LIVEREQUEST: public ST_MBCMSGBASE
 		nMsgType = msgtype_LIVEREQUEST;
 	}
 };*/
-
+//not used
 struct ST_MBCCHANNELINFO_FORVC6
 {
 	char szChannelId[64];
@@ -80,7 +87,7 @@ struct ST_MBCCHANNELINFO_FORVC6
 };
 
 
-
+//not used
 struct ST_TXCHANNELINFO
 {
 	CString szChannelId;
@@ -122,7 +129,7 @@ struct ST_TXMSG_LIVEQA : public ST_TXMSGBASE
 	virtual BOOL operator >>(CTxSerialize& ar);  
 
 };
-
+//not used
 struct ST_TXMSG_ACTQA: public ST_TXMSGBASE
 {
 	int nActType;
@@ -175,7 +182,7 @@ struct ST_MBCMSG_ACTREPLY: public ST_MBCMSGBASE
 
 };
 */
-
+//not used
 struct ST_OBJSTATEINFO
 {
 	ULONG pObj;
