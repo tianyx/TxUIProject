@@ -8,6 +8,7 @@
 *********************************************************************/
 #pragma once
 #include "EMBGuid.h"
+#include "EMBWorkString.h"
 #include <vector>
 
 #ifdef VC6PREDEF
@@ -20,7 +21,6 @@ typedef int DISPATCHID;
 
 using namespace std;
 typedef CString CTaskString;
-
 namespace EMB{
 
 enum ENUM_PLUGINTYPE
@@ -178,9 +178,9 @@ interface ITaskReportToExcutorInterface
 
 interface ITaskWorkerCallInterface:virtual public ITxUnkown
 {
-	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback) = 0;
+	virtual HRESULT DoTask(const CTaskString& szTaskIn, CEMBWorkString& szRet, ITaskReportToExcutorInterface* pICallback) = 0;
 	virtual HRESULT CancelTask() = 0;
-	virtual HRESULT GetTaskProgress(CTaskString& szInfo) = 0;
+	virtual HRESULT GetTaskProgress(CEMBWorkString& szInfo) = 0;
 };
 
 
@@ -193,6 +193,12 @@ interface IPluginStorageInterface:virtual public ITxUnkown
 	virtual HRESULT FetchTaskFromStorage(const DISPATCHID nDispatchID, int nMinPriority, int nDesiredNum, VECTASKS& vTasks) = 0;
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks) = 0;
 
+};
+
+// Actor 界面获取信息接口
+interface IActorUI : virtual public ITxUnkown
+{
+	virtual HRESULT GetExecutors(vector<CString>& vExecutor) = 0;
 };
 
 

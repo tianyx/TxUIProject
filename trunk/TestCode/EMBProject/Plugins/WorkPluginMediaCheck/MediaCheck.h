@@ -21,9 +21,9 @@ public:
 
 
 public:
-	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback);
+	virtual HRESULT DoTask(const CTaskString& szTaskIn, CEMBWorkString& szRet, ITaskReportToExcutorInterface* pICallback);
 	virtual HRESULT CancelTask();
-	virtual HRESULT GetTaskProgress(CTaskString& szInfo);
+	virtual HRESULT GetTaskProgress(CEMBWorkString& szInfo);
 
 };
 }

@@ -58,6 +58,8 @@ CGraphDrawer::CGraphDrawer(void):m_bmpCache(g_nScreenCX, g_nScreenCY, PixelForma
 {
 	nLastGraphUniqueId = -1;
 	m_dZoom =1.0;
+	m_ptLastDrawOrg.x = 0;
+	m_ptLastDrawOrg.y = 0;
 }
 
 CGraphDrawer::~CGraphDrawer(void)
@@ -82,6 +84,7 @@ void CGraphDrawer::DrawGraph(HDC hdcIn, CPoint& ptLeftTop, CSize& szSizeIn )
 		ptLeftTop.y = (szSizeIn.cy - m_szGraphSize.cy) /2;
 	}
 
+	m_ptLastDrawOrg = ptLeftTop;
 	Rect rcSrc(0,0,g_nScreenCX, g_nScreenCY);
 	Rect rcDes(ptLeftTop.x, ptLeftTop.y, g_nScreenCX, g_nScreenCY);
 	GraphicsContainer gcn = gc.BeginContainer(rcDes,rcSrc,  UnitPixel);
@@ -89,12 +92,14 @@ void CGraphDrawer::DrawGraph(HDC hdcIn, CPoint& ptLeftTop, CSize& szSizeIn )
 	int x = 0;
 	int y = 0;
 	// Fill the rectangle.
+	{
+	CAutoLock lock(&m_csData);
 	for_each(m_vObjClient.begin(), m_vObjClient.end(), CObjDrawcls(&gc));
 	for_each(m_vObjSvr.begin(), m_vObjSvr.end(), CObjDrawcls(&gc));
 	for_each(m_vObjEndSlave.begin(), m_vObjEndSlave.end(), CObjDrawcls(&gc));
 	for_each(m_vObjEndMaster.begin(), m_vObjEndMaster.end(), CObjDrawcls(&gc));
 	for_each(m_vObjEndBack.begin(), m_vObjEndBack.end(), CObjDrawcls(&gc));
-
+	}
 
 	gc.EndContainer(gcn);
 	Graphics gcIn(hdcIn);
@@ -109,6 +114,7 @@ void CGraphDrawer::DrawGraph(HDC hdcIn, CPoint& ptLeftTop, CSize& szSizeIn )
 
 HRESULT CGraphDrawer::ResetDrawData( ST_GRAPHSTATE& gsStateInfo )
 {
+
 	//calc obj type is changed?
 	BOOL bReset = FALSE;
 	if (nLastGraphUniqueId == -1 || nLastGraphUniqueId != gsStateInfo.nUniqueId)
@@ -117,6 +123,9 @@ HRESULT CGraphDrawer::ResetDrawData( ST_GRAPHSTATE& gsStateInfo )
 		bReset = TRUE;
 		nLastGraphUniqueId = gsStateInfo.nUniqueId;
 		ClearDrawer();
+
+		CAutoLock lock(&m_csData);
+
 		for (size_t i = 0; i < gsStateInfo.vClientInfo.size(); ++i)
 		{
 			CMBCGDrawClientObj* pObj = new CMBCGDrawClientObj;
@@ -284,6 +293,8 @@ HRESULT CGraphDrawer::ResetDrawData( ST_GRAPHSTATE& gsStateInfo )
 
 void CGraphDrawer::ClearDrawer()
 {
+	CAutoLock lock(&m_csData);
+
 	for_each(m_vObjClient.begin(), m_vObjClient.end(), DelDrawObjProc);
 	for_each(m_vObjSvr.begin(), m_vObjSvr.end(), DelDrawObjProc);
 	for_each(m_vObjEndMaster.begin(), m_vObjEndMaster.end(), DelDrawObjProc);
@@ -310,6 +321,8 @@ void CGraphDrawer::ReLayoutGraph(double dZoom  /*= -1.0*/)
 	{
 		dZoom = m_dZoom;
 	}
+
+	CAutoLock lock(&m_csData);
 
 
 	VECDRAWOBJS tmpEnd;
@@ -420,5 +433,85 @@ void CGraphDrawer::RelayoutLineObjs( VECDRAWOBJS& vObjs, const CPoint& ptLeftTop
 		vObjs[i]->SetDrawRect(ptOrg, dZoom);
 		ptOrg.Offset(nIntervalX + (dZoom *g_nDefMBCDrawItemCX) , 0);
 	}
+}
+
+BOOL CGraphDrawer::HitTestObject( CPoint ptIn, ST_OBJSTATEINFO& objInfoOut )
+{
+	ptIn.Offset(-m_ptLastDrawOrg.x, -m_ptLastDrawOrg.y);
+	CRect rcGraph(0,0, m_szGraphSize.cx, m_szGraphSize.cy);
+	if (!rcGraph.PtInRect(ptIn))
+	{
+		return FALSE;
+	}
+
+	CAutoLock lock(&m_csData);
+
+	BOOL bFind = FALSE;
+	for (size_t i = 0 ; i < m_vObjClient.size(); ++i)
+	{
+		CMBCGDrawBaseObj* pDrawObj = m_vObjClient[i];
+		Rect rcTmp = pDrawObj->GetDrawRect();
+		CRect rcObj(rcTmp.X, rcTmp.Y, rcTmp.GetRight(), rcTmp.GetBottom());
+		if (rcObj.PtInRect(ptIn)
+			&& pDrawObj->m_pObjInfo)
+		{
+			objInfoOut = *(pDrawObj->m_pObjInfo);
+			return TRUE;
+		}
+	}
+	
+
+	for (size_t i = 0 ; i < m_vObjSvr.size(); ++i)
+	{
+		CMBCGDrawBaseObj* pDrawObj = m_vObjSvr[i];
+		Rect rcTmp = pDrawObj->GetDrawRect();
+		CRect rcObj(rcTmp.X, rcTmp.Y, rcTmp.GetRight(), rcTmp.GetBottom());
+		if (rcObj.PtInRect(ptIn)
+			&& pDrawObj->m_pObjInfo)
+		{
+			objInfoOut = *(pDrawObj->m_pObjInfo);
+			return TRUE;
+		}
+	}
+
+	for (size_t i = 0 ; i < m_vObjEndMaster.size(); ++i)
+	{
+		CMBCGDrawBaseObj* pDrawObj = m_vObjEndMaster[i];
+		Rect rcTmp = pDrawObj->GetDrawRect();
+		CRect rcObj(rcTmp.X, rcTmp.Y, rcTmp.GetRight(), rcTmp.GetBottom());
+		if (rcObj.PtInRect(ptIn)
+			&& pDrawObj->m_pObjInfo)
+		{
+			objInfoOut = *(pDrawObj->m_pObjInfo);
+			return TRUE;
+		}
+	}
+	for (size_t i = 0 ; i < m_vObjEndSlave.size(); ++i)
+	{
+		CMBCGDrawBaseObj* pDrawObj = m_vObjEndSlave[i];
+		Rect rcTmp = pDrawObj->GetDrawRect();
+		CRect rcObj(rcTmp.X, rcTmp.Y, rcTmp.GetRight(), rcTmp.GetBottom());
+		if (rcObj.PtInRect(ptIn)
+			&& pDrawObj->m_pObjInfo)
+		{
+			objInfoOut = *(pDrawObj->m_pObjInfo);
+			return TRUE;
+		}
+	}
+	for (size_t i = 0 ; i < m_vObjEndBack.size(); ++i)
+	{
+		CMBCGDrawBaseObj* pDrawObj = m_vObjEndBack[i];
+		Rect rcTmp = pDrawObj->GetDrawRect();
+		CRect rcObj(rcTmp.X, rcTmp.Y, rcTmp.GetRight(), rcTmp.GetBottom());
+		if (rcObj.PtInRect(ptIn)
+			&& pDrawObj->m_pObjInfo)
+		{
+			objInfoOut = *(pDrawObj->m_pObjInfo);
+			return TRUE;
+		}
+	}
+	
+
+	return FALSE;
 }
 

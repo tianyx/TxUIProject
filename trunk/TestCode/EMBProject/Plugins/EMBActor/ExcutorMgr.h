@@ -78,6 +78,8 @@ public:
 	HRESULT WndMsgPoolCheckLoop();
 	HANDLE CreateExchangemapping(EXCUTORID excId);
 
+	HRESULT GetExecutors(vector<ST_EXCUTORINFO>& vExecutor);
+
 public:
 	HWND m_hMessageWnd;
 

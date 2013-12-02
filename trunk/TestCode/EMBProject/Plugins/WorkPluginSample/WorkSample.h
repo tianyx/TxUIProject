@@ -24,11 +24,11 @@ public:
 public:
 	//任务开始接口,此函数要求立即返回。任务执行请开另一个线程
 	//第三个参数为回调接口
-	virtual HRESULT DoTask(const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback);
+	virtual HRESULT DoTask(const CTaskString& szTaskIn, CEMBWorkString& szRet, ITaskReportToExcutorInterface* pICallback);
 
 	virtual HRESULT CancelTask();
 	//进度查询接口
-	virtual HRESULT GetTaskProgress(CTaskString& szInfo);
+	virtual HRESULT GetTaskProgress(CEMBWorkString& szInfo);
 	
 	BOOL RunTaskLoop();
 	BOOL m_bTaskRunning;

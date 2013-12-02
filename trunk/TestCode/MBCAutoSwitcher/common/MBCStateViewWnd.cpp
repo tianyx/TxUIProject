@@ -433,3 +433,42 @@ void CMBCStateViewWnd::OnLButtonDown(UINT nFlags, CPoint point)
 	SetFocus();
 	CWnd::OnLButtonDown(nFlags, point);
 }
+
+BOOL CMBCStateViewWnd::HitTestObject( ST_OBJSTATEINFO& hitObjInfo )
+{
+	CPoint pt;
+	GetCursorPos(&pt);
+	this->ScreenToClient(&pt);
+	CRect rcThis;
+	GetClientRect(rcThis);
+	if (!rcThis.PtInRect(pt))
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	CPoint ptOrg(0,0);
+	if (GetStyle() & WS_HSCROLL)
+	{
+		SCROLLINFO info;
+		if(GetScrollInfo(SB_HORZ, &info, SIF_POS))
+		{
+			ptOrg.x = -info.nPos;
+			ASSERT(ptOrg.x < rcThis.Width());
+
+		}
+	}
+
+	if (GetStyle() & WS_VSCROLL)
+	{
+		SCROLLINFO info;
+		if(GetScrollInfo(SB_VERT, &info, SIF_POS))
+		{
+			ptOrg.y = -info.nPos;
+			ASSERT(ptOrg.y < rcThis.Height());
+
+		}
+	}
+
+	return m_ghDrawer.HitTestObject(pt, hitObjInfo);
+	
+}

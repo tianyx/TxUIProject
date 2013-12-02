@@ -1,5 +1,6 @@
 #pragma once
 #include "MBCHeartBeatObj.h"
+#include "IMBCRelayCtrlInterface.h"
 
 interface IGraphStateIncomingCallback
 {
@@ -18,6 +19,6 @@ public:
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed );
 
 	virtual HRESULT SetGraphStateIncomingCallback(IGraphStateIncomingCallback* pCallback);
-
+	
 	IGraphStateIncomingCallback* m_pGsInCallback;
 };

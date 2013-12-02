@@ -24,10 +24,6 @@ struct ST_SUBTASKDATA
 	CString strSubTask; // пео╒
 };
 
-interface IExcutorCallback
-{
-};
-
 class CExcutorObj : public ITaskReportToExcutorInterface
 {
 private:
@@ -71,6 +67,8 @@ public:
 	*/
 	virtual HRESULT OnDllReportTaskProgress(const CTaskString& szInfo);
 
+public://for unit test
+	BOOL TestRunTask(CString& strTaskIn);
 private:
 	BOOL	OnExcutorRegistered();
 	BOOL	OnExcutorUnRegister(ST_EXCUTORINFO& infoIn);

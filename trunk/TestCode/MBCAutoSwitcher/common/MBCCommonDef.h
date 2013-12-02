@@ -53,7 +53,7 @@ enum ENUM_MBCSTATE
 #define selfType_SVRMASTER 1
 #define selfType_SVRSECOND 2
 
-#define actid_notsend -1
+#define actid_notsended -1
 #define actid_closed  -2  //replyed and close
 #define actid_timeout -3
 
@@ -69,6 +69,7 @@ enum ENUM_MBCSTATE
 #define msgtype_LIVEQA	1
 #define msgtype_ACTQA	3
 #define msgtype_GraphState 4
+#define msgtype_ChangeRelay 5	//for 2->1 relay mode
 
 #define msgState_none 0
 #define msgState_Q 1
@@ -268,8 +269,27 @@ struct ST_GRAPHSTATE
 	virtual BOOL operator >>(CTxSerialize& ar)  ;
 };
 
-
 void CHInfoV62CHInfo(ST_MBCCHANNELINFO_FORVC6& infoV6, ST_MBCCHANNELINFO& infoOut);
 
+
+struct ST_CHANGERELAY: public ST_MBCMSGBASE
+{
+	int nId;
+	char strChId[64];
+	SOCKADDR_IN addrRelay;
+	ST_CHANGERELAY()
+	{
+		nMsgType = msgtype_ChangeRelay;
+		addrRelay.sin_family = 0;
+		ZeroMemory(strChId, 64);
+		nId = -1;
+	}
+
+	virtual BOOL operator <<( CTxSerialize& ar) const;
+
+	virtual BOOL operator >>(CTxSerialize& ar);  
+
+
+};
 #pragma pack()
 

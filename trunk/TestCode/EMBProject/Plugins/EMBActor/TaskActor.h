@@ -52,7 +52,8 @@ class CTaskActor:
 // 	public IPluginConnectorInterce,
 // 	public IActorMsgCallBackInterface,
 	public IActorConnectorCallback,
-	public IExcutorMsgCallBack
+	public IExcutorMsgCallBack,
+	public IActorUI
 
 {
 public:
@@ -103,7 +104,15 @@ public:
 	HRESULT OnExcutorMessage(const EXCUTORID excutorId, CString& szInfoIn);
 	HRESULT OnExcutorExit(const EXCUTORID excutorId);
 
-
+	// IActorUI 接口
+	/*
+    Description：获取运行中的Executor.exe 信息
+	Input：		mapExecutor 返回运行的Executor信息
+	Return:		S_OK 成功
+	History：
+	*/
+	virtual HRESULT GetExecutors(vector<CString>& vExecutor);
+	// ------------------------------------------------------
 
 private:
 	BOOL SwitchActorConn(BOOL bMainConn);
@@ -118,6 +127,7 @@ private:
 	*/
 	bool TaskResultSaveXmlFile(ST_TASKREPORT& tskReport);
 	bool QueryXmlFile(const CString& strTaskGuid, ST_TASKREPORT& tskInfor);
+	bool FindTask(const EXCUTORID& strExecutorId, ST_TASKINACTOR& tsk);
 
 private:
 	CActorConnector m_actorconnMain;

@@ -8,6 +8,7 @@
 #include "MainFrm.h"
 #include "GlobalDef.h"
 #include "FGlobal.h"
+#include "TxLogManager.h"
 
 #include "GdiPlusNewHeader.h"
 #include "TxFontLoader.h"
@@ -83,6 +84,7 @@ BOOL CMBCMonitorApp::InitInstance()
 		return FALSE;
 	}
 
+	GetTxLogMgr()->AddNewLogFile(LOGKEYMAIN, TEXT("MonitorLog"), TRUE);
 
 	if (!InitGlobalConfig())
 	{
@@ -166,6 +168,7 @@ void CMBCMonitorApp::OnAppAbout()
 int CMBCMonitorApp::ExitInstance()
 {
 	// TODO: 在此添加专用代码和/或调用基类
+	ReleaseTxLogMgr();
 	WSACleanup();
 	if (g_pFontLoader)
 	{

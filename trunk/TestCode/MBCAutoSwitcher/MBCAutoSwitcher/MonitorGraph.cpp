@@ -22,6 +22,7 @@ CMonitorGraph::CMonitorGraph(void)
 	m_nSwitchCD = g_GlobalInfo.nSwitchCD;
 	m_nRelyCD = g_GlobalInfo.nRelayCD;
 	m_gsHostObj.m_addrLocal = g_GlobalInfo.addrGStateHostListen;
+	m_nRelay2to1Mode = g_GlobalInfo.nRelay2to1Mode;
 	m_gsHostObj.SetGraphStateCallback(this);
 	m_gsHostObj.Run();
 }
@@ -327,7 +328,7 @@ HRESULT CMonitorGraph::CheckGraphState()
 							ST_MBCACTCOOLDOWN cdmsg;
 							cdmsg.nCoolDownCount = m_nSwitchCD;
 							cdmsg.pObj = pSlaveClentObj;
-							cdmsg.actMsg.nMsgId = actid_notsend;
+							cdmsg.actMsg.nMsgId = actid_notsended;
 							cdmsg.actMsg.nActType = actType_changeMBCDest;
 							cdmsg.actMsg.addrDest = addrSvrCtrl;
 							StrCpy(cdmsg.actMsg.strChId, strCHId.GetBuffer());
@@ -342,11 +343,11 @@ HRESULT CMonitorGraph::CheckGraphState()
 							if (FindFirstValidBackEnd(strCHId, pBackEndObj))
 							{
 								CFWriteLog(SWITCHERLOGKEY, TEXT("found available back end obj, start relay from %s to %s"),  Addr2String(pBackEndObj->m_addrRemote).c_str(),  Addr2String(addrDest).c_str());
-								pBackEndObj->AddRelayAddr(addrDest);
+								//pBackEndObj->AddRelayAddr(addrDest);
 								ST_MBCACTCOOLDOWN cdmsg;
 								cdmsg.nCoolDownCount = m_nRelyCD;
 								cdmsg.pObj = pBackEndObj;
-								cdmsg.actMsg.nMsgId = actid_notsend;
+								cdmsg.actMsg.nMsgId = actid_notsended;
 								cdmsg.actMsg.nActType = actType_relayDest;
 								cdmsg.actMsg.addrDest = addrDest;
 								StrCpy(cdmsg.actMsg.strChId, strCHId.GetBuffer());
@@ -503,7 +504,7 @@ HRESULT CMonitorGraph::CheckCDMsgs()
 	for (; itb!=ite; ++itb)
 	{
 		ST_MBCACTCOOLDOWN& cdmsg = itb->second;
-		if (cdmsg.actMsg.nMsgId == actid_notsend)
+		if (cdmsg.actMsg.nMsgId == actid_notsended)
 		{
 			static int snActIdBase = 0;
 			snActIdBase++;
@@ -529,6 +530,14 @@ HRESULT CMonitorGraph::CheckCDMsgs()
 			}
 			else if (cdmsg.actMsg.nActType == actType_relayDest)
 			{
+				for (size_t ir  = 0; ir < m_graphData.vEnd.size(); ++ir)
+				{
+					CMBCEndObj* pRelayObj = m_graphData.vEnd[ir];
+					if (pRelayObj->m_nObjType == MBCOBJTYPE_ENDBACK)
+					{
+						pRelayObj->RemoveRelayAddr(cdmsg.actMsg.addrDest);
+					}
+				}
 				cdmsg.actMsg.nMsgId = snActIdBase;
 				cdmsg.actMsg.nRequestSendTime = time(NULL);
 				//send msg
@@ -616,6 +625,10 @@ BOOL CMonitorGraph::StopRelyBroadCast( SOCKADDR_IN& AddrRely )
 
 HRESULT CMonitorGraph::CheckMasterRecvState(CMBCEndObj* pMasterEndObj)
 {
+	if (IsChannelActInCD(pMasterEndObj->m_strCHID))
+	{
+		return S_OK;
+	}
 	std::vector<SOCKADDR_IN> vSrcAddrs;
 	pMasterEndObj->GetRecvAddrs(vSrcAddrs);
 	if (vSrcAddrs.size() >1)
@@ -716,7 +729,7 @@ HRESULT CMonitorGraph::Test()
 				ST_MBCACTCOOLDOWN cdmsg;
 				cdmsg.nCoolDownCount = m_nSwitchCD;
 				cdmsg.pObj = (CMBCBaseObj* )objInfo.pObj;
-				cdmsg.actMsg.nMsgId = actid_notsend;
+				cdmsg.actMsg.nMsgId = actid_notsended;
 				cdmsg.actMsg.nActType = actType_changeMBCDest;
 				cdmsg.actMsg.addrDest = vchInfo[k].addrCtrl;
 				StrCpy(cdmsg.actMsg.strChId, vchInfo[k].szChannelId);
@@ -805,7 +818,7 @@ void CMonitorGraph::AutoJusticeMasterClient( CString& strCHId, SOCKADDR_IN& addr
 		ST_MBCACTCOOLDOWN cdmsg;
 		cdmsg.nCoolDownCount = 1;
 		cdmsg.pObj = pFinalObj;
-		cdmsg.actMsg.nMsgId = actid_notsend;
+		cdmsg.actMsg.nMsgId = actid_notsended;
 		cdmsg.actMsg.nActType = actType_changeMBCDest;
 		cdmsg.actMsg.addrDest = pFinalObj->m_addrRemote;
 		StrCpy(cdmsg.actMsg.strChId, strCHId.GetBuffer());
@@ -815,4 +828,86 @@ void CMonitorGraph::AutoJusticeMasterClient( CString& strCHId, SOCKADDR_IN& addr
 	}
 
 
+}
+
+HRESULT CMonitorGraph::ChangeRelay( ST_CHANGERELAY& relayIn )
+{
+	CAutoLock lock(&m_lockGraph);
+	//check relay mode 
+	if (m_nRelay2to1Mode == 0)
+	{
+		ASSERT(FALSE);
+		CFWriteLog(TEXT("not in relay 2 to 1 mode!"));
+		return S_FALSE;
+	}
+
+	CFWriteLog(TEXT("2to1OP: chid = %s, relay addr to %s"),relayIn.strChId,  Addr2String(relayIn.addrRelay).c_str());
+	HRESULT hr = S_FALSE;
+	//find master obj
+	CMBCEndObj* pMasterEndObj = NULL;
+	CMBCEndObj* pBackObj = NULL;
+	vector<CMBCEndObj*> vBackObjs;
+	for(size_t i = 0; i < m_graphData.vEnd.size(); ++i)
+	{
+		CMBCEndObj* pObj = m_graphData.vEnd[i]; 
+		if (pObj->m_nObjType == MBCOBJTYPE_ENDMASTER
+			 && pObj->m_strCHID.Compare(relayIn.strChId) == 0)
+		{
+			pMasterEndObj = m_graphData.vEnd[i];
+		}
+
+		if (pObj->m_nObjType == MBCOBJTYPE_ENDBACK)
+		{
+			if (pObj->GetState() == MBCSTATE_OK && pObj->m_addrRemote == relayIn.addrRelay)
+			{
+				pBackObj = pObj;
+			}
+		}
+	}
+	
+	if (pMasterEndObj)
+	{
+		std::vector<SOCKADDR_IN> vSrcAddrs;
+		pMasterEndObj->GetRecvAddrs(vSrcAddrs);
+		if (vSrcAddrs.size() > 0)
+		{
+			//stop other relay
+			ASSERT(vSrcAddrs.size() == 1);
+			if (vSrcAddrs[0] == relayIn.addrRelay)
+			{
+				//not need to change
+				hr = S_OK;
+			}
+			else
+			{
+				//stop old relay
+								
+			}
+		}
+	}
+	else
+	{
+		hr = E_FAIL;
+		return hr;
+	}
+
+	//start new relay 
+	if (pBackObj)
+	{
+		//pBackObj->AddRelayAddr(pMasterEndObj->m_addrRemote);
+		ST_MBCACTCOOLDOWN cdmsg;
+		cdmsg.nCoolDownCount = m_nRelyCD;
+		cdmsg.pObj = pBackObj;
+		cdmsg.actMsg.nMsgId = actid_notsended;
+		cdmsg.actMsg.nActType = actType_relayDest;
+		cdmsg.actMsg.addrDest = pMasterEndObj->m_addrRemote;
+		StrCpy(cdmsg.actMsg.strChId, relayIn.strChId);
+		cdmsg.strChId = relayIn.strChId;
+		AddCDMsg(cdmsg);
+		CheckCDMsgs();
+		hr = S_OK;
+	}
+	
+
+	return hr;
 }

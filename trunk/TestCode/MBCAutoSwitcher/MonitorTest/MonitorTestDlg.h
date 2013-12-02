@@ -6,9 +6,11 @@
 
 #include "MBCCommonDef.h"
 #include "MBCRemoteInterface.h"
+#include "TxTimer.h"
 
 // CMonitorTestDlg 对话框
-class CMonitorTestDlg : public CDialog, IMBCMSGRemoteCallInterface
+class CMonitorTestDlg : public CDialog, IMBCMSGRemoteCallInterface,
+	public ITxTimerCallbackInterface
 {
 // 构造
 public:
@@ -27,9 +29,13 @@ public:
 	virtual HRESULT TransActData(int nmsgType,char* bufferIn, int nLenIn, char* bufferToFill, int nMaxLen, int& nFillLen);
 	virtual HRESULT GetLiveInfo(ST_MBCMSGBASE& basemsg, int& nRemoteState, int& nSelftype,  ST_MBCCHANNELINFO_FORVC6* pArrayOut, const int nArrLen, int& chUsed);
 
+	virtual HRESULT TxTimerCallbackProc(DWORD dwEvent, LPARAM lparam);
+
 // 实现
 protected:
 	HICON m_hIcon;
+	CTxTimer timerTest;
+
 
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
@@ -40,4 +46,5 @@ protected:
 public:
 	afx_msg void OnBnClickedBtnStart();
 	afx_msg void OnBnClickedBtnStop();
+	afx_msg void OnBnClickedButton2();
 };

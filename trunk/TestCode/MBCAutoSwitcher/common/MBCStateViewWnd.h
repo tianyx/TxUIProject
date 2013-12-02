@@ -21,6 +21,9 @@ protected:
 	ST_GRAPHSTATE m_gsState;
 
 	void ReCalcViewSize(CSize szViewIn , double dZoom);
+	
+	BOOL HitTestObject(ST_OBJSTATEINFO& hitObjInfo);
+	
 public:
 	afx_msg void OnPaint();
 protected:

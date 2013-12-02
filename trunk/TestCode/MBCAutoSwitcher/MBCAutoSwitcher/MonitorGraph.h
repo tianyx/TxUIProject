@@ -75,6 +75,7 @@ public:
 	HRESULT Stop();
 
 	virtual HRESULT GetGraphState(ST_GRAPHSTATE& outData);
+	virtual HRESULT ChangeRelay(ST_CHANGERELAY& relayIn);
 
 private:
 	BOOL IsChannelActInCD(CString& strCHId);
@@ -118,6 +119,7 @@ private:
 	//conifg
 	int m_nSwitchCD;
 	int m_nRelyCD;
+	int m_nRelay2to1Mode;
 
 	//for remote query graph state 
 	CMBCGraphStateSvrObj m_gsHostObj;

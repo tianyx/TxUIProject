@@ -138,3 +138,27 @@ BOOL ST_MBCCHANNELINFO::operator >>(CTxSerialize& ar)
 	 infoOut.addrDestSecond = infoV6.addrDestSecond;
 	 infoOut.addrCtrl = infoV6.addrCtrl;
  }
+
+ BOOL ST_CHANGERELAY::operator<<( CTxSerialize& ar ) const
+ {
+	 ST_MBCMSGBASE::operator <<(ar);
+	 LONG nCharLen = strlen(strChId);
+	 ar.Serialize((char*)strChId, nCharLen);
+	 LONG nLen = sizeof(SOCKADDR_IN);
+	 ar.Serialize((BYTE*)&addrRelay, nLen);
+	 ar << nId;
+
+	 return TRUE;
+ }
+
+ BOOL ST_CHANGERELAY::operator>>( CTxSerialize& ar )
+ {
+	 ST_MBCMSGBASE::operator >>(ar);
+	 LONG nCharLen = 64;
+	 ZeroMemory(strChId, 64);
+	 ar.Serialize(strChId, nCharLen);
+	 LONG nLen = sizeof(SOCKADDR_IN);
+	 ar.Serialize((BYTE*)&addrRelay, nLen);
+	 ar >> nId;
+	 return TRUE;
+ }

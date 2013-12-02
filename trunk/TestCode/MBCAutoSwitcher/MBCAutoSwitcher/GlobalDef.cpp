@@ -94,7 +94,7 @@ BOOL InitGlobalConfig()
 	g_GlobalInfo.nSockDownReconnDelay = GetPrivateProfileInt("Config", "SockDownReconnDelay", 5000, g_GlobalInfo.szIniPath.c_str());
 
 	g_GlobalInfo.nStateCheckInterval = GetPrivateProfileInt("Config", "StateCheckInterval", 5000, g_GlobalInfo.szIniPath.c_str());
-	g_GlobalInfo.nEndBitRateCheckInterval = GetPrivateProfileInt("Config", "EndBitRateCheckInterval", 1000, g_GlobalInfo.szIniPath.c_str());
+	g_GlobalInfo.nEndBitRateCheckInterval = GetPrivateProfileInt("Config", "EndBitRateCheckInterval", 2000, g_GlobalInfo.szIniPath.c_str());
 
 	g_GlobalInfo.nSwitchCD = GetPrivateProfileInt("Config", "SwitchCD", 5000, g_GlobalInfo.szIniPath.c_str());
 	g_GlobalInfo.nRelayCD = GetPrivateProfileInt("Config", "RelayCD", 5000, g_GlobalInfo.szIniPath.c_str());
@@ -102,6 +102,8 @@ BOOL InitGlobalConfig()
 
 	g_GlobalInfo.nAutoJudgeMasterClient = GetPrivateProfileInt("Config", "AutoJudgeMasterClient", 1, g_GlobalInfo.szIniPath.c_str());
 	g_GlobalInfo.nCacheBeforeRelay = GetPrivateProfileInt("Config", "SleepBeforeRelay",1024*1024, g_GlobalInfo.szIniPath.c_str());
+
+	g_GlobalInfo.nRelay2to1Mode = GetPrivateProfileInt("Config", "Relay2to1Mode", 0, g_GlobalInfo.szIniPath.c_str());
 
 	//set to global variable
 	 g_SOCK_INTERVAL_RECONN  = g_GlobalInfo.nSockDownReconnDelay;

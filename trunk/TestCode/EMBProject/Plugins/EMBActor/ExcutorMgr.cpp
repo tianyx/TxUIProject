@@ -773,3 +773,19 @@ void CExcutorMgr::ClearMsgPool()
 	}
 	m_vMsgPool.clear();
 }
+
+HRESULT CExcutorMgr::GetExecutors( vector<ST_EXCUTORINFO>& vExecutor )
+{
+	// clear up
+	vExecutor.clear();
+
+	CAutoLock lock(&m_csExcutors);
+
+	// ¸´ÖÆµ½vExecutor
+	for(MAPEXCUTORS::iterator itor = m_mapExcutors.begin(); itor != m_mapExcutors.end(); ++itor)
+	{
+		vExecutor.push_back(itor->second);
+	}
+
+	return S_OK;
+}

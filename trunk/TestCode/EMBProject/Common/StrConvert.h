@@ -12,6 +12,14 @@
 #pragma once
 #include <string>
 #include <vector>
+
+#ifdef _UNICODE
+#define TxStrLen wcslen
+#else
+#define TxStrLen strlen
+#endif // _DEBUG
+
+
 using namespace std;
 LONG Char2Wchar(const char* pszChar, wchar_t* pwszChar, int nwSize);  //nwSize = sizeof wchar in byte
 LONG Wchar2Char(const wchar_t* pwszChar, char* pszChar, int nwSize); //nwSize = sizeof char in byte

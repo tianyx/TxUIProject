@@ -564,7 +564,9 @@ HRESULT CExcutorObj::TaskCheckLoop()
 							{
 								int nPercent = 0;
 								// 查询任务执行状态信息
-								HRESULT hr = m_pTaskDllInterface->GetTaskProgress(szInfo);
+								CEMBWorkString szWorkStr;
+								HRESULT hr = m_pTaskDllInterface->GetTaskProgress(szWorkStr);
+								szInfo = szWorkStr;
 								ASSERT(hr == S_OK);
 								bReport = TRUE;
 							}
@@ -582,6 +584,10 @@ HRESULT CExcutorObj::TaskCheckLoop()
 			if (bIdle)
 			{
 				//wait while time out
+				if (m_pTaskDllInterface)
+				{
+					UnLoadTaskDll();
+				}
 				
 				if (m_bRegistered)
 				{
@@ -823,11 +829,14 @@ BOOL CExcutorObj::UnLoadTaskDll()
 	if (m_pTaskDllInterface)
 	{
 		m_pTaskDllInterface->Release();
+		m_pTaskDllInterface = NULL;
 	}
 	
 	if (m_taskDll.handle)
 	{
 		UnLoadPluginByPluginMgr(g_pIPluginMgr, m_taskDll);
+		m_taskDll.handle = NULL;
+		m_taskDll.pIface = NULL;
 	}
 		
 	return TRUE;
@@ -853,7 +862,8 @@ HRESULT CExcutorObj::LaunchTask()
 	if (m_pTaskDllInterface)
 	{
 		// 向功能dll提交分步任务
-		hr = m_pTaskDllInterface->DoTask(m_vSubTasks[m_runState.nCurrStep].strSubTask, strRet, this);
+		CEMBWorkString szWorkRet;
+		hr = m_pTaskDllInterface->DoTask(m_vSubTasks[m_runState.nCurrStep].strSubTask, szWorkRet, this);
 		if (hr != S_OK)
 		{
 			hr = EMBERR_TASKSUBMIT; // 提交失败
@@ -868,6 +878,19 @@ HRESULT CExcutorObj::LaunchTask()
 	}
 
 	return hr;
+}
+
+BOOL CExcutorObj::TestRunTask( CString& strTaskIn )
+{
+	if (!m_strTask.IsEmpty())
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	m_bRegistered = TRUE;
+	m_strTask = strTaskIn;
+	m_runState.nState = embtaskstate_dispatched;
+	return TRUE;
 }
 
 

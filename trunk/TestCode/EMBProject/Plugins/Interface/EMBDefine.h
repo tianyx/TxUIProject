@@ -8,7 +8,6 @@
 *********************************************************************/
 #pragma once
 
-#include "MBCCommonDef.h"
 ///
 #define INVALID_ID -1
 #define INVALID_VALUE -1

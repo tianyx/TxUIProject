@@ -68,6 +68,7 @@ BEGIN_MESSAGE_MAP(CEMBExternalExcutorDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDC_EXECUTETASK, &CEMBExternalExcutorDlg::OnBnClickedExecutetask)
 END_MESSAGE_MAP()
 
 
@@ -194,4 +195,39 @@ void CEMBExternalExcutorDlg::OnDestroy()
 	}
 	CDialog::OnDestroy();
 	
+}
+
+void CEMBExternalExcutorDlg::OnBnClickedExecutetask()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString strfile =GetAppPath().c_str();
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_FILEMUSTEXIST, NULL, this, 0 );
+	if (dlg.DoModal() == IDOK)
+	{
+		strfile = dlg.GetOFN().lpstrFile;
+	}
+	else
+	{
+		return;
+	}
+
+	CFile file;
+	BOOL bOPen =file.Open(strfile, CFile::modeRead, NULL);
+	CString strTask;
+	if (bOPen)
+	{
+		int nLen = file.GetLength()+1;
+		char* pBuff = new char[nLen];
+		ZeroMemory(pBuff, nLen);
+		file.Read(pBuff, file.GetLength());
+		strTask = pBuff;
+		delete pBuff;
+		file.Close();
+	}
+
+	if (m_pExcObj && !strTask.IsEmpty())
+	{
+		CString strRet;
+		m_pExcObj->TestRunTask(strTask);
+	}
 }

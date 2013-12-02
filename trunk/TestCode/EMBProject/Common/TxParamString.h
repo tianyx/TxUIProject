@@ -23,10 +23,7 @@ struct ST_CHILDMAP
 	MAPKEYVALUE* pChildItem;
 	ST_CHILDMAP();
 
-	~ST_CHILDMAP()
-	{
-
-	}
+	~ST_CHILDMAP();
 	ST_CHILDMAP(ST_CHILDMAP& other);
 
 
@@ -63,7 +60,7 @@ public:
 		strKey = other.strKey;
 		strVal = other.strVal;
 		mapChildItem = other.mapChildItem;
-		mapAttrib = mapAttrib;
+		mapAttrib = other.mapAttrib;
 	}
 	ST_MARKITEM& operator =(const ST_MARKITEM& other)
 	{
@@ -75,7 +72,8 @@ public:
 		strKey = other.strKey;
 		strVal = other.strVal;
 		mapChildItem = other.mapChildItem;
-		mapAttrib = mapAttrib;
+		mapAttrib = other.mapAttrib;
+		return *this;
 	}
 	
 };

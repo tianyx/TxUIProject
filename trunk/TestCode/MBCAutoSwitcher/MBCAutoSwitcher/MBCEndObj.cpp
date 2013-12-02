@@ -175,6 +175,11 @@ DWORD __stdcall UDPSockLoopProc( void* lparam )
 
 void CMBCEndObj::CopyCacheData( char* buffIn, const int nLenIn )
 {
+	if (!m_bActiveRelay)
+	{
+		return;
+	}
+
 	if(nLenIn <= 0 || nLenIn%TS_PACKET_SIZE != 0)
 	{
 		ASSERT(FALSE);
@@ -290,7 +295,7 @@ void CMBCEndObj::CacheExSendProc()
 {
 	while(WaitForSingleObject(m_hFirstReadSignal, 100)!= WAIT_OBJECT_0)
 	{
-		if (!m_bRuning)
+		if (!m_bActiveRelay)
 		{
 			return;
 		}
@@ -325,7 +330,7 @@ void CMBCEndObj::CacheExSendProc()
 	BOOL bForceSend = FALSE;
 	while(TRUE)
 	{
-		if (!m_bRuning)
+		if (!m_bActiveRelay)
 		{
 			return;
 		}
@@ -336,7 +341,7 @@ void CMBCEndObj::CacheExSendProc()
 
 		if (m_deqCacheExchange.m_nUsed == 0)
 		{
-			if (!m_bRuning)
+			if (!m_bActiveRelay)
 			{
 				return;
 			}
@@ -344,7 +349,7 @@ void CMBCEndObj::CacheExSendProc()
 			m_bSendFirstReadSignal = TRUE;
 			while(WaitForSingleObject(m_hFirstReadSignal, 100)!= WAIT_OBJECT_0)
 			{
-				if (!m_bRuning)
+				if (!m_bActiveRelay)
 				{
 					return;
 				}
@@ -471,7 +476,7 @@ CMBCEndObj::CMBCEndObj(ENUM_MBCOBJTYPE type)
 	m_hRelaySphone = CreateSemaphore(0, 0, 1, NULL);
 	m_hUDPLoopThd = NULL;
 	m_hFirstReadSignal = NULL;
-	m_bRuning = FALSE;
+	m_bActiveRelay = FALSE;
 	if (m_nObjType == MBCOBJTYPE_ENDBACK)
 	{
 		ResetCache(MAXSENDCACHE, MAXEXCHANGECACHE);
@@ -587,12 +592,12 @@ BOOL CMBCEndObj::AddRelayAddr( SOCKADDR_IN& addrIn )
 			return FALSE;
 		}
 		m_vRelaySocks.push_back(pSockCtrl);
-		if (m_vRelaySocks.size() ==1)
-		{
-			//start relay proc
-			//StartRelayThd();
-
-		}
+// 		if (m_vRelaySocks.size() ==1)
+// 		{
+// 			//start relay proc
+// 			//StartRelayThd();
+// 
+// 		}
 	}
 
 	return TRUE;
@@ -619,10 +624,10 @@ BOOL CMBCEndObj::RemoveRelayAddr( SOCKADDR_IN& addrIn )
 		}
 	}
 
-	if (m_vRelaySocks.size() == 0 && m_hRelayProcThd)
-	{
-		StopRelayThd();
-	}
+// 	if (m_vRelaySocks.size() == 0 && m_hRelayProcThd)
+// 	{
+// 		StopRelayThd();
+// 	}
 
 	return bFind;
 }
@@ -848,9 +853,8 @@ HRESULT CMBCEndObj::StartRelayThd()
 	WaitForSingleObject(m_lockCacheWrite, 1);
 	WaitForSingleObject(m_hFirstReadSignal, 1);
 	m_frameSendbuff.nUsed = 0;
-	m_bQuitRelayThread = FALSE;
 	m_bSendFirstReadSignal = TRUE;
-	m_bRuning = TRUE;
+	m_bActiveRelay = TRUE;
 	m_hRelayProcThd = CreateThread(NULL, 0, RelayDataProc, (LPVOID)this,  0, 0);
 	ASSERT(m_hRelayProcThd != NULL);
 	ASSERT(SetThreadPriority(m_hRelayProcThd, THREAD_PRIORITY_HIGHEST));
@@ -860,10 +864,9 @@ HRESULT CMBCEndObj::StartRelayThd()
 
 HRESULT CMBCEndObj::StopRelayThd()
 {
-	m_bQuitRelayThread = TRUE;
 	if (m_hRelayProcThd)
 	{
-		m_bRuning = FALSE;
+		m_bActiveRelay = FALSE;
 		WaitForSingleObject(m_hRelayProcThd, 10000);
 		CloseHandle(m_hRelayProcThd);
 		m_hRelayProcThd = NULL;

@@ -99,6 +99,7 @@ BEGIN
     CTEXT           "TODO: 在此放置对话框控件。",IDC_STATIC,7,7,71,8
     PUSHBUTTON      "start",IDC_BTN_START,231,21,50,27
     PUSHBUTTON      "stop",IDC_BTN_STOP,233,67,50,31
+    PUSHBUTTON      "timer test",IDC_BUTTON2,227,126,50,14
 END
 
 

@@ -39,4 +39,5 @@ protected:
 
 public:
 	afx_msg void OnDestroy();
+	afx_msg void OnBnClickedExecutetask();
 };

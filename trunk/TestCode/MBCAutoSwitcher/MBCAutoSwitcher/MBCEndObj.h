@@ -235,11 +235,10 @@ public:
 	ST_TSSENDCACHE m_deqCacheExchange;
 	BOOL m_bQuitUdpThread;
 	BOOL m_bQuitCalcBitrateThread;
-	BOOL m_bQuitRelayThread;
 	HANDLE m_hFirstReadSignal;
 	ST_FRAMESENDBUFF m_frameSendbuff;
 	BOOL m_bSendFirstReadSignal;
-	BOOL m_bRuning;
+	BOOL m_bActiveRelay;
 #ifdef _DEBUG
 	CFile fileOut;
 #endif // _DEBUG

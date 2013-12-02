@@ -23,12 +23,18 @@ BOOL InitGlobalConfig()
 	if (nArgC != 2)
 	{
 		ASSERT(FALSE);
+		//to debug launch a executor, set follow param in project setting->debug->running paramepter
+		//"<excutorreg actorId=""1"" guid=""1"" hwndActor=""0"" hwndExcutor=""0""/>"
 		return FALSE;
 	}
 
 	CString strParam = __argv[1];
 	g_GlobalInfo.excInfo.FromString(strParam);
-
+	if (g_GlobalInfo.excInfo.hwndActor == 0)
+	{
+		//debug lunch mode
+		g_GlobalInfo.excInfo.hwndActor = ::GetDesktopWindow();
+	}
 	if (!::IsWindow(g_GlobalInfo.excInfo.hwndActor))
 	{
 		ASSERT(FALSE);

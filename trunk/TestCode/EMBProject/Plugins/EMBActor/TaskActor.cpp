@@ -76,7 +76,12 @@ HRESULT CTaskActor::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 		pInterfaceOut = dynamic_cast<IPluginConfigInterface*>(this);
 		AddRef();
 		return S_OK;
-
+	}
+	else if (GuidEMBPlugin_IActorUI == guidIn)
+	{
+		pInterfaceOut = dynamic_cast<IActorUI*>(this);
+		AddRef();
+		return S_OK;
 	}
 	else
 	{
@@ -593,6 +598,61 @@ bool EMB::CTaskActor::QueryXmlFile( const CString& strTaskGuid, ST_TASKREPORT& t
 	// 解析xml信息
 	CString xmlContent = xmlMark.GetDoc();
 	suc = tskInfor.FromString(xmlContent);
+
+	return suc;
+}
+
+HRESULT EMB::CTaskActor::GetExecutors( vector<CString>& vExecutor )
+{
+	vExecutor.clear();
+
+	// get running executor
+	vector<ST_EXCUTORINFO> vST;
+	HRESULT hr = m_pExcutorMgr->GetExecutors(vST);
+	CString strInfo;
+	ST_TASKINACTOR tsk;
+
+	// get task in executor
+	for (int i = 0; i < vST.size(); ++i)
+	{
+		if (FindTask(vST[i].excutorId, tsk))
+		{
+			vST[i].m_strTaskGuid = tsk.taskGuid; // taskguid
+			vST[i].m_strRunStep.Format("%d", tsk.nCurrStep);
+			vST[i].m_nPercent = tsk.nPercent;
+		}
+		else
+		{
+			vST[i].m_strTaskGuid.Empty();
+			vST[i].m_strRunStep.Empty();
+			vST[i].m_nPercent = 0;
+		}
+
+		// insert
+		vST[i].ToString(strInfo);
+		vExecutor.push_back(strInfo);
+	}
+
+	return hr;
+}
+
+bool EMB::CTaskActor::FindTask( const EXCUTORID& strExecutorId, ST_TASKINACTOR& tsk )
+{
+	CAutoLock lock(&m_csmapLock);
+	bool suc = false;
+
+	// 获得任务信息
+	MAPEXCTASKS::iterator itor = m_mapExcTask.find(strExecutorId);
+	if (itor != m_mapExcTask.end())
+	{
+		MAPTASKINACTOR::iterator tskItor = m_mapTaskinActor.find(itor->second);
+
+		if (tskItor != m_mapTaskinActor.end())
+		{
+			tsk = tskItor->second;
+			suc = true;
+		}
+	}
 
 	return suc;
 }

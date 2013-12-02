@@ -31,19 +31,21 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCStateMonitor", "MBCState
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCWatchDog", "MBCWatchDog\MBCWatchDog.vcproj", "{9093D460-3CF9-41F4-B14A-DA0482F93826}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MBCRelayCtrl", "MBCRelayCtrl\MBCRelayCtrl.vcproj", "{520B574F-0801-42FB-931C-882DBF60CB27}"
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 8
-		SccProjectUniqueName0 = MBCAutoSwitcher\\MBCAutoSwitcher.vcproj
+		SccNumberOfProjects = 9
 		SccLocalPath0 = .
-		SccProjectFilePathRelativizedFromConnection0 = MBCAutoSwitcher\\
-		SccProjectUniqueName1 = CMBCCommonLib\\CMBCCommonLib.vcproj
+		SccProjectUniqueName1 = MBCAutoSwitcher\\MBCAutoSwitcher.vcproj
 		SccLocalPath1 = .
-		SccProjectFilePathRelativizedFromConnection1 = CMBCCommonLib\\
-		SccProjectUniqueName2 = MBCRemoteCtrl\\MBCRemoteCtrl.vcproj
+		SccProjectFilePathRelativizedFromConnection1 = MBCAutoSwitcher\\
+		SccProjectUniqueName2 = CMBCCommonLib\\CMBCCommonLib.vcproj
 		SccLocalPath2 = .
-		SccProjectFilePathRelativizedFromConnection2 = MBCRemoteCtrl\\
+		SccProjectFilePathRelativizedFromConnection2 = CMBCCommonLib\\
+		SccProjectUniqueName3 = MBCRemoteCtrl\\MBCRemoteCtrl.vcproj
 		SccLocalPath3 = .
+		SccProjectFilePathRelativizedFromConnection3 = MBCRemoteCtrl\\
 		SccProjectUniqueName4 = MonitorTest\\MonitorTest.vcproj
 		SccLocalPath4 = MonitorTest
 		SccProjectUniqueName5 = MulticastEndTest\\MulticastEndTest.vcproj
@@ -52,6 +54,9 @@ Global
 		SccLocalPath6 = MBCStateMonitor
 		SccProjectUniqueName7 = MBCWatchDog\\MBCWatchDog.vcproj
 		SccLocalPath7 = MBCWatchDog
+		SccProjectUniqueName8 = MBCRelayCtrl\\MBCRelayCtrl.vcproj
+		SccLocalPath8 = .
+		SccProjectFilePathRelativizedFromConnection8 = MBCRelayCtrl\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -86,6 +91,10 @@ Global
 		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Debug|Win32.Build.0 = Debug|Win32
 		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Release|Win32.ActiveCfg = Release|Win32
 		{9093D460-3CF9-41F4-B14A-DA0482F93826}.Release|Win32.Build.0 = Release|Win32
+		{520B574F-0801-42FB-931C-882DBF60CB27}.Debug|Win32.ActiveCfg = Debug|Win32
+		{520B574F-0801-42FB-931C-882DBF60CB27}.Debug|Win32.Build.0 = Debug|Win32
+		{520B574F-0801-42FB-931C-882DBF60CB27}.Release|Win32.ActiveCfg = Release|Win32
+		{520B574F-0801-42FB-931C-882DBF60CB27}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

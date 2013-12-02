@@ -67,6 +67,7 @@ BEGIN_MESSAGE_MAP(CMonitorTestDlg, CDialog)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_START, &CMonitorTestDlg::OnBnClickedBtnStart)
 	ON_BN_CLICKED(IDC_BTN_STOP, &CMonitorTestDlg::OnBnClickedBtnStop)
+	ON_BN_CLICKED(IDC_BUTTON2, &CMonitorTestDlg::OnBnClickedButton2)
 END_MESSAGE_MAP()
 
 
@@ -228,4 +229,16 @@ void CMonitorTestDlg::OnBnClickedBtnStop()
 HRESULT CMonitorTestDlg::TransActData(int nmsgType, char* bufferIn, int nLenIn, char* bufferToFill, int nMaxLen, int& nFillLen )
 {
 	return E_NOTIMPL;
+}
+
+void CMonitorTestDlg::OnBnClickedButton2()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	timerTest.SetTimer(110, 5000, this, 0, WT_EXECUTEDEFAULT, 1000);
+}
+
+HRESULT CMonitorTestDlg::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
+{
+	TRACE("\ntimer once test");
+	return S_OK;
 }

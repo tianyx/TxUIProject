@@ -13,6 +13,7 @@
 #include "FGlobal.h"
 #include "EMBDefine.h"
 #include "IEMBBaseInterface.h"
+#include "MBCCommonDef.h"
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
@@ -218,6 +219,8 @@ struct ST_TASKRUNSTATE
 
 //////////////////////////////////////////////////////////////////////////
 //executor info that hold by actor
+#define EDOC_ST_ST_EXCUTORINFO TEXT("<ExecutorInfo></ExecutorInfo>")
+
 struct ST_EXCUTORINFO
 {
 	EXCUTORID excutorId;	
@@ -226,13 +229,23 @@ struct ST_EXCUTORINFO
 	HANDLE hmemMap;					//mapping buffer for sending message to executor
 	CString strDesExcMappingName;	//mapping buffer name
 	time_t tmLastcheck;				//time for last check executor state
+	CString m_strTaskGuid;          // 任务标识
+	CString m_strRunStep;           // 运行步骤名称
+	int		m_nPercent;             // 进度
+
 	ST_EXCUTORINFO()
 	{
 		excutorId = INVALID_ID;
 		hwnd = NULL;
 		hProcessId = NULL;
 		tmLastcheck = 0;
+
+		m_strTaskGuid.Empty();
+		m_strRunStep.Empty();
 	}
+
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
 };
 
 //////////////////////////////////////////////////////////////////////////

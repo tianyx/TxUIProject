@@ -20,6 +20,7 @@ HRESULT CMBCStateQueryObj::TxTimerCallbackProc( DWORD dwEvent, LPARAM lparam )
 	if (dwEvent == IDTIMER_LIVECHECK)
 	{
 		//send state info request msg;
+		TRACE("\nqueue graph state");
 		ST_GRAPHSTATE msg;
 		char buffer[MAXGRAPHBUFF];
 		int nUsed = 0;

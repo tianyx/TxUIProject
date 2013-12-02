@@ -42,7 +42,7 @@ HRESULT EMB::CWorkSample::QueryPluginInfo( VECPLUGINFOS& vInfoOut )
 
 }
 
-HRESULT EMB::CWorkSample::DoTask( const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback )
+HRESULT EMB::CWorkSample::DoTask( const CTaskString& szTaskIn, CEMBWorkString& szRet, ITaskReportToExcutorInterface* pICallback )
 {
 	if (m_hThreadTask)
 	{
@@ -59,11 +59,13 @@ HRESULT EMB::CWorkSample::CancelTask()
 	return S_OK;
 }
 
-HRESULT EMB::CWorkSample::GetTaskProgress( CTaskString& szInfo )
+HRESULT EMB::CWorkSample::GetTaskProgress( CEMBWorkString& szInfo )
 {
 	ST_WORKERREPORT report;
 	report.nPercent = m_nPercent;
-	report.ToString(szInfo);
+	CString strRet;
+	report.ToString(strRet);
+	szInfo = strRet;
 	return S_OK;
 }
 

@@ -50,7 +50,7 @@ void EMB::CMediaCheck::OnFinalRelease()
 {
 }
 
-HRESULT EMB::CMediaCheck::DoTask( const CTaskString& szTaskIn, CTaskString& szRet, ITaskReportToExcutorInterface* pICallback )
+HRESULT EMB::CMediaCheck::DoTask( const CTaskString& szTaskIn, CEMBWorkString& szRet, ITaskReportToExcutorInterface* pICallback )
 {
 return S_OK;
 }
@@ -60,7 +60,7 @@ HRESULT EMB::CMediaCheck::CancelTask()
 return S_OK;
 }
 
-HRESULT EMB::CMediaCheck::GetTaskProgress( CTaskString& szInfo )
+HRESULT EMB::CMediaCheck::GetTaskProgress( CEMBWorkString& szInfo )
 {
 return S_OK;
 }

@@ -6,6 +6,10 @@
 #include "EMBActorHost.h"
 #include "EMBActorHostDlg.h"
 #include "..\..\Plugins\EMBActor\TaskActor.h"
+#include "TxAutoComPtr.h"
+#include "IEMBBaseInterface.h"
+
+using namespace EMB;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,13 +23,13 @@ class CAboutDlg : public CDialog
 public:
 	CAboutDlg();
 
-// 对话框数据
+	// 对话框数据
 	enum { IDD = IDD_ABOUTBOX };
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
-// 实现
+	// 实现
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -49,7 +53,7 @@ END_MESSAGE_MAP()
 
 
 CEMBActorHostDlg::CEMBActorHostDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(CEMBActorHostDlg::IDD, pParent)
+: CDialog(CEMBActorHostDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -162,7 +166,7 @@ HCURSOR CEMBActorHostDlg::OnQueryDragIcon()
 void CEMBActorHostDlg::OnDestroy()
 {
 	CDialog::OnDestroy();
-	
+
 	// TODO: 在此处添加消息处理程序代码
 }
 
@@ -172,7 +176,7 @@ void CEMBActorHostDlg::OnBnClickedButtonRefresh()
 	GetExecutors(arrExecutor);
 
 	m_lstExecutor.DeleteAllItems();
-	
+
 	for (int i = 0; i < arrExecutor.GetSize(); ++i)
 	{
 		tagExecutorProcess tag = arrExecutor[i];
@@ -214,15 +218,32 @@ void CEMBActorHostDlg::OnClose()
 
 void CEMBActorHostDlg::GetExecutors( CArray<tagExecutorProcess, tagExecutorProcess>& m_arrExecutors )
 {
-	// 从EMBActor.dll 查询信息, 未实现 to do
-	tagExecutorProcess tag;
-	tag.m_strID = "test001";
-	tag.m_strName = "Executor1";
-	tag.m_strState = "空闲";
-	tag.m_strTaskGuid = "";
-	tag.m_nPercent = 100;
+	// 从EMBActor.dll 查询信息, 待修改 to do
+	if (g_pIActorPlugin != NULL)
+	{
+		CTxAutoComPtr<IActorUI> ptrActorUI;
 
-	m_arrExecutors.Add(tag);
+		if (S_OK == g_pIActorPlugin->QueryInterface(GuidEMBPlugin_IActorUI, (LPVOID&)(*&ptrActorUI)))
+		{
+			vector<CString> vExecutor;
+			ptrActorUI->GetExecutors(vExecutor);
+
+			for(int i = 0; i < vExecutor.size(); ++i)
+			{
+				ST_EXCUTORINFO tem;
+				tem.FromString(vExecutor[i]);
+
+				tagExecutorProcess tag;
+				tag.m_strID.Format("%d", tem.excutorId);
+				tag.m_strName.Format("%d", tem.hProcessId);
+				tag.m_strState = tem.m_strRunStep;
+				tag.m_strTaskGuid = tem.m_strTaskGuid;
+				tag.m_nPercent = tem.m_nPercent;
+
+				m_arrExecutors.Add(tag);
+			}
+		}
+	}
 }
 
 void CEMBActorHostDlg::OnBnClickedLuanchexec()
@@ -235,6 +256,10 @@ void CEMBActorHostDlg::OnBnClickedLuanchexec()
 	{
 		strfile = dlg.GetOFN().lpstrFile;
 	}
+	else
+	{
+		return;
+	}
 
 	CFile file;
 	BOOL bOPen =file.Open(strfile, CFile::modeRead, NULL);
@@ -246,10 +271,11 @@ void CEMBActorHostDlg::OnBnClickedLuanchexec()
 		ZeroMemory(pBuff, nLen);
 		file.Read(pBuff, file.GetLength());
 		strTask = pBuff;
+		delete pBuff;
 		file.Close();
 	}
 
-	if (g_pIActorPlugin)
+	if (g_pIActorPlugin && !strTask.IsEmpty())
 	{
 		EMB::CTaskActor* pActor = dynamic_cast<EMB::CTaskActor*>(g_pIActorPlugin);
 		if (pActor)
@@ -258,8 +284,7 @@ void CEMBActorHostDlg::OnBnClickedLuanchexec()
 			DWORD dwProcessId = 0;
 			CString strRet;
 			pActor->OnActorConnectorMsg(strTask, strRet);
-			CString strmsg;
-			strmsg.Format(TEXT("excutorlaunched id = %d, processid = %d"));
+
 		}
 	}
 }

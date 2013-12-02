@@ -37,3 +37,6 @@ extern const GUID GuidEMBPlugin_IControler;
 extern const GUID GuidEMBPlugin_IStorage;
 
 extern const GUID GuidEMBPlugin_ITaskWorkerCall;
+
+// 用于Actor界面获取信息
+extern const GUID GuidEMBPlugin_IActorUI;

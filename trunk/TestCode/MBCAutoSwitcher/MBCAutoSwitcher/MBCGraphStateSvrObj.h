@@ -3,6 +3,7 @@
 interface IGraphStateCallbackInterface
 {
 	virtual HRESULT GetGraphState(ST_GRAPHSTATE& outData) = 0;
+	virtual HRESULT ChangeRelay(ST_CHANGERELAY& relayIn) = 0;
 };
 class CMBCGraphStateSvrObj :
 	public CMBCRemoteObj

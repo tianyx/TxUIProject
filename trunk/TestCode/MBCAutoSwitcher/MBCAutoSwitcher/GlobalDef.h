@@ -48,7 +48,7 @@ struct ST_GLOBAL
 	int nUDPRelayTTL;
 	int nAutoJudgeMasterClient;
 	int nCacheBeforeRelay;
-
+	int nRelay2to1Mode;
 
 	ST_GLOBAL()
 	{
@@ -62,6 +62,7 @@ struct ST_GLOBAL
 		nUDPRelayTTL = 32;
 		nAutoJudgeMasterClient = 1;
 		nCacheBeforeRelay = 1024*1024;
+		nRelay2to1Mode = 0;
 	}
 
 

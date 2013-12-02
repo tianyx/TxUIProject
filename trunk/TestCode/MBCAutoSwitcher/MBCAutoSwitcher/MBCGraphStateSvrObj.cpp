@@ -37,6 +37,15 @@ HRESULT CMBCGraphStateSvrObj::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsg
 		}
 		hr = PackMBCMsg(msgIn, buffer, MAXGRAPHBUFF, nRetUsed);
 	}
+	else if (nMsgType == msgtype_ChangeRelay)
+	{
+		ST_CHANGERELAY msgIn;
+		UnPackMBCMsg(bufferIn, nUsed, msgIn);
+		if (m_pIGSCallback)
+		{
+			m_pIGSCallback->ChangeRelay(msgIn);
+		}
+	}
 	
 
 	//send info back

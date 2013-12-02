@@ -890,3 +890,44 @@ BOOL ST_FCVSCONFIGINFO::ToString(CString& strOut)
 	strOut = txParam;
 	return TRUE;	
 }
+
+BOOL ST_EXCUTORINFO::ToString( CString& strOut )
+{
+	CTxParamString txParam(EDOC_ST_ST_EXCUTORINFO);
+	txParam.GoIntoKey("ExecutorInfo");
+
+	CTxStrConvert val;
+	val.SetVal(excutorId);
+	txParam.SetAttribVal(NULL, TEXT("ExecutorId"), val);
+	CString strTem;
+	strTem.Format("%d", hProcessId);
+	val.SetVal(strTem);
+	txParam.SetAttribVal(NULL, TEXT("ProcessId"), val);
+
+	val.SetVal(m_strTaskGuid);
+	txParam.SetAttribVal(NULL, TEXT("TaskGuid"), val);
+
+	val.SetVal(m_strRunStep);
+	txParam.SetAttribVal(NULL, TEXT("RunStep"), val);
+
+	val.SetVal(m_nPercent);
+	txParam.SetAttribVal(NULL, TEXT("nPercent"), val);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;	
+}
+
+BOOL ST_EXCUTORINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey("ExecutorInfo");
+
+	excutorId = txParam.GetAttribVal(NULL,TEXT("ExecutorId")).GetAsInt();
+	hProcessId = txParam.GetAttribVal(NULL,TEXT("ProcessId")).GetAsInt();
+	m_strTaskGuid = txParam.GetAttribVal(NULL,TEXT("TaskGuid")).GetAsString();
+	m_strRunStep = txParam.GetAttribVal(NULL,TEXT("RunStep")).GetAsString();
+	m_nPercent = txParam.GetAttribVal(NULL,TEXT("nPercent")).GetAsInt();
+
+	return TRUE;
+}

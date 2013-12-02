@@ -63,7 +63,7 @@ BOOL CEMBExternalExcutorApp::InitInstance()
 	MACRO_CREATEOUTPUTCONSOLE
 	if (!InitGlobalConfig())
 	{
-
+		
 		return FALSE;
 	}
 

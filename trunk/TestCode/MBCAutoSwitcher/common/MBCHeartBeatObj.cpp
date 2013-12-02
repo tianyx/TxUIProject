@@ -104,7 +104,7 @@ HRESULT CMBCHeartBeatObj::NetCall_Connect(CMBCSocket* pMBCSock, WPARAM wParam, L
 	ASSERT(socRecv == *pMBCSock);
 	if (nErr ==S_OK)
 	{	
-		m_timerLive.SetTimer(IDTIMER_LIVECHECK, INTERVAL_LIVECHECK, this, (LPARAM)this, 1000);
+		m_timerLive.SetTimer(IDTIMER_LIVECHECK, INTERVAL_LIVECHECK, this, (LPARAM)this, WT_EXECUTEDEFAULT,  1000);
 		TRACE("\n Sock Connected");
 
 	}

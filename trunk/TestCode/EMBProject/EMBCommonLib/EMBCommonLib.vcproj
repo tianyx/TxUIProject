@@ -168,6 +168,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Common\EMBWorkString.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -199,6 +203,10 @@
 			</File>
 			<File
 				RelativePath="..\Common\EMBTask.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBWorkString.h"
 				>
 			</File>
 			<File

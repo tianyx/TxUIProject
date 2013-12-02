@@ -351,6 +351,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\Log.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\common\Log.h"
+				>
+			</File>
+			<File
 				RelativePath="..\common\MBCCommonDef.h"
 				>
 			</File>
