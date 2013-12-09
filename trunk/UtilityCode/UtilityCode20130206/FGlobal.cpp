@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "FGlobal.h"
-#include "TxFontLoader.h"
 #include "TxLogManager.h"
 #include "Rpc.h"
 #include "StrConvert.h"

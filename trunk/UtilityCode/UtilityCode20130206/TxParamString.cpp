@@ -467,5 +467,14 @@ void ST_CHILDMAP::clear()
 	(*pChildItem).clear();
 }
 
+ST_CHILDMAP::~ST_CHILDMAP()
+{
+	if (pChildItem)
+	{
+		delete pChildItem;
+		pChildItem = NULL;
+	}
+}
+
 
 #endif // VC6DEFINE

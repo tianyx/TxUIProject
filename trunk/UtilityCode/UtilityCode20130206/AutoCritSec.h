@@ -1,6 +1,14 @@
+/********************************************************************
+	created:	2013/11/22
+	created:	$2013:11:22
+	filename: 	AutoCritSec.h
+	file base:	AutoCritSec
+	file ext:	h
+	author:		tianyx
+	
+	purpose:	自动临界区类/临界区自动锁类
+*********************************************************************/
 #pragma once
-
-
 
 class CAutoCritSec {
 

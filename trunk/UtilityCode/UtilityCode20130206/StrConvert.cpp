@@ -276,10 +276,18 @@ void CTxStrConvert::SetVal( unsigned int nVal )
 {
 	m_szParam.Format(TEXT("%u"), nVal);
 }
-
+void CTxStrConvert::SetVal(double fVal )
+{
+	m_szParam.Format(TEXT("%lf"), fVal);
+}
 void CTxStrConvert::SetVal( int nVal )
 {
 	m_szParam.Format(TEXT("%d"), nVal);
+}
+
+void CTxStrConvert::SetValX( int nVal )
+{
+	m_szParam.Format(TEXT("%X"), nVal);
 }
 
 void CTxStrConvert::SetVal( INT64 nVal )
@@ -340,4 +348,14 @@ BOOL CTxStrConvert::GetAsIntArray( VECINTS& vOut, TCHAR separator /*= ','*/ )
 	}
 	return TRUE;
 }
-
+double CTxStrConvert::GetAsDouble(double nDefault /* = 0.0 */)
+{
+	if (m_szParam.IsEmpty())
+	{
+		return nDefault;
+	}
+	
+	double nRet  = nDefault;
+	double nSuc = sscanf_s(m_szParam, TEXT("%lf"), &nRet);
+	return nSuc> 0.0? nRet:nDefault;
+}

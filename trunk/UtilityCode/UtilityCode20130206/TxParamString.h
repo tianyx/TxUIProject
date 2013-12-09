@@ -16,17 +16,14 @@ typedef map<CString, CString> MAPKEYATTRIB;
 typedef map<CString, ST_MARKITEM> MAPKEYVALUE;
 
 
-
+//defined for vc6 STL
 #ifdef VC6DEFINE
 struct ST_CHILDMAP
 {
 	MAPKEYVALUE* pChildItem;
 	ST_CHILDMAP();
 
-	~ST_CHILDMAP()
-	{
-
-	}
+	~ST_CHILDMAP();
 	ST_CHILDMAP(ST_CHILDMAP& other);
 
 
@@ -63,7 +60,7 @@ public:
 		strKey = other.strKey;
 		strVal = other.strVal;
 		mapChildItem = other.mapChildItem;
-		mapAttrib = mapAttrib;
+		mapAttrib = other.mapAttrib;
 	}
 	ST_MARKITEM& operator =(const ST_MARKITEM& other)
 	{
@@ -75,7 +72,8 @@ public:
 		strKey = other.strKey;
 		strVal = other.strVal;
 		mapChildItem = other.mapChildItem;
-		mapAttrib = mapAttrib;
+		mapAttrib = other.mapAttrib;
+		return *this;
 	}
 	
 };
@@ -112,27 +110,72 @@ public:
 	bool operator ==(const CTxParamString& other);
 	operator CString(){return m_strRealString;}
 	BOOL IsEmpty(){return m_strRealString.IsEmpty();}
-	BOOL InitLayout();
+
 	void Clear();
-	//root format like directory. ".\\folder1", "."means root, NULL means root
+	
+	//*Description: go into a node, must pass a full path
+	//*Input Param: szRoot:root format like directory. ".\\folder1", "."means root, NULL means root
+	//*Return Param: not used now
+	//*History: 
 	BOOL GoToPath(LPCTSTR szRoot = NULL);
-	//key format like "edoc_main"
+	
+	
+	//*Description: go into a node, pass in a sub-node name of current node.
+	//*Input Param: szKey: node name, format like "edoc_main"
+	//*Return Param: 
+	//*History: 
 	BOOL GoIntoKey(LPCTSTR szKey);
 
+	//jump out of current node.
 	BOOL OutofKey();
 
-	//
+	
+	//*Description: get node value
+	//*Input Param: szKey: if null, return the current node value, else return value of sub-node of current node 
+	//*Return Param: 
+	//*History: 
 	CTxStrConvert GetElemVal(LPCTSTR szKey);
+
+	
+	//*Description: get node attribrate value
+	//*Input Param: szKey: sub node name, if null, means current node
+	//				szAttribKey: attribrate name, must not be null
+	//*Return Param: 
+	//*History: 
 	CTxStrConvert GetAttribVal(LPCTSTR szKey, LPCTSTR szAttribKey);
+
 	//BOOL AddPath(LPCTSTR szKey);
+
+	
+	//*Description: set node value, note that if set node value, you can't set sub-node to this node
+	//*Input Param: see GetElemVal
+	//*Return Param: 
+	//*History: 
 	BOOL SetElemVal(LPCTSTR szKey, CTxStrConvert& valIn);
+
+	//*Description: set node attribrate value
+	//*Input Param: see GetElemVal
+	//*Return Param: 
+	//*History: 
 	BOOL SetAttribVal(LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrConvert& valIn );
 
+	
+	//*Description: return the sub xml string of a node
+	//*Input Param: szRoot: full path of a node
+	//*Return Param: 
+	//*History: 
 	BOOL GetSubNodeString(LPCTSTR szRoot, CTxParamString& subParamOut);
 	BOOL SetSubNodeString(LPCTSTR szRoot, CTxParamString& subParamIn);
 
-	//must call this if what write back to m_strRealString after set value
+	//
+	
+	//*Description:write back to the xml string, must call this if what write back to m_strRealString after use Setxxx func
+	//*Input Param: not used now
+	//*Return Param: 
+	//*History: 
 	BOOL UpdateData(BOOL bToReal = TRUE);
+private:
+	BOOL InitLayout();
 
 private:
 	ST_MARKITEM* FindNode(VECSTRINGS& vPaths);
@@ -145,6 +188,9 @@ public:
 
 };
 
+
+//template class for auto update struct to xml string 
+//type T must implement the function ToString
 template<typename T>
 struct ST_AUTOUPDATEPARAM : public T
 {

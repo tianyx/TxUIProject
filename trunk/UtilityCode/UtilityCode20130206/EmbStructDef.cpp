@@ -127,21 +127,21 @@ BOOL ST_ACTORCONFIG::FromString( const CString& strIn )
 	return TRUE;
 }
 
-BOOL ST_EDOCMAINHEADER::ToString( CString& strOut )
-{
-	strOut.Format(EDOC_TASKHEADERFMT, nVer, nType, strGuid);
-	return TRUE;
-}
-
-BOOL ST_EDOCMAINHEADER::FromString( const CString& strIn )
-{
-	CTxParamString sParm(strIn);
-	sParm.GoIntoKey(EK_MAIN);
-	nVer = sParm.GetAttribVal(NULL, EA_MAIN_VER).GetAsInt(-1);
-	nType = sParm.GetAttribVal(NULL, EA_MAIN_TYPE).GetAsInt(-1);
-	strGuid = sParm.GetAttribVal(NULL, EA_MAIN_GUID).GetAsString();
-	return TRUE;
-}
+// BOOL ST_EDOCMAINHEADER::ToString( CString& strOut )
+// {
+// 	strOut.Format(EDOC_TASKHEADERFMT, nVer, nType, strGuid);
+// 	return TRUE;
+// }
+// 
+// BOOL ST_EDOCMAINHEADER::FromString( const CString& strIn )
+// {
+// 	CTxParamString sParm(strIn);
+// 	sParm.GoIntoKey(EK_MAIN);
+// 	nVer = sParm.GetAttribVal(NULL, EA_MAIN_VER).GetAsInt(-1);
+// 	nType = sParm.GetAttribVal(NULL, EA_MAIN_TYPE).GetAsInt(-1);
+// 	strGuid = sParm.GetAttribVal(NULL, EA_MAIN_GUID).GetAsString();
+// 	return TRUE;
+// }
 
 BOOL ST_TASKBASIC::ToString( CString& strOut )
 {
@@ -186,14 +186,67 @@ BOOL ST_TASKBASIC::FromString( const CString& strIn )
 BOOL ST_TASKRUNSTATE::ToString( CString& strOut )
 {
 	CTxParamString sParm(EDOC_ST_TASKRUNSTATE_STRUCT);
-	sParm.GoIntoKey(EK_TASKBASIC);
+	sParm.GoIntoKey("ST_TASKRUNSTATE");
+
+	CTxStrConvert strVal;
+	strVal.SetVal(Guid2String(guid));
+	sParm.SetAttribVal(NULL, "guid", strVal);
+
+	strVal.SetVal(nState);
+	sParm.SetAttribVal(NULL, "nState", strVal);
+
+	strVal.SetVal(nCurrStep);
+	sParm.SetAttribVal(NULL, "nCurrStep", strVal);
+
+	strVal.SetVal(nExcType);
+	sParm.SetAttribVal(NULL, "nExcType", strVal);
+
+	strVal.SetVal(tmCommit);
+	sParm.SetAttribVal(NULL, "tmCommit", strVal);
+
+	sParm.UpdateData();
+	strOut = sParm;
 
 	return TRUE;
 }
 
 BOOL ST_TASKRUNSTATE::FromString( const CString& strIn )
 {
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey("ST_TASKRUNSTATE");
+
+	guid = String2Guid(txParam.GetAttribVal(NULL, "guid").GetAsString());
+	nState = txParam.GetAttribVal(NULL, "nState").GetAsInt();
+	nCurrStep = txParam.GetAttribVal(NULL, "nCurrStep").GetAsInt();
+	nExcType = txParam.GetAttribVal(NULL, "nExcType").GetAsInt();
+	tmCommit = txParam.GetAttribVal(NULL, "tmCommit").GetAsInt64();
+
 	return TRUE;
+}
+
+CString ST_TASKRUNSTATE::StateDes()
+{
+	CString strDes;
+	switch (nState)
+	{
+	case embtaskstate_dispatching:
+		strDes = "等待";
+		break;
+
+	case embtaskstate_dispatched:
+		strDes = "执行";
+		break;
+
+	case embtaskstate_finished:
+		strDes = "成功";
+		break;
+
+	case embtaskstate_error:
+		strDes = "失败";
+		break;
+	}
+
+	return strDes;
 }
 
 BOOL ST_TASKRISERCONFIG::ToString( CString& strOut )
@@ -267,6 +320,34 @@ BOOL ST_TASKRISERCONFIG::FromString( const CString& strIn )
 }
 
 //////////////////////////////////////////////////////////////////////////
+BOOL ST_TASKSTORAGECONFIG::ToString( CString& strOut )
+{
+	CTxParamString txParam("");
+	CTxStrConvert txVal;
+	txParam.SetElemVal(EK_TASKSTORAGECONFIG, txVal);
+	txParam.GoIntoKey(EK_TASKSTORAGECONFIG);
+	txVal.SetVal(nType);
+	txParam.SetAttribVal(NULL, TEXT("Type"), txVal);
+	txVal.SetVal(strDBConnect);
+	txParam.SetAttribVal(NULL, TEXT("DBConnect"), txVal);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_TASKSTORAGECONFIG::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(EK_TASKSTORAGECONFIG);
+	nType = txParam.GetAttribVal(NULL, TEXT("Type")).GetAsInt(INVALID_ID);
+	strDBConnect = txParam.GetAttribVal(NULL, TEXT("DBConnect")).GetAsString();
+
+	return TRUE;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 BOOL ST_TASKDISPATCHCONFIG::ToString( CString& strOut )
 {
 	CTxParamString txParam("");
@@ -305,8 +386,14 @@ BOOL ST_TASKUPDATE::ToString( CString& strOut )
 {
 	CString strParam;
 	strParam.Format(EDOC_TASKHEADERFMT, embxmltype_taskupdate, TEXT(""));
-	CTxParamString txParam(strParam);
+	CTxParamString txRootParam(strParam);
+	txRootParam.GoIntoKey(EK_MAIN);
 	CTxStrConvert val;
+	val.SetVal(embxmltype_taskupdate); // update
+	txRootParam.SetAttribVal(NULL, EA_MAIN_TYPE, val);
+
+	
+	CTxParamString txParam;
 	txParam.SetElemVal(EK_TASKUPDATE, val);
 	txParam.GoIntoKey(EK_TASKUPDATE);
 	val.SetVal(Guid2String(guid));
@@ -334,8 +421,10 @@ BOOL ST_TASKUPDATE::ToString( CString& strOut )
 		ASSERT(FALSE);
 	}
 
-	txParam.UpdateData();
-	strOut = txParam;
+	txRootParam.SetSubNodeString(".\\edoc_main", txParam);
+	txRootParam.UpdateData();
+	strOut = txRootParam;
+
 	return TRUE;
 }
 
@@ -355,6 +444,9 @@ BOOL ST_TASKUPDATE::FromString( const CString& strIn )
 	if (nUpdateType == embtaskupdatetype_finish)
 	{
 		//to be add...
+		CString strGuid = txParam.GetAttribVal(NULL, TEXT("guid")).GetAsString("");
+		guid = String2Guid(strGuid);
+		txParam.GoIntoKey(EK_TASKUPDATE_END);
 		data_end.nEndState = txParam.GetAttribVal(NULL, TEXT("nEndState")).GetAsInt(embtaskstate_none);
 		data_end.actorid = txParam.GetAttribVal(NULL, TEXT("actorid")).GetAsInt(INVALID_ID);
 		data_end.excutorid = txParam.GetAttribVal(NULL, TEXT("excutorid")).GetAsInt(INVALID_ID);
@@ -390,6 +482,11 @@ BOOL ST_TASKREPORT::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("nPercent"), val);
 	val.SetVal(nStep);
 	txParam.SetAttribVal(NULL, TEXT("nStep"), val);
+	val.SetVal(nSubErrorCode);
+	txParam.SetAttribVal(NULL, TEXT("nSubErrorCode"), val);
+	val.SetValX(nSubErrorCode);
+	txParam.SetAttribVal(NULL, TEXT("nSubErrorCodeX"), val); // 十六进制错误码
+
 	txParam.UpdateData();
 	strOut = txParam;
 
@@ -414,6 +511,7 @@ BOOL ST_TASKREPORT::FromString( const CString& strIn )
 	nState = txParam.GetAttribVal(NULL, TEXT("nState")).GetAsInt(embtaskstate_none);
 	nPercent = txParam.GetAttribVal(NULL, TEXT("nPercent")).GetAsInt(0);
 	nStep = txParam.GetAttribVal(NULL, TEXT("nStep")).GetAsInt(-1);
+	nSubErrorCode = txParam.GetAttribVal(NULL, TEXT("nSubErrorCode")).GetAsInt(0);
 
 	return TRUE;
 }
@@ -551,4 +649,390 @@ BOOL ST_WORKERREPORT::FromString( const CString& strIn )
 	code = txParam.GetAttribVal(EK_WORKREPORT, EA_REPORTCODE).GetAsInt(0);
 	return TRUE;
 
+}
+///////////////////////////////////////////////
+BOOL ST_FCVSTASKINFO::FromString(const CString& strIn)
+{
+	CTxParamString txParam(strIn);
+// 	int type = txParam.GetAttribVal(EK_MAIN, EA_MAIN_TYPE).GetAsInt(-1);
+// 	if (type != embxmltype_svrActive)
+// 	{
+// 		ASSERT(FALSE);
+// 		return FALSE;
+// 	}
+//	txParam.GoIntoKey(EK_MAIN);
+	txParam.GoIntoKey(EK_FCVSHeader);
+	txParam.GoIntoKey(EK_FCVSTASK);
+
+		
+	clipType = txParam.GetAttribVal(NULL,TEXT("ClipType")).GetAsString();
+	fileMediaType = txParam.GetAttribVal(NULL,TEXT("FileMediaType")).GetAsString();
+	checkItem = txParam.GetAttribVal(NULL,TEXT("CheckItem")).GetAsInt(0x00111111);
+// 	FCVSTaskCut = txParam.GetAttribVal(NULL,TEXT("FCVSTaskCut")).GetAsBOOL(FALSE);
+// 	if (FCVSTaskCut)
+	//{
+		TaskCutSOM = txParam.GetAttribVal(NULL,TEXT("TaskCutSOM")).GetAsInt64(0);
+		TaskCutEOM = txParam.GetAttribVal(NULL,TEXT("TaskCutEOM")).GetAsInt64(0);
+	//}
+	usedDetectLevel = txParam.GetAttribVal(NULL,TEXT("UsedDetectLevel")).GetAsString();
+	fileAdrType = txParam.GetAttribVal(NULL,TEXT("FileAdrType")).GetAsString();
+	filePath = txParam.GetAttribVal(NULL,TEXT("FilePath")).GetAsString();
+	fileName = txParam.GetAttribVal(NULL,TEXT("FileName")).GetAsString();
+
+	if (fileAdrType == TEXT("FTP"))
+	{
+		fileAdrIP = txParam.GetAttribVal(NULL,TEXT("FileAdrIP")).GetAsString();
+		fileAdrUser = txParam.GetAttribVal(NULL,TEXT("FileAdrUser")).GetAsString();
+		fileAdrPwd = txParam.GetAttribVal(NULL,TEXT("FileAdrPwd")).GetAsString();
+		fileAdrPort = txParam.GetAttribVal(NULL,TEXT("FileAdrPort")).GetAsString();
+	}
+	if ((fileName == "")||(filePath == "")||(fileMediaType==""))
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+BOOL ST_FCVSTASKINFO::ToString(CString& strOut)
+{
+	CTxParamString txParam("");
+	CTxStrConvert val;
+	txParam.SetElemVal(EK_FCVSTASK, val);
+	txParam.GoIntoKey(EK_FCVSTASK);
+// 	val.SetVal(actorId);
+// 	txParam.SetAttribVal(NULL, TEXT("actorId"), val);
+	val.SetVal(clipType);
+	txParam.SetAttribVal(NULL, TEXT("ClipType"),val);
+	val.SetVal(fileMediaType);
+	txParam.SetAttribVal(NULL, TEXT("FileMediaType"),val);
+	val.SetVal(checkItem);
+	txParam.SetAttribVal(NULL,TEXT("CheckItem"),val);
+// 	val.SetVal(FCVSTaskCut);
+// 	txParam.SetAttribVal(NULL,TEXT("FCVSTaskCut"),val);
+	val.SetVal(TaskCutSOM);
+	txParam.SetAttribVal(NULL,TEXT("TaskCutSOM"),val);
+	val.SetVal(TaskCutEOM);
+	txParam.SetAttribVal(NULL,TEXT("TaskCutEOM"),val);
+	val.SetVal(usedDetectLevel);
+	txParam.SetAttribVal(NULL,TEXT("UsedDetectLevel"),val);
+	val.SetVal(fileAdrType);
+	txParam.SetAttribVal(NULL,TEXT("FileAdrType"),val);
+	val.SetVal(filePath);
+	txParam.SetAttribVal(NULL,TEXT("FilePath"),val);
+	val.SetVal(fileName);
+	txParam.SetAttribVal(NULL,TEXT("FileName"),val);
+	val.SetVal(fileAdrIP);
+	txParam.SetAttribVal(NULL,TEXT("FileAdrIP"),val);
+	val.SetVal(fileAdrUser);
+	txParam.SetAttribVal(NULL,TEXT("FileAdrUser"),val);
+	val.SetVal(fileAdrPwd);
+	txParam.SetAttribVal(NULL,TEXT("FileAdrPwd"),val);
+	val.SetVal(fileAdrPort);
+	txParam.SetAttribVal(NULL,TEXT("FileAdrPort"),val);
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;	
+}
+BOOL ST_FCVSCONFIGINFO::FromString(const CString& strIn)
+{
+	int i;
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(EK_FCVSHeader);
+	txParam.GoIntoKey(EK_FCVSTASKCONFIG);
+	serverName = txParam.GetAttribVal(NULL,TEXT("ServerName")).GetAsString(TEXT("技审服务"));
+//	dataBaseInfo = txParam.GetAttribVal(NULL,TEXT("DataBaseInfo")).GetAsString();
+	bSaveXML = txParam.GetAttribVal(NULL,TEXT("BSaveXML")).GetAsBOOL(FALSE);
+//	bSaveDB = txParam.GetAttribVal(NULL,TEXT("BSaveXML")).GetAsBOOL(TRUE);
+	bCheckAudio = txParam.GetAttribVal(NULL,TEXT("BCheckAudio")).GetAsBOOL(TRUE);
+	bUseSection = txParam.GetAttribVal(NULL,TEXT("BUseSection")).GetAsBOOL(FALSE);
+//	serviceCount = txParam.GetAttribVal(NULL,TEXT("ServiceCount")).GetAsInt(0);
+	fileDriverCount = txParam.GetAttribVal(NULL,TEXT("FileDriverCount")).GetAsInt(0);
+	detectLevelCount = txParam.GetAttribVal(NULL,TEXT("DetectLevelCount")).GetAsInt(0);
+	detectThresholodCount =txParam.GetAttribVal(NULL,TEXT("DetectThresholodCount")).GetAsInt(0);
+// 	if (dataBaseInfo == "" )
+// 	{
+// 		return FALSE;
+// 	}
+// 	if (bSaveDB&&bSaveXML)
+// 	{
+// 		return FALSE;
+//	}
+	if (fileDriverCount ==0)
+	{
+		return FALSE;
+	}
+// 	for ( i = 0 ;i<serviceCount;i++)
+// 	{
+// 		CString tempService ;
+// 		tempService.Format("Service%d",i);
+// 		txParam.GoIntoKey(tempService);
+// 		serVice[i].Name = txParam.GetAttribVal(NULL,TEXT("Name")).GetAsString();
+// 		serVice[i].IP = txParam.GetAttribVal(NULL,TEXT("IP")).GetAsString();
+// 		serVice[i].Port = txParam.GetAttribVal(NULL,TEXT("Port")).GetAsInt(2000);
+// 		serVice[i].TYPE = txParam.GetAttribVal(NULL,TEXT("TYPE")).GetAsString();
+// 		serVice[i].Protocol = txParam.GetAttribVal(NULL,TEXT("Protocol")).GetAsString();
+// 		serVice[i].isServer = txParam.GetAttribVal(NULL,TEXT("isServer")).GetAsBOOL(TRUE);
+// 		txParam.OutofKey();
+// 	}
+	for ( i = 0;i<fileDriverCount;i++)
+	{
+		CString temp ;
+		temp.Format("FileDriver%d",i);
+		txParam.GoIntoKey(temp);
+		fileDriver[i].name = txParam.GetAttribVal(NULL,TEXT("Name")).GetAsString();
+		fileDriver[i].classString = txParam.GetAttribVal(NULL,TEXT("ClassString")).GetAsString();
+		fileDriver[i].driverName = txParam.GetAttribVal(NULL,TEXT("DriverName")).GetAsString();
+		fileDriver[i].fileType = txParam.GetAttribVal(NULL,TEXT("FileType")).GetAsString();
+		fileDriver[i].isDefault = txParam.GetAttribVal(NULL,TEXT("IsDefault")).GetAsBOOL(FALSE);
+		fileDriver[i].DetectedCLIP_HEIGHT = txParam.GetAttribVal(NULL,TEXT("DetectedCLIP_HEIGHT")).GetAsInt(0);
+		fileDriver[i].DetectedCLIP_WIDTH = txParam.GetAttribVal(NULL,TEXT("DetectedCLIP_WIDTH")).GetAsInt(0);
+		txParam.OutofKey();
+	}
+	for ( i =0;i<detectLevelCount;i++)
+	{
+		CString temp ;
+		temp.Format("DetectLevel%d",i);
+		txParam.GoIntoKey(temp);
+		detectLevel[i].levelID = txParam.GetAttribVal(NULL,TEXT("LevelID")).GetAsInt(0);
+		detectLevel[i].levelName =txParam.GetAttribVal(NULL,TEXT("LevelName")).GetAsString(0);
+		detectLevel[i].blackFrame = txParam.GetAttribVal(NULL,TEXT("BlackFrame")).GetAsInt(0);
+		detectLevel[i].colorFrame = txParam.GetAttribVal(NULL,TEXT("ColorFrame")).GetAsInt(0);
+		detectLevel[i].colorSripe = txParam.GetAttribVal(NULL,TEXT("ColorSripe")).GetAsInt(0);
+		detectLevel[i].staticFrame = txParam.GetAttribVal(NULL,TEXT("StaticFrame")).GetAsInt(0);
+		detectLevel[i].muteDur = txParam.GetAttribVal(NULL,TEXT("MuteDur")).GetAsInt(0);
+		detectLevel[i].HighDur = txParam.GetAttribVal(NULL,TEXT("HighDur")).GetAsInt(0);
+		detectLevel[i].LowDur = txParam.GetAttribVal(NULL,TEXT("LowDur")).GetAsInt(0);
+		txParam.OutofKey();
+	}
+	if (detectThresholodCount !=0)
+	{
+		for ( i = 0 ;i<detectThresholodCount;i++)
+		{
+			CString temp ;
+			temp.Format("DetectThresholodCount%d",i);
+			txParam.GoIntoKey(temp);
+			detectThresholod[i].name = txParam.GetAttribVal(NULL,TEXT("Name")).GetAsString();
+			detectThresholod[i].TOP_SAFE_SECTION = txParam.GetAttribVal(NULL,TEXT("TOP_SAFE_SECTION")).GetAsDouble();
+			detectThresholod[i].BOTTOM_SAFE_SECTION = txParam.GetAttribVal(NULL,TEXT("BOTTOM_SAFE_SECTION")).GetAsDouble();
+			detectThresholod[i].LEFT_SAFE_SECTION = txParam.GetAttribVal(NULL,TEXT("LEFT_SAFE_SECTION")).GetAsDouble();
+			detectThresholod[i].RIGHT_SAFE_SECTION = txParam.GetAttribVal(NULL,TEXT("RIGHT_SAFE_SECTION")).GetAsDouble();
+			detectThresholod[i].BLACK_SCENE_THRESHOLD = txParam.GetAttribVal(NULL,TEXT("BLACK_SCENE_THRESHOLD")).GetAsDouble();
+			detectThresholod[i].COLOR_SCENE_PERCENTAGE = txParam.GetAttribVal(NULL,TEXT("COLOR_SCENE_PERCENTAGE")).GetAsDouble();
+			detectThresholod[i].COLOR_STRIP_PERCENTAGE =txParam.GetAttribVal(NULL,TEXT("COLOR_STRIP_PERCENTAGE")).GetAsDouble();
+			detectThresholod[i].STATIC_FRAME_PERCENTAGE = txParam.GetAttribVal(NULL,TEXT("STATIC_FRAME_PERCENTAGE")).GetAsDouble();
+			detectThresholod[i].LINE_COUNTS_FOR_STRIP_DETECT =txParam.GetAttribVal(NULL,TEXT("LINE_COUNTS_FOR_STRIP_DETECT")).GetAsDouble();
+			detectThresholod[i].AMBIT_DEEMED_TO_SAME_PIXEL =txParam.GetAttribVal(NULL,TEXT("AMBIT_DEEMED_TO_SAME_PIXEL")).GetAsDouble();
+			detectThresholod[i].UNDULATE_AMBIT_OF_Y = txParam.GetAttribVal(NULL,TEXT("UNDULATE_AMBIT_OF_Y")).GetAsDouble();
+			detectThresholod[i].UNDULATE_AMBIT_OF_U = txParam.GetAttribVal(NULL,TEXT("UNDULATE_AMBIT_OF_U")).GetAsDouble();
+			detectThresholod[i].UNDULATE_AMBIT_OF_V = txParam.GetAttribVal(NULL,TEXT("UNDULATE_AMBIT_OF_V")).GetAsDouble();
+			detectThresholod[i].AUDIO_Low_THRESHOLD = txParam.GetAttribVal(NULL,TEXT("AUDIO_Low_THRESHOLD")).GetAsDouble();
+			detectThresholod[i].AUDIO_Low_PERIOD = txParam.GetAttribVal(NULL,TEXT("AUDIO_Low_PERIOD")).GetAsDouble();
+			detectThresholod[i].AUDIO_High_THRESHOLD = txParam.GetAttribVal(NULL,TEXT("AUDIO_High_THRESHOLD")).GetAsDouble();
+			detectThresholod[i].AUDIO_High_PERIOD =txParam.GetAttribVal(NULL,TEXT("AUDIO_High_PERIOD")).GetAsDouble();
+			detectThresholod[i].AUDIO_Mute_THRESHOLD = txParam.GetAttribVal(NULL,TEXT("AUDIO_Mute_THRESHOLD")).GetAsDouble();
+			detectThresholod[i].AUDIO_Mute_PERIOD = txParam.GetAttribVal(NULL,TEXT("AUDIO_Mute_PERIOD")).GetAsDouble();
+			txParam.OutofKey();
+		}		
+	}
+
+	return TRUE;
+}
+BOOL ST_FCVSCONFIGINFO::ToString(CString& strOut)
+{
+	CTxParamString txParam("");
+	CTxStrConvert val;
+	int i;
+	txParam.SetElemVal(EK_FCVSTASKCONFIG, val);
+	txParam.GoIntoKey(EK_FCVSTASKCONFIG);
+	val.SetVal(serverName);
+	txParam.SetAttribVal(NULL,TEXT("ServerName"),val);
+// 	val.SetVal(dataBaseInfo);
+// 	txParam.SetAttribVal(NULL,TEXT("DataBaseInfo"),val);
+	val.SetVal(bSaveXML);
+	txParam.SetAttribVal(NULL,TEXT("BSaveXML"),val);
+// 	val.SetVal(bSaveDB);
+// 	txParam.SetAttribVal(NULL,TEXT("BSaveDB"),val);
+	val.SetVal(bCheckAudio);
+	txParam.SetAttribVal(NULL,TEXT("BCheckAudio"),val);
+	val.SetVal(bUseSection);
+	txParam.SetAttribVal(NULL,TEXT("BUseSection"),val);
+// 	val.SetVal(serviceCount);
+// 	txParam.SetAttribVal(NULL,TEXT("ServiceCount"),val);
+	val.SetVal(fileDriverCount);
+	txParam.SetAttribVal(NULL,TEXT("FileDriverCount"),val);
+	val.SetVal(detectLevelCount);
+	txParam.SetAttribVal(NULL,TEXT("DetectLevelCount"),val);
+	val.SetVal(detectThresholodCount);
+	txParam.SetAttribVal(NULL,TEXT("DetectThresholodCount"),val);
+// 	for (i = 0 ;i<serviceCount;i++)
+// 	{
+// 		CString tempService ;
+// 		CTxStrConvert valService;
+// 		tempService.Format("Service%d",i);
+// 		txParam.SetElemVal(tempService, valService);
+// 		txParam.GoIntoKey(tempService);
+// 		valService.SetVal(serVice[i].Name);
+// 		txParam.SetAttribVal(NULL,TEXT("Name"),valService);
+// 		valService.SetVal(serVice[i].IP);
+// 		txParam.SetAttribVal(NULL,TEXT("IP"),valService);
+// 		valService.SetVal(serVice[i].Port);
+// 		txParam.SetAttribVal(NULL,TEXT("Port"),valService);
+// 		valService.SetVal(serVice[i].TYPE);
+// 		txParam.SetAttribVal(NULL,TEXT("TYPE"),valService);
+// 		valService.SetVal(serVice[i].Protocol);
+// 		txParam.SetAttribVal(NULL,TEXT("Protocol"),valService);
+// 		txParam.OutofKey();
+// 	}
+	for ( i = 0;i<fileDriverCount;i++)
+	{
+		CString tempDriver ;
+		CTxStrConvert valDriver;
+		tempDriver.Format("FileDriver%d",i);
+		txParam.SetElemVal(tempDriver, valDriver);
+		txParam.GoIntoKey(tempDriver);
+		valDriver.SetVal(fileDriver[i].name);
+		txParam.SetAttribVal(NULL,TEXT("Name"),valDriver);
+		valDriver.SetVal(fileDriver[i].classString);
+		txParam.SetAttribVal(NULL,TEXT("ClassString"),valDriver);
+		valDriver.SetVal(fileDriver[i].driverName);
+		txParam.SetAttribVal(NULL,TEXT("DriverName"),valDriver);
+		valDriver.SetVal(fileDriver[i].fileType);
+		txParam.SetAttribVal(NULL,TEXT("FileType"),valDriver);
+		valDriver.SetVal(fileDriver[i].isDefault);
+		txParam.SetAttribVal(NULL,TEXT("IsDefault"),valDriver);
+		valDriver.SetVal(fileDriver[i].DetectedCLIP_HEIGHT);
+		txParam.SetAttribVal(NULL,TEXT("DetectedCLIP_HEIGHT"),valDriver);
+		valDriver.SetVal(fileDriver[i].DetectedCLIP_WIDTH);
+		txParam.SetAttribVal(NULL,TEXT("DetectedCLIP_WIDTH"),valDriver);
+		txParam.OutofKey();
+	}
+	for ( i =0;i<detectLevelCount;i++)
+	{
+		CString tempLevel ;
+		CTxStrConvert valLevel;
+		tempLevel.Format("DetectLevel%d",i);
+		txParam.SetElemVal(tempLevel, valLevel);
+		txParam.GoIntoKey(tempLevel);
+		valLevel.SetVal(detectLevel[i].levelID);
+		txParam.SetAttribVal(NULL,TEXT("LevelID"),valLevel);
+		valLevel.SetVal(detectLevel[i].levelName);
+		txParam.SetAttribVal(NULL,TEXT("LevelName"),valLevel);
+		valLevel.SetVal(detectLevel[i].blackFrame);
+		txParam.SetAttribVal(NULL,TEXT("BlackFrame"),valLevel);
+		valLevel.SetVal(detectLevel[i].colorFrame);
+		txParam.SetAttribVal(NULL,TEXT("ColorFrame"),valLevel);
+		valLevel.SetVal(detectLevel[i].staticFrame);
+		txParam.SetAttribVal(NULL,TEXT("StaticFrame"),valLevel);
+		valLevel.SetVal(detectLevel[i].colorSripe);
+		txParam.SetAttribVal(NULL,TEXT("ColorSripe"),valLevel);
+		valLevel.SetVal(detectLevel[i].muteDur);
+		txParam.SetAttribVal(NULL,TEXT("HighDur"),valLevel);
+		valLevel.SetVal(detectLevel[i].LowDur);
+		txParam.SetAttribVal(NULL,TEXT("LowDur"),valLevel);
+
+		txParam.OutofKey();
+	}
+	for ( i = 0 ;i<detectThresholodCount;i++)
+	{
+		CString tempThresholod ;
+		CTxStrConvert valThresholod ;
+		tempThresholod.Format("DetectThresholodCount%d",i);
+		txParam.SetElemVal(tempThresholod, valThresholod);
+		txParam.GoIntoKey(tempThresholod);
+		valThresholod.SetVal(detectThresholod[i].name);
+		txParam.SetAttribVal(NULL,TEXT("Name"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].TOP_SAFE_SECTION);
+		txParam.SetAttribVal(NULL,TEXT("TOP_SAFE_SECTION"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].BOTTOM_SAFE_SECTION);
+		txParam.SetAttribVal(NULL,TEXT("BOTTOM_SAFE_SECTION"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].LEFT_SAFE_SECTION);
+		txParam.SetAttribVal(NULL,TEXT("LEFT_SAFE_SECTION"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].RIGHT_SAFE_SECTION);
+		txParam.SetAttribVal(NULL,TEXT("RIGHT_SAFE_SECTION"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].BLACK_SCENE_THRESHOLD);
+		txParam.SetAttribVal(NULL,TEXT("BLACK_SCENE_THRESHOLD"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].COLOR_SCENE_PERCENTAGE);
+		txParam.SetAttribVal(NULL,TEXT("COLOR_SCENE_PERCENTAGE"),valThresholod);		
+		valThresholod.SetVal(detectThresholod[i].COLOR_STRIP_PERCENTAGE);
+		txParam.SetAttribVal(NULL,TEXT("COLOR_STRIP_PERCENTAGE"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].STATIC_FRAME_PERCENTAGE);
+		txParam.SetAttribVal(NULL,TEXT("STATIC_FRAME_PERCENTAGE"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].LINE_COUNTS_FOR_STRIP_DETECT);
+		txParam.SetAttribVal(NULL,TEXT("LINE_COUNTS_FOR_STRIP_DETECT"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AMBIT_DEEMED_TO_SAME_PIXEL);
+		txParam.SetAttribVal(NULL,TEXT("AMBIT_DEEMED_TO_SAME_PIXEL"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].UNDULATE_AMBIT_OF_Y);
+		txParam.SetAttribVal(NULL,TEXT("UNDULATE_AMBIT_OF_Y"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].UNDULATE_AMBIT_OF_U);
+		txParam.SetAttribVal(NULL,TEXT("UNDULATE_AMBIT_OF_U"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].UNDULATE_AMBIT_OF_V);
+		txParam.SetAttribVal(NULL,TEXT("UNDULATE_AMBIT_OF_V"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AUDIO_Low_THRESHOLD);
+		txParam.SetAttribVal(NULL,TEXT("AUDIO_Low_THRESHOLD"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AUDIO_Low_PERIOD);
+		txParam.SetAttribVal(NULL,TEXT("AUDIO_Low_PERIOD"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AUDIO_High_THRESHOLD);
+		txParam.SetAttribVal(NULL,TEXT("AUDIO_High_THRESHOLD"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AUDIO_High_PERIOD);
+		txParam.SetAttribVal(NULL,TEXT("AUDIO_High_PERIOD"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AUDIO_Mute_THRESHOLD);
+		txParam.SetAttribVal(NULL,TEXT("AUDIO_Mute_THRESHOLD"),valThresholod);
+		valThresholod.SetVal(detectThresholod[i].AUDIO_Mute_THRESHOLD);
+		txParam.SetAttribVal(NULL,TEXT("AUDIO_Mute_THRESHOLD"),valThresholod);
+		txParam.OutofKey();
+		}		
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;	
+}
+
+BOOL ST_EXCUTORINFO::ToString( CString& strOut )
+{
+	CTxParamString txParam(EDOC_ST_ST_EXCUTORINFO);
+	txParam.GoIntoKey("ExecutorInfo");
+
+	CTxStrConvert val;
+	val.SetVal(excutorId);
+	txParam.SetAttribVal(NULL, TEXT("ExecutorId"), val);
+	CString strTem;
+	strTem.Format("%d", hProcessId);
+	val.SetVal(strTem);
+	txParam.SetAttribVal(NULL, TEXT("ProcessId"), val);
+
+	val.SetVal(m_strTaskGuid);
+	txParam.SetAttribVal(NULL, TEXT("TaskGuid"), val);
+
+	val.SetVal(m_strRunStep);
+	txParam.SetAttribVal(NULL, TEXT("RunStep"), val);
+
+	val.SetVal(m_nPercent);
+	txParam.SetAttribVal(NULL, TEXT("nPercent"), val);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;	
+}
+
+BOOL ST_EXCUTORINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey("ExecutorInfo");
+
+	excutorId = txParam.GetAttribVal(NULL,TEXT("ExecutorId")).GetAsInt();
+	hProcessId = txParam.GetAttribVal(NULL,TEXT("ProcessId")).GetAsInt();
+	m_strTaskGuid = txParam.GetAttribVal(NULL,TEXT("TaskGuid")).GetAsString();
+	m_strRunStep = txParam.GetAttribVal(NULL,TEXT("RunStep")).GetAsString();
+	m_nPercent = txParam.GetAttribVal(NULL,TEXT("nPercent")).GetAsInt();
+
+	return TRUE;
+}
+BOOL ST_FCVS::ToString(CString& strOut)
+{
+	CString temp = "";
+	CString tempTask = "";
+	CString tempConfig = "";
+	taskInfo.ToString(tempTask);
+	configInfo.ToString(tempConfig);
+	temp.Format("<FCVS>%s%s</FCVS>",tempConfig,tempTask);
+	strOut = temp;
+	return TRUE;
 }
