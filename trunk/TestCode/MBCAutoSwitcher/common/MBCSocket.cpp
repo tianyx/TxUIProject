@@ -322,7 +322,12 @@ HRESULT CMBCSocket::Init()
 	MUSTBESOK(hr);
 	if ((m_nCreateFlag & MBCSOCKTYPE_TCP_LISTENER) != 0)
 	{
-		listen(m_hSock, 10);
+		hr =listen(m_hSock, 10);
+		if (hr == SOCKET_ERROR)
+		{
+			hr = WSAGetLastError();
+			ASSERT(FALSE);
+		}
 		if((m_nFavMsgType & FD_ACCEPT) == 0)
 		{
 			ASSERT(FALSE);
