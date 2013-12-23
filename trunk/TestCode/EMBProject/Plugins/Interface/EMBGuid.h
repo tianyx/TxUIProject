@@ -19,6 +19,9 @@ extern const GUID GuidEMBPlugin_PActor;
 extern const GUID GuidEMBPlugin_PWorkerSample;
 extern const GUID GuidEMBPlugin_PWorkerMediaCheck;
 extern const GUID GuidEMBPlugin_PWorkerMD5;
+extern const GUID GuidEMBPlugin_PWorkerDBWriter;
+extern const GUID GuidEMBPlugin_PWorkerUIServer;
+extern const GUID GuidEMBPlugin_PWorkerMCResultMerge;
 
 
 //define plugin interface
@@ -40,3 +43,6 @@ extern const GUID GuidEMBPlugin_ITaskWorkerCall;
 
 // 用于Actor界面获取信息
 extern const GUID GuidEMBPlugin_IActorUI;
+
+//
+extern const GUID GuidEMBPlugin_IUIMessageProcess;

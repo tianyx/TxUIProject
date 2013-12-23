@@ -10,7 +10,7 @@ using namespace EMB;
 CEMBPluginManager::CEMBPluginManager(void)
 {
 	m_bDeepSearch = FALSE;
-	m_strExten = TEXT("dll");
+	m_strExten = TEXT("epl");
 }
 
 CEMBPluginManager::~CEMBPluginManager(void)

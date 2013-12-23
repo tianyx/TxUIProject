@@ -67,11 +67,11 @@ BOOL InitGlobalConfig()
 BOOL LoadActorHost(CString& strConfig)
 {
 	CString strFile = g_GlobalInfo.szAppPath;
-	strFile +=TEXT("\\plugin\\EMBActor.dll");
+	strFile +=TEXT("\\plugin\\EMBActor.epl");
 	if (_access(strFile, 0) == -1)
 	{
 		ASSERT(FALSE);
-		CFWriteLog(LOGKEYMAIN, TEXT("EMBActor.dll not Found"));
+		CFWriteLog(LOGKEYMAIN, TEXT("EMBActor.epl not Found"));
 		return FALSE;
 	}
 
@@ -122,11 +122,11 @@ BOOL UnloadActorHost()
 BOOL LoadPluginManager()
 {
 	CString strFile = g_GlobalInfo.szAppPath;
-	strFile +=TEXT("\\plugins\\EMBPluginMgr.dll");
+	strFile +=TEXT("\\plugins\\EMBPluginMgr.epl");
 	if (_access(strFile, 0) == -1)
 	{
 		ASSERT(FALSE);
-		CFWriteLog(LOGKEYMAIN, TEXT("EMBPluginMgr.dll not Found"));
+		CFWriteLog(LOGKEYMAIN, TEXT("EMBPluginMgr.epl not Found"));
 		return FALSE;
 	}
 	

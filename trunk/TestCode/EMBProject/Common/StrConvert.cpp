@@ -305,7 +305,7 @@ void CTxStrConvert::SetVal( LPCTSTR szVal )
 	m_szParam = szVal;
 }
 
-void CTxStrConvert::SetVal( VECSTRINGS& vVal )
+void CTxStrConvert::SetVal(const VECSTRINGS& vVal )
 {
 	m_szParam.Empty();
 	for (size_t i = 0; i < vVal.size(); ++i)
@@ -318,7 +318,7 @@ void CTxStrConvert::SetVal( VECSTRINGS& vVal )
 	}
 }
 
-void CTxStrConvert::SetVal( VECINTS& vVal )
+void CTxStrConvert::SetVal(const VECINTS& vVal )
 {
 	m_szParam.Empty();
 	for (size_t i = 0; i < vVal.size(); ++i)

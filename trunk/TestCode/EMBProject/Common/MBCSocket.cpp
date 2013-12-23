@@ -41,6 +41,10 @@ BOOL RegisterSockWnd()
 DWORD __stdcall CreateSockWndThread( void* lparam )
 {
 	CMBCSocket* pSock = (CMBCSocket*)lparam;
+	if (!pSock)
+	{
+		ASSERT(FALSE);
+	}
 	HINSTANCE hInstance = GetSelfModuleHandle();
 	HWND& hwnd = pSock->m_hSockWnd;
 	ASSERT(hwnd == NULL);

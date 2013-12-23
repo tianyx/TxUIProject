@@ -1,12 +1,17 @@
 #include "stdafx.h"
 #include "MiniDump.h"
+#ifndef _DEBUG
 #include <DbgHelp.h>
 #pragma comment(lib, "DbgHelp.lib")
+
+#endif // _DEBUG
 
 
 CMiniDump::CMiniDump()
 {
+#ifndef _DEBUG
 	::SetUnhandledExceptionFilter(TopLevelFilter);
+#endif
 }
 
 CMiniDump::~CMiniDump()
@@ -16,7 +21,7 @@ CMiniDump::~CMiniDump()
 LONG WINAPI CMiniDump::TopLevelFilter( struct _EXCEPTION_POINTERS *pExceptionInfo )
 {
 	LONG ret = EXCEPTION_CONTINUE_SEARCH;
-	
+#ifndef _DEBUG
 	char lpFileName[MAX_PATH];
 	::GetModuleFileName(NULL,lpFileName,MAX_PATH);
 	CString strPathName(lpFileName);
@@ -42,14 +47,18 @@ LONG WINAPI CMiniDump::TopLevelFilter( struct _EXCEPTION_POINTERS *pExceptionInf
 		ExInfo.ExceptionPointers = pExceptionInfo;
 		ExInfo.ClientPointers = NULL;
 		// write the dump
-		DWORD minitype = MiniDumpNormal |		 
-						MiniDumpWithDataSegs | 
-						MiniDumpWithFullMemory |
-						MiniDumpWithHandleData;
+		DWORD minitype = MiniDumpNormal    
+			| MiniDumpWithHandleData    
+			| MiniDumpWithUnloadedModules    
+			| MiniDumpWithIndirectlyReferencedMemory    
+			| MiniDumpScanMemory    
+			| MiniDumpWithProcessThreadData    
+			| MiniDumpWithThreadInfo;
 		BOOL bOK = MiniDumpWriteDump( GetCurrentProcess(), GetCurrentProcessId(),
 			hFile, (MINIDUMP_TYPE)minitype, &ExInfo, NULL, NULL );
 		ret = EXCEPTION_EXECUTE_HANDLER;
 		::CloseHandle(hFile);
 	}
+#endif
 	return ret;
 }

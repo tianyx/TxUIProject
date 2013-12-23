@@ -269,7 +269,7 @@ CTxStrConvert CTxParamString::GetAttribVal( LPCTSTR szKey,LPCTSTR szAttribKey)
 	return txConvert;
 }
 
-BOOL CTxParamString::SetElemVal( LPCTSTR szKey, CTxStrConvert& valIn )
+BOOL CTxParamString::SetElemValRef( LPCTSTR szKey, CTxStrConvert& valIn )
 {
 	BOOL bRet = FALSE;
 	VECSTRINGS vPath = m_vecCurrPath;
@@ -286,7 +286,7 @@ BOOL CTxParamString::SetElemVal( LPCTSTR szKey, CTxStrConvert& valIn )
 	return bRet;
 }
 
-BOOL CTxParamString::SetAttribVal( LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrConvert& valIn )
+BOOL CTxParamString::SetAttribValRef( LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrConvert& valIn )
 {
 	if (!m_bInited)
 	{

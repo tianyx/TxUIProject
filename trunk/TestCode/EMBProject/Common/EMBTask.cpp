@@ -468,3 +468,114 @@ BOOL CEMBTaskRequest::ToMeta( const CString& strXml, const CString& strPath )
 
 	return TRUE;
 }
+
+
+
+CString CEdocMain::ToXml()
+{
+	CTxParamString xParam(TEXT("<edoc_main></edoc_main>"));
+	xParam.GoToPath(TEXT(".\\edoc_main"));
+
+	// set attribute value
+	CTxStrConvert strVal;
+	strVal.SetVal(m_strVer);
+	xParam.SetAttribVal(NULL, TEXT("ver"), strVal);
+
+	strVal.SetVal(m_nType);
+	xParam.SetAttribVal(NULL, TEXT("type"), strVal);
+
+	strVal.SetVal(m_strGuid);
+	xParam.SetAttribVal(NULL, TEXT("guid"), strVal);
+
+	if (m_arrSysRes.size() > 0)
+	{
+		CTxParamString xRes(TEXT("<SystemResource></SystemResource>"));
+		xRes.GoToPath(TEXT(".\\SystemResource"));
+
+		CString strTem;
+
+		for (int i = 0; i < m_arrSysRes.size(); ++i)
+		{
+			CSystemResourceInfo info = m_arrSysRes[i];
+			strTem.Format("<%s></%s>", info.m_strName, info.m_strName);
+			CTxParamString xLeaf(strTem);
+			xLeaf.GoIntoKey(info.m_strName);
+
+			strVal.SetVal(info.m_eRes);
+			xLeaf.SetAttribVal(NULL, "kind", strVal);
+
+			strVal.SetVal(info.m_nUsedPercent);
+			xLeaf.SetAttribVal(NULL, "usedPercent", strVal);
+
+			xRes.SetSubNodeString(".\\SystemResource", xLeaf);
+		}
+
+		xParam.SetSubNodeString(".\\edoc_main", xRes);
+	}
+
+	//
+	xParam.UpdateData();
+	CString strXml = xParam;
+
+	return strXml;
+}
+
+BOOL CEdocMain::ToMeta( const CString& strXml, const CString& strPath )
+{
+	if (strXml.IsEmpty())
+	{
+		return FALSE;
+	}
+
+	CTxParamString xParm(strXml);
+	xParm.GoToPath(strPath);
+
+	//
+	m_strVer = xParm.GetAttribVal(NULL, TEXT("ver")).GetAsString();
+	m_nType = xParm.GetAttribVal(NULL, TEXT("type")).GetAsInt();
+	m_strGuid = xParm.GetAttribVal(NULL, TEXT("guid")).GetAsString();
+
+	if (xParm.GoIntoKey("SystemResource"))
+	{
+		CMarkup xmlMark(strXml);
+
+		if(xmlMark.FindChildElem("SystemResource"))
+		{
+			xmlMark.IntoElem();
+
+			CTxStrConvert strTem;
+
+			while(xmlMark.FindChildElem())
+			{
+				CSystemResourceInfo info;
+				info.m_strName = xmlMark.GetChildTagName();
+				//
+				strTem.SetVal(xmlMark.GetChildAttrib("usedPercent"));
+				info.m_nUsedPercent = strTem.GetAsInt();
+
+				strTem.SetVal(xmlMark.GetChildAttrib("kind"));
+				info.m_eRes = (SYSTEM_RES)strTem.GetAsInt();
+
+				m_arrSysRes.push_back(info);
+			}
+
+			xmlMark.OutOfElem();
+		}
+	}
+
+	return TRUE;
+}
+
+CEdocMain::CEdocMain()
+{
+	m_strVer = "1.0";
+	m_strGuid.Empty();
+	m_nType = 1;
+
+	m_arrSysRes.clear();
+}
+
+CEdocMain::~CEdocMain()
+{
+
+}

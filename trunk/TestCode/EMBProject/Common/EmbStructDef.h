@@ -16,6 +16,8 @@
 #include "MBCCommonDef.h"
 using namespace std;
 
+typedef vector<CString> VECSTRINGS;
+
 //////////////////////////////////////////////////////////////////////////
 //struct for windows message trans
 struct ST_EMBWNDMSG
@@ -43,10 +45,12 @@ struct ST_EMBXMLMAININFO
 	int ver;
 	int nType;
 	CString guid;
+	int nErrcode;
 	ST_EMBXMLMAININFO()
 	{
 		ver = INVALID_VALUE;
 		nType = embxmltype_none;
+		nErrcode = S_OK;
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
@@ -107,6 +111,8 @@ struct ST_ACTORCONFIG
 	int nExcutorMaxId;			//max excutor to use
 	int nActorLevel;			//actor level that corresponding with task priority, task can assign to the actor if the nActorLevel <= task priority
 	CString strExcPath;			//executor path to call excutor.exe, if not full path, will check executor at default folder
+	int nMaxDiskIO;			//max disk io KB
+	int nMaxNetIO;
 	ST_ACTORCONFIG()
 	{
 		actorId = -1;
@@ -115,6 +121,8 @@ struct ST_ACTORCONFIG
 		addrMain.sin_family = 0;
 		addrSlave.sin_family = 0;
 		nActorLevel = embActorLevel_normal;
+		nMaxDiskIO = 40000;
+		nMaxNetIO = 60000;
 	}
 	
 	BOOL ToString(CString& strOut);
@@ -123,9 +131,10 @@ struct ST_ACTORCONFIG
 };
 //////////////////////////////////////////////////////////////////////////
 //config for storage
-struct ST_STORAGECONFIG
+struct ST_TASKSTORAGECONFIG
 {
 	int nType;
+	CString strDBConnect;
 	union
 	{
 		struct  
@@ -137,6 +146,9 @@ struct ST_STORAGECONFIG
 		}dbCfg;
 		
 	}data;
+
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
 };
 
 
@@ -165,10 +177,13 @@ typedef vector<CString> VECSUBTASKS;
 struct ST_TASKBASIC
 {
 	CString strGuid;		//task guid
+	CString strTaskID;      //task ID
 	int nPriority;			//task priority
 	time_t tmSubmit;		//time of task submited
 	int nStartStep;			//first step to process
 	ACTORID nFixActor;		//specify a actor to executor
+	CString strTaskFrom;    //task From which System
+	int nTaskSplit;         //task can be split
 	VECSUBTASKS vSubTask;	//sub task name list
 	ST_TASKBASIC()
 	{
@@ -207,19 +222,31 @@ struct ST_TASKRUNSTATE
 		excId = INVALID_ID;
 		nState = embtaskstate_zero;
 		nExcType = embexcuteType_none;
+		nCurrStep = -1;
+		nPercent = 0;
+		nRetry = 0;
+
 		tmCommit = 0;
 		tmExcute = 0;
 		tmLastReport = 0;
-		nRetry = 0;
+		tmLastCheck = 0;
 	}
-	BOOL ToString(CString& strOut);
-	BOOL FromString(const CString& strIn);
+	BOOL ToString(CString& strOut, BOOL bWithinMainHeader = FALSE);
+	BOOL FromString(const CString& strIn, BOOL bWithinMainHeader = FALSE);
+	CString StateDes();
 	
 };
 
 //////////////////////////////////////////////////////////////////////////
 //executor info that hold by actor
 #define EDOC_ST_ST_EXCUTORINFO TEXT("<ExecutorInfo></ExecutorInfo>")
+
+enum EXE_STATE
+{
+	EXE_IDLE = 1, // 空闲
+	EXE_ASSIGN = 2, // 已分配
+	EXE_RUN  = 3, // 运行
+};
 
 struct ST_EXCUTORINFO
 {
@@ -229,6 +256,8 @@ struct ST_EXCUTORINFO
 	HANDLE hmemMap;					//mapping buffer for sending message to executor
 	CString strDesExcMappingName;	//mapping buffer name
 	time_t tmLastcheck;				//time for last check executor state
+	EXE_STATE m_eState;             // 状态
+
 	CString m_strTaskGuid;          // 任务标识
 	CString m_strRunStep;           // 运行步骤名称
 	int		m_nPercent;             // 进度
@@ -239,6 +268,7 @@ struct ST_EXCUTORINFO
 		hwnd = NULL;
 		hProcessId = NULL;
 		tmLastcheck = 0;
+		m_eState = EXE_IDLE;   // 默认为空闲
 
 		m_strTaskGuid.Empty();
 		m_strRunStep.Empty();
@@ -263,6 +293,10 @@ struct ST_SVRLIVEINFO
 		nActive = -1;
 		nConnState = -1;
 	}
+
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -333,7 +367,6 @@ struct ST_TASKDISPATCHCONFIG
 	
 };
 
-
 //////////////////////////////////////////////////////////////////////////
 //
 struct ST_TASKUP_END
@@ -361,6 +394,7 @@ struct ST_TASKUPDATE
 {
 	int nUpdateType;
 	TXGUID guid;
+	CString strTaskID;
 	
 	ST_TASKUP_END data_end;
 	ST_TASKUP_PRIORITY data_pri;
@@ -383,12 +417,16 @@ struct ST_ACTORSTATE
 	//runtime state;
 	int nCpuUsage;
 	int nMemUsage;
-	int nDiscUsage;
+	int nDiscIOUsage;
+	int nExcResUsage; //executor id use percent
+	int nNetIOUsage;
 	// 	CString strHost;
 	// 	MAPDISKUSEAGE mapDiskUse;
+	CString strTeam;     //在指定组中
 	
 	time_t tmLastReport;
 	time_t tmLastCheck;
+	time_t tmLastAssignTask;
 	
 	ST_ACTORSTATE()
 	{
@@ -396,10 +434,14 @@ struct ST_ACTORSTATE
 		actorId = INVALID_ID;
 		nCpuUsage = INVALID_VALUE;
 		nMemUsage = INVALID_VALUE;
-		nDiscUsage = INVALID_VALUE;
+		nDiscIOUsage = INVALID_VALUE;
 		nActorLevel = embActorLevel_normal;
+		nNetIOUsage = INVALID_VALUE;
+		nExcResUsage = INVALID_VALUE;
 		tmLastReport = 0;
 		tmLastCheck = 0;
+		tmLastAssignTask = 0;
+
 	}
 	
 	BOOL ToString(CString& strOut);
@@ -456,6 +498,7 @@ struct ST_MD5TASKINFO
 {
 	CString strFileToCheck;
 	CString strFileToWriteResult;
+	CString strMD5Compare;
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 
@@ -538,14 +581,14 @@ struct ST_FCVSCONFIGDETECTLEVEL  //技审级别
 	ST_FCVSCONFIGDETECTLEVEL()
 	{
 		levelID = 0;
-		levelName = "";
-		blackFrame =0;
-		colorFrame = 0;
-		colorSripe = 0;
-		staticFrame =0;
-		muteDur = 0;
-		HighDur = 0;
-		LowDur = 0;
+		levelName = "A";
+		blackFrame =125;
+		colorFrame =50;
+		colorSripe = 1;
+		staticFrame =125;
+		muteDur = 250;
+		HighDur = 25;
+		LowDur = 250;
 	}
 };
 struct ST_FCVSCONFIGDETECTTHRESHOLD
@@ -644,8 +687,8 @@ struct ST_FCVSTASKINFO
 	int checkItem ;  //技审项详见宏定义
 	
 	//BOOL FCVSTaskCut ; //切片功能默认否
-	LONGLONG TaskCutSOM;  //切片入点
-	LONGLONG TaskCutEOM; //切片出点
+	int nSectionID;  //切片入点
+	int nTotalSectionCount; //切片出点
 	CString usedDetectLevel;
 	
 	CString fileAdrType;
@@ -662,8 +705,8 @@ struct ST_FCVSTASKINFO
 		fileMediaType = "";
 		checkItem = 0x00111111L;
 		//FCVSTaskCut = FALSE;
-		TaskCutSOM = 0;
-		TaskCutEOM = 0;
+		nSectionID = 0;
+		nTotalSectionCount = 1;
 		usedDetectLevel  = TEXT("B");
 		fileAdrType = TEXT("磁盘");
 		filePath = "";
@@ -672,6 +715,80 @@ struct ST_FCVSTASKINFO
 		fileAdrUser = "";
 		fileAdrPwd = "";
 		fileAdrPort = "";
+	}
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+};
+struct ST_FCVS  
+{
+	ST_FCVSTASKINFO taskInfo;
+	ST_FCVSCONFIGINFO configInfo;
+	BOOL ToString(CString& strOut);
+	//BOOL FromString(const CString& strIn);
+	//如有需要 用时请调用两个变量的FromString
+};
+
+typedef vector<CString> VECSQLSTRINGS;
+struct ST_DBWRITERTASKINFO
+{
+	ST_DBWRITERTASKINFO()
+	{
+		nDBType = INVALID_VALUE;
+	}
+	int nDBType;
+	CString strConn;
+	VECSQLSTRINGS vSqlKeys;
+	VECSQLSTRINGS vSqls;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+};
+
+struct ST_UISVRCONFIG
+{
+	int nProberType;
+	SOCKADDR_IN addrListen;
+	ST_UISVRCONFIG()
+	{
+		nProberType = INVALID_VALUE;
+	}
+
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_UICLIENTCONFIG
+{
+	SOCKADDR_IN addrMain;
+	SOCKADDR_IN addrSlave;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_TASKLISTINFO
+{
+	VECSTRINGS vlist;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_ACTORLISTINFO
+{
+	VECSTRINGS vlist;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+struct ST_FCVSRESULTTASK
+{
+	CString filePath;
+	int nTotalSectionCount;
+	ST_FCVSRESULTTASK()
+	{
+		filePath = "";
+		nTotalSectionCount = 0;
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);

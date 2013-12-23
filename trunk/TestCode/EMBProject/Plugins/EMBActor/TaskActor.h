@@ -26,7 +26,9 @@ struct ST_TASKINACTOR
 	int nPercent;
 	int nSubErrorCode; // 具体错误
 	time_t tmLastReport;
+	time_t tmCommit; // 提交时间
 	CString strTask;
+
 	ST_TASKINACTOR()
 	{
 		taskGuid = GUID_NULL;
@@ -37,6 +39,7 @@ struct ST_TASKINACTOR
 		excId = INVALID_ID;
 		nPercent = 0;
 		nSubErrorCode = 0;
+		tmCommit = time(NULL);
 	}
 };
 
@@ -112,7 +115,12 @@ public:
 	History：
 	*/
 	virtual HRESULT GetExecutors(vector<CString>& vExecutor);
+	virtual HRESULT GetTaskInActor(vector<CString>& vTask);
 	// ------------------------------------------------------
+
+public:
+	//for cpu get loop
+	DWORD CalcResLoop();
 
 private:
 	BOOL SwitchActorConn(BOOL bMainConn);
@@ -128,6 +136,8 @@ private:
 	bool TaskResultSaveXmlFile(ST_TASKREPORT& tskReport);
 	bool QueryXmlFile(const CString& strTaskGuid, ST_TASKREPORT& tskInfor);
 	bool FindTask(const EXCUTORID& strExecutorId, ST_TASKINACTOR& tsk);
+	// 添加任务到 m_mapTaskinActor
+	bool AddTask(TXGUID& tskGuid, const ST_TASKINACTOR& tsk);
 
 private:
 	CActorConnector m_actorconnMain;
@@ -143,6 +153,12 @@ private:
 	BOOL m_bRuning;
 	int nfgRetryMax;
 	CString m_strTaskXmlPath; // 保存xml文件的路径
+
+	HANDLE m_hThreadCPULoop; //to calc cpu usage
+	HANDLE m_hEventQuit;
+	int m_nCpuUsage;
+	int m_nDiskIOUsage;
+	int m_nNetIOUsage;
 };
 
 

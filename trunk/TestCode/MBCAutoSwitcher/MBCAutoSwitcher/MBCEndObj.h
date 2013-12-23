@@ -167,6 +167,7 @@ struct ST_TSSENDCACHE
 
 typedef std::vector<CMBCSocket*> VRELAYSOCKS;
 typedef std::vector<SOCKADDR_IN> VECRECVSRCADDRS;
+typedef std::vector<SOCKADDR_IN> VECRELAYADDRS;
 class CMBCEndObj :
 	public CMBCBaseObj
 {
@@ -210,6 +211,7 @@ public:
 	BOOL AddRelayAddr(SOCKADDR_IN& addrIn);
 	BOOL RemoveRelayAddr(SOCKADDR_IN& addrIn);
 	BOOL ClearRelayAddrs();
+	BOOL GetRelayedAddrs(VECRELAYADDRS& vaddrOut);
 	int IsLocalAddrOfRelaySock(SOCKADDR_IN& addrRelayTo, SOCKADDR_IN& addrLocal);
 
 	BOOL CanRelayData();

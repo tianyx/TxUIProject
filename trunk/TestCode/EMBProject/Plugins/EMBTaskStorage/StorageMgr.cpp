@@ -7,6 +7,7 @@ using namespace EMB;
 CStorageMgr::CStorageMgr(void)
 {
 	m_pIStorage = NULL;
+	m_pTaskCommit = NULL;
 }
 
 CStorageMgr::~CStorageMgr(void)
@@ -59,17 +60,11 @@ HRESULT CStorageMgr::QueryPluginInfo( VECPLUGINFOS& vInfoInOut )
 	return S_OK;
 }
 
-//？不清楚功能
+//
 HRESULT CStorageMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 {
 	pInterfaceOut = NULL;
 
-	// 	if (guidIn == GuidEMBPlugin_TaskRiser)
-	// 	{
-	// 		pInterfaceOut = dynamic_cast<IPluginTaskRiserInterface*>(this);
-	// 		AddRef();
-	// 		return S_OK;
-	// 	}
 	if (guidIn == GuidEMBPlugin_IBase)
 	{
 		pInterfaceOut = dynamic_cast<IPluginBaseInterface*>(this);
@@ -100,6 +95,13 @@ HRESULT CStorageMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 	else if (guidIn == GuidEMBPlugin_ITaskCommit)
 	{
 		pInterfaceOut = dynamic_cast<IPluginTaskCommit*>(this);
+		AddRef();
+		return S_OK;
+
+	}
+	else if (guidIn == GuidEMBPlugin_IConfig)
+	{
+		pInterfaceOut = dynamic_cast<IPluginConfigInterface*>(this);
 		AddRef();
 		return S_OK;
 
@@ -168,13 +170,11 @@ HRESULT CStorageMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 
 HRESULT CStorageMgr::SubmitTask( const CTaskString& szTaskIn, CTaskString& szRet )
 {
-	//为什么IPluginStorageInterface接口中没有SubmitTask定义？如果没有任务如何添加进去？
-	/*if (m_pIStorage)
+	if (m_pIStorage && m_pTaskCommit)
 	{
-		return m_pIStorage->SubmitTask(szTaskIn,szRet);
+		return m_pTaskCommit->SubmitTask(szTaskIn,szRet);
 	}
-	return E_NOTIMPL;*/
-	return S_OK;
+	return E_NOTIMPL;
 }
 
 HRESULT CStorageMgr::UpdateTaskToStorage( const int nDispatchID, CTaskString& szTaskIn )
@@ -212,10 +212,25 @@ HRESULT EMB::CStorageMgr::GetDispatchedTaskFromStorage( const DISPATCHID nDispat
 HRESULT CStorageMgr::Run_Plugin()
 {
 	Stop_Plugin();
-#ifdef _DEBUG
+	if(m_cfgStorage.nType == embStorageType_mem)
+	{
+		CEMBStorageMem* pTmpStorage = new CEMBStorageMem;
+		m_pIStorage = pTmpStorage;
+		m_pTaskCommit = pTmpStorage;
+
+	}
+	else if(m_cfgStorage.nType == embStorageType_db)
+	{
+		CEMBStorageDB *pIDBStorage = new CEMBStorageDB;
+		m_pIStorage = pIDBStorage;
+		pIDBStorage->SetDBConnectString(m_cfgStorage.strDBConnect);
+		m_pTaskCommit = pIDBStorage;
+	}
+
+/*#ifdef _DEBUG
 	m_cfgStorage.nType = embStorageType_mem;
 	m_pIStorage = new CEMBStorageMem;
-#endif // _DEBUG
+#endif */// _DEBUG
 	return S_OK;
 }
 
@@ -230,17 +245,10 @@ HRESULT CStorageMgr::Stop_Plugin()
 	if (m_pIStorage)
 	{
 		// 删除存储任务内存表
-		if (m_cfgStorage.nType == embStorageType_mem)
-		{
-			CEMBStorageMem* pMem = (CEMBStorageMem*)m_pIStorage;
-			delete pMem;
-		}
-		else
-		{
-			ASSERT(FALSE);
-		}
-	
+		
+		delete m_pIStorage;
 		m_pIStorage = NULL;
+		m_pTaskCommit = NULL;
 	}
 	return S_OK;
 }
@@ -255,6 +263,7 @@ HRESULT CStorageMgr::Stop_Plugin()
 */
 HRESULT CStorageMgr::GetParam( const CTaskString& szIn, CTaskString& szOut )
 {
+	m_cfgStorage.ToString(szOut);
 	return S_OK;
 }
 
@@ -269,6 +278,10 @@ HRESULT CStorageMgr::GetParam( const CTaskString& szIn, CTaskString& szOut )
 HRESULT CStorageMgr::SetParam( const CTaskString& szIn, CTaskString& szOut )
 {
 	//获取缓存状态信息
+	ST_TASKSTORAGECONFIG tmpConfig;
+	tmpConfig.FromString(szIn);
+	m_cfgStorage = tmpConfig;
+
 	return S_OK;
 }
 

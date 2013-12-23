@@ -101,7 +101,9 @@ private:
 };
 
 
-class CEMBStorageDB:public IPluginStorageInterface
+class CEMBStorageDB:
+	public IPluginStorageInterface,
+	public IPluginTaskCommit
 {
 public:
 	CEMBStorageDB(void);
@@ -111,14 +113,21 @@ public:
 
 
 	virtual HRESULT UpdateTaskToStorage(const DISPATCHID nDispatchID, CTaskString& szTaskIn);
-	virtual HRESULT FetchTaskFromStorage(const DISPATCHID nDispatchID, int nDesiredNum, VECTASKS& vTasks);
+	virtual HRESULT FetchTaskFromStorage( const DISPATCHID nDispatchID,int nMinPriority, int nDesiredNum, VECTASKS& vTasks );
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
 
 	// 设置数据库连接字符串
 	void SetDBConnectString(CString strDBCon);
 
 private:
+	CString GetTaskKind(ST_TASKSAVEDATA taskInfo);
+	CString Timet2CString(time_t tm);
+
+private:
 	CString m_strDBCon;
+
+	//智能锁
+	CAutoCritSec m_csPoolLock;
 };
 
 }

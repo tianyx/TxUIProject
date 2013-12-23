@@ -17,9 +17,10 @@ public:
 	CSlaveHeartBeat(void);
 	virtual ~CSlaveHeartBeat(void);
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed );
-	BOOL SetLiveCallback(IServerLiveInterface* pCallbackIn){m_pSvrLiveCallback = pCallbackIn;}
+	BOOL SetLiveCallback(IServerLiveInterface* pCallbackIn){m_pSvrLiveCallback = pCallbackIn; return TRUE;}
 
 	virtual HRESULT FillLivePack(ST_TXMSG_LIVEQA& msg);
+
 	HRESULT OnLiveMsgIn( ST_TXMSG_LIVEQA& msg );
 	//for IRemoteSvrLiveInterface
 	virtual HRESULT GetRemoteSvrState(ST_SVRLIVEINFO& infoOut);

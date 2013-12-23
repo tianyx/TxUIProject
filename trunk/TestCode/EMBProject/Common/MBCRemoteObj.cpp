@@ -6,7 +6,6 @@
 CMBCRemoteObj::CMBCRemoteObj(void)
 {
 	m_hLogWnd = NULL;
-	m_pIRemoteCallInterface = NULL;
 	m_nObjType =MBCOBJTYPE_REMOTEHOST;
 }
 
@@ -36,14 +35,16 @@ HRESULT CMBCRemoteObj::Run()
 
 HRESULT CMBCRemoteObj::Stop()
 {
-	MAPSOCKINS::iterator itb = m_mapSockIns.begin();
-	MAPSOCKINS::iterator ite = m_mapSockIns.end();
-	for (; itb != ite; ++itb)
-	{
-		CMBCSocket::ReleaseSock(itb->first);
+	{//for release lock
+		CAutoLock lock(&m_csSockIn);
+		MAPSOCKINS::iterator itb = m_mapSockIns.begin();
+		MAPSOCKINS::iterator ite = m_mapSockIns.end();
+		for (; itb != ite; ++itb)
+		{
+			CMBCSocket::ReleaseSock(itb->first);
+		}
+		m_mapSockIns.clear();
 	}
-	m_mapSockIns.clear();
-
 
 	return __super::Stop();
 }
@@ -53,61 +54,32 @@ HRESULT CMBCRemoteObj::ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, ch
 	HRESULT hr = S_OK;
 	int nLen = 0;
 
-	if(m_pIRemoteCallInterface == NULL)
-	{
-		ASSERT(FALSE);
-		return E_NOINTERFACE;
-	}
-
 	int nRetUsed = 0;
-	char buffer[MAXRECVBUFF];
+	char buffer[SMALLBUFSIZE];
 
-		if (nMsgType == msgtype_LIVEQA)
-		{
-			//extract msg
-			//CFWriteLog("recv live Q");
-			ST_TXMSG_LIVEQA msgIn;
-			UnPackMBCMsg(bufferIn, nUsed, msgIn);
-			//get live info
-			msgIn.nMsgState = msgState_A;
-			ST_MBCCHANNELINFO_FORVC6 chInfos[50];
-			int nChUsed = 0;
-			m_pIRemoteCallInterface->GetLiveInfo(msgIn,msgIn.nRemoteState, msgIn.nSelfType, chInfos, 50, nChUsed);
-			HRESULT hr = PackMBCMsg(msgIn,  buffer, MAXRECVBUFF, nRetUsed);
-
-
-		}
-		else if (nMsgType == msgtype_ACTQA)
-		{
-			//extract msg
-			_RPT1(0, "--recved actQA use size = %d", nUsed);
-			ST_TXMSG_ACTQA msgIn;
-			UnPackMBCMsg(bufferIn, nUsed, msgIn);
-			//do action
-			m_pIRemoteCallInterface->DoAction(msgIn);
-
-			HRESULT hr = PackMBCMsg(msgIn, buffer, MAXRECVBUFF, nRetUsed);
-		}
-
-	
-
-
-	
-	
-
-	//send info back
-	if (nRetUsed > 0)
+	if (nMsgType == msgtype_LIVEQA)
 	{
-		hr = send(*pMBCSock, buffer, nRetUsed, 0);
-		//CFWriteLog2Wnd(m_hLogWnd, TEXT("=send back to soc %d"), pMBCSock->m_hSock);
-		if(hr == SOCKET_ERROR)
+		//extract msg
+		//CFWriteLog("recv live Q");
+		ST_TXMSG_LIVEQA msgIn;
+		UnPackMBCMsg(bufferIn, nUsed, msgIn);
+		//get live info
+		msgIn.nMsgState = msgState_A;
+		HRESULT hr = PackMBCMsg(msgIn,  buffer, SMALLBUFSIZE, nRetUsed);
+		//send info back
+		if (nRetUsed > 0)
 		{
-			ASSERT(FALSE);
-			hr = WSAGetLastError();
+			hr = send(*pMBCSock, buffer, nRetUsed, 0);
+			//CFWriteLog2Wnd(m_hLogWnd, TEXT("=send back to soc %d"), pMBCSock->m_hSock);
+			if(hr == SOCKET_ERROR)
+			{
+				ASSERT(FALSE);
+				hr = WSAGetLastError();
+			}
 		}
 	}
 
-	return hr;
+	return S_OK;
 }
 
 
@@ -120,18 +92,7 @@ HRESULT CMBCRemoteObj::NetCall_Connect( CMBCSocket* pMBCSock, WPARAM wParam, LPA
 HRESULT CMBCRemoteObj::NetCall_Close( CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lParam )
 {
 	//only process incoming sock
-	MAPSOCKINS::iterator itf = m_mapSockIns.find(pMBCSock);
-	if (itf != m_mapSockIns.end())
-	{
-		CMBCSocket* pSock = itf->first;
-		if (pSock)
-		{
-			CMBCSocket::ReleaseSock(pSock);
-			pSock = NULL;
-		}
-		m_mapSockIns.erase(itf);
-		CFWriteLog("==remote closed, ip =%s",  Addr2String(pMBCSock->m_addrs.addrRemote).c_str());
-	}
+	RemoveSock(pMBCSock);
 
 
 	return CMBCBaseObj::NetCall_Close(pMBCSock, wParam, lParam);
@@ -151,7 +112,7 @@ HRESULT CMBCRemoteObj::NetCall_Accept( CMBCSocket* pMBCSock, WPARAM wParam, LPAR
 		if (pSock)
 		{
 			CFWriteLog("==remote accepted, soc = %d, ip =%s", socRecv, Addr2String(addrDes).c_str());
-			m_mapSockIns[pSock] = pSock;
+			AddSock(pSock);
 		}
 		else
 		{
@@ -159,4 +120,32 @@ HRESULT CMBCRemoteObj::NetCall_Accept( CMBCSocket* pMBCSock, WPARAM wParam, LPAR
 		}
 
 		return S_OK;
+}
+
+
+void CMBCRemoteObj::RemoveSock( CMBCSocket* pSock )
+{
+	CMBCSocket* pSockFound = NULL;
+	{
+		CAutoLock lock(&m_csSockIn);
+		MAPSOCKINS::iterator itf = m_mapSockIns.find(pSock);
+		if (itf != m_mapSockIns.end())
+		{
+			pSockFound = pSock;
+			m_mapSockIns.erase(itf);
+		}
+	}
+
+	if (pSockFound)
+	{
+		CFWriteLog("==remote closed, ip =%s",  Addr2String(pSock->m_addrs.addrRemote).c_str());
+		CMBCSocket::ReleaseSock(pSockFound);
+	}
+
+}
+
+void CMBCRemoteObj::AddSock( CMBCSocket* pSock )
+{
+	CAutoLock lock(&m_csSockIn);
+	m_mapSockIns[pSock] = pSock;
 }

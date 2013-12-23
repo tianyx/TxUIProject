@@ -13,7 +13,6 @@
 #include "MBCTransMsg.h"
 #include <map>
 #include "MBCCommonDef.h"
-#include "MBCRemoteInterface.h"
 #include "MBCBaseObj.h"
 
 
@@ -27,9 +26,12 @@ public:
 	~CMBCRemoteObj(void);
 
 	//map for save incoming connection
+	CAutoCritSec m_csSockIn;
 	MAPSOCKINS m_mapSockIns;
 
-	IMBCMSGRemoteCallInterface * m_pIRemoteCallInterface;
+	void RemoveSock(CMBCSocket* pSock);
+	void AddSock(CMBCSocket* pSock);
+
 	virtual HRESULT Run();
 	virtual HRESULT Stop();
 

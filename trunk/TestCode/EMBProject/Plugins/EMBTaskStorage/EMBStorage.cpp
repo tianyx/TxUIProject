@@ -5,6 +5,7 @@
 #include "EMBDocDef.h"
 #include "ADOCtrl.h"
 #include "Log.h"
+#include "LogKeyDef.h"
 
 using namespace EMB;
 CEMBStorageMem::CEMBStorageMem(void)
@@ -39,9 +40,6 @@ CEMBStorageDB::~CEMBStorageDB(void)
 */
 HRESULT EMB::CEMBStorageMem::UpdateTaskToStorage( const DISPATCHID nDispatchID, CTaskString& szTaskIn )
 {
-	//Direct return?
-	return S_OK;
-
 	// 分析消息
 	ST_TASKUPDATE updateInfo;
 	updateInfo.FromString(szTaskIn);
@@ -121,7 +119,7 @@ HRESULT EMB::CEMBStorageMem::UpdateTaskToStorage( const DISPATCHID nDispatchID, 
 		ASSERT(FALSE);
 	}
 	
-
+	return S_OK;
 
 }
 
@@ -308,14 +306,16 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 		{
 			// 将任务移植到日志表中
 			strSQL = "insert into t_EMBTaskLog(strTaskID,nState,Remark) values('";
-			strSQL += Guid2String(updateInfo.guid);
+			strSQL += Guid2String(guid);
 			strSQL += "',";
 
-			strSQL += embtaskstate_finished;
+			char cNum[5];
+			ltoa(embtaskstate_finished,cNum,10);
+			strSQL += cNum;
 			strSQL += ",'";
 
 			strSQL += "成功";
-			strSQL += "'";
+			strSQL += "')";
 
 			if(!dbCtrl.ExecuteSQL(strSQL))
 			{
@@ -323,73 +323,326 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
 			}
 
-			// 从任务列表中删除
+// 			// 从任务列表中删除
+// 
+// 			strSQL =  "delete from t_EMBTask where strTaskID='";
+// 			strSQL += Guid2String(updateInfo.guid);
+// 			strSQL += "'";
+// 
 
+			strSQL = "update t_EMBTask set nState= ";
+			CTxStrConvert conval(embtaskstate_finished);
+			strSQL +=conval.GetAsString();
+			strSQL +=" where strTaskID='";
+			strSQL += Guid2String(guid);
+			strSQL += "'";
+
+			if(!dbCtrl.ExecuteSQL(strSQL))
+			{
+				CFWriteLog(LOGKEY_TASKSTORAGE,"删除数据库表信息失败， SQL语句失败!");
+				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+			}
 		}
 		else if (nEndState == embtaskstate_error)
 		{
 			//if retry time not max,reset task;
 			//else remove from all map;
-			ASSERT(FALSE);
-			MAPTASKASSIGNED::iterator itDispath = m_mapAssigned.find(nDispatchID);
-			if (itDispath != m_mapAssigned.end())
+			strSQL = "select nRetry from t_EMBTask where strTaskID='";
+			strSQL += Guid2String(guid);
+			strSQL += "'";
+
+			if(dbCtrl.OpenRecordset(strSQL))
 			{
-				itDispath->second.erase(guid);
+				if(dbCtrl.GetCount() > 0)
+				{
+					long nRetry = 0;
+					dbCtrl.GetSpecialValue("nRetry",&nRetry);
+					if(nRetry > 0)
+					{
+						nRetry--;
+						dbCtrl.SetSpecialValue("nRetry",nRetry);
+						//将任务状态重置为0
+						strSQL = "update t_EMBTask set nState=0 where strTaskID='";
+						strSQL += Guid2String(guid);
+						strSQL += "'";
+
+					}
+					else
+					{
+						// 将任务移植到日志表中
+						strSQL = "insert into t_EMBTaskLog(strTaskID,nState,Remark) values('";
+						strSQL += Guid2String(guid);
+						strSQL += "',";
+
+						char cNum[5];
+						ltoa(embtaskstate_error,cNum,10);
+						strSQL += cNum;
+						strSQL += ",'";
+
+						strSQL += "失败";
+						strSQL += "')";
+
+						if(!dbCtrl.ExecuteSQL(strSQL))
+						{
+							CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
+							CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+						}
+
+						strSQL = "update t_EMBTask set nState= ";
+						CTxStrConvert conval(embtaskstate_error);
+						strSQL +=conval.GetAsString();
+						strSQL +=" where strTaskID='";
+						strSQL += Guid2String(guid);
+						strSQL += "'";
+// 						strSQL = "delete from t_EMBTask where strTaskID='";
+// 						strSQL += Guid2String(guid);
+// 						strSQL += "'";
+					}
+
+					if(!strSQL.IsEmpty())
+					{
+						if (!dbCtrl.ExecuteSQL(strSQL))
+						{
+							CFWriteLog(LOGKEY_TASKSTORAGE,"处理失败任务失败， SQL语句失败!");
+							CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+						}
+					}
+				}
 			}
 
-			MAPMEMTASKPOOL::iterator itf = m_mapTaskPool.find(guid);
-			if (itf != m_mapTaskPool.end())
-			{
-				ST_TASKSAVEDATA& sdata = itf->second;
-				if (itf->second.nRetry > m_nMaxRetry)
-				{
-					//eraase it 
-					m_mapTaskPool.erase(itf);
-				}
-				else
-				{
-					sdata.nRetry++;
-					//add to not assign list
-					ST_TASKPRIKEY prikey;
-					prikey.guid = guid;
-					prikey.nPriority = sdata.basic.nPriority;
-					prikey.stSubmit = sdata.stSubmit;
-					m_mapNotAssigned[prikey] = guid;
-				}
-			}
-
+			dbCtrl.CloseRecordset();
 		}
 	}
 	else if (updateInfo.nUpdateType == embtaskupdatetype_del)
 	{
 		//如果是删除操作
-		//to be add...
-		ASSERT(FALSE);
+		strSQL = "delete from t_EMBTask where strTaskID='";
+		strSQL += Guid2String(guid);
+		strSQL += "'";
+
+		if(!dbCtrl.ExecuteSQL(strSQL))
+		{
+			CFWriteLog(LOGKEY_TASKSTORAGE,"删除任务失败， SQL语句失败!");
+			CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+		}
+	}
+	else if (updateInfo.nUpdateType == embtaskupdatetype_change)
+	{
+		// 调整数组大小为20
+		char cNum[20];
+		memset(cNum, 0, sizeof(cNum));
+		// 重置任务状态
+		itoa(updateInfo.data_pri.nPriority,cNum,10);
+		strSQL = "update T_EMBTask set nPRI = ";
+		strSQL += cNum;
+		strSQL += ",";
+
+		itoa(updateInfo.data_end.dispatchid,cNum,10);
+		strSQL += "nDispatchID=";
+		strSQL += cNum;
+		strSQL += ",";
+
+		itoa(updateInfo.data_end.actorid,cNum,10);
+		strSQL += "nActorID=";
+		strSQL += cNum;
+
+		strSQL += " where strTaskID='";
+		strSQL += updateInfo.strTaskID;
+		strSQL += "'";
+
+		if(!dbCtrl.ExecuteSQL(strSQL))
+		{
+			CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储执行SQL语句失败!");
+			CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+
+			dbCtrl.CloseDB();
+			return S_FALSE;
+		}
 	}
 	else
 	{
 		ASSERT(FALSE);
 	}
 
+	dbCtrl.CloseDB();
+
 	return S_OK;
 }
-
-HRESULT EMB::CEMBStorageDB::FetchTaskFromStorage( const DISPATCHID nDispatchID, int nDesiredNum, VECTASKS& vTasks )
+HRESULT EMB::CEMBStorageDB::FetchTaskFromStorage( const DISPATCHID nDispatchID, int nMinPriority, int nDesiredNum, VECTASKS& vTasks )
 {
+	long nSize = 0;
+	CString strTaskID = "";
+	CString strXml = "";
+	CString strSQL = "";
+	char cNum[5];
+
+	CAutoLock lock(&m_csPoolLock);
+	
+	CADOCtrl dbCtrl;
+	dbCtrl.SetODBCDatabase(m_strDBCon);
+	if(!dbCtrl.OpenDB())
+	{
+		CFWriteLog(0, TEXT("Manager DB Connect Error ,ConnectString : %s"),m_strDBCon);
+		return FALSE;
+	}
+
+	
+
+	strSQL = "select * from t_EMBTask where (nState = 0) and (nDispatchID) (nPRI > ";
+	itoa(nMinPriority,cNum,10);
+	strSQL += cNum;
+	
+	strSQL += ") order by nPRI,tSubmitTime desc";
+	if(dbCtrl.OpenRecordset(strSQL))
+	{
+		nSize = dbCtrl.GetCount();
+
+		if(nSize > 0)
+		{
+			if(nSize < nDesiredNum)
+				nDesiredNum = nSize;
+
+			dbCtrl.MoveFirst();
+			for(int i = 0 ; i < nDesiredNum ; i++)
+			{
+				// 添加任务
+				dbCtrl.GetSpecialValue("strTaskID",&strTaskID);
+				dbCtrl.GetSpecialValue("strExtendInfoXml",&strXml);
+				vTasks.push_back(strXml);
+
+				// 置状态为正在运行
+				dbCtrl.SetSpecialValue("nState",1);
+				dbCtrl.SetSpecialValue("nDispatchID",nDispatchID);
+
+				dbCtrl.MoveNext();
+			}
+		}
+	}
+
+	dbCtrl.CloseRecordset();
+	dbCtrl.CloseDB();
 	return S_OK;
 }
 
 HRESULT EMB::CEMBStorageDB::SubmitTask( const CTaskString& szTaskIn, CTaskString& szRet )
 {
+	CString strSQL = "";
+	char cNum[5];
+	CAutoLock lock(&m_csPoolLock);
+
+	CADOCtrl dbCtrl;
+	dbCtrl.SetODBCDatabase(m_strDBCon);
+	if(!dbCtrl.OpenDB())
+	{
+		return FALSE;
+	}
+
+	ST_TASKSAVEDATA sdata;
+	GetTaskBasicInfo(szTaskIn, sdata.basic);
+	if (!sdata.basic.strGuid.IsEmpty())
+	{
+		strSQL = "insert into t_EMBTask(strTaskID,strTaskKind,nPRI,tSubmitTime,nState,nRetry,strExtendInfoXml) values('";
+
+		strSQL += sdata.basic.strGuid;
+		strSQL += "','";
+
+		strSQL += GetTaskKind(sdata);
+		strSQL += "',";
+
+		itoa(sdata.basic.nPriority,cNum,10);
+		strSQL += ",'";
+
+		strSQL += Timet2CString(sdata.basic.tmSubmit);
+		strSQL += "',";
+
+		strSQL += "0,3,'";
+
+		strSQL += szTaskIn;
+		strSQL += "')";
+
+		if(!dbCtrl.ExecuteSQL(strSQL))
+		{
+			CFWriteLog(LOGKEY_TASKSTORAGE,"Submit Task Error， SQL:");
+			CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+		}
+	}
+	else
+	{
+		dbCtrl.CloseDB();
+		return S_FALSE;
+	}
+
+	dbCtrl.CloseDB();
 	return S_OK;
 }
 
 HRESULT EMB::CEMBStorageDB::GetDispatchedTaskFromStorage( const DISPATCHID nDispatchID, VECTASKS& vTasks )
 {
+	CString strSQL = "";
+	CString strXml = "";
+	char cNum[5];
+	CAutoLock lock(&m_csPoolLock);
+
+	CADOCtrl dbCtrl;
+	dbCtrl.SetODBCDatabase(m_strDBCon);
+	if(!dbCtrl.OpenDB())
+	{
+		return FALSE;
+	}
+
+	itoa(nDispatchID,cNum,10);
+	/*strSQL = "select * from t_EMBTask where nDispatchID = ";
+	strSQL += cNum;*/
+	// 取 nState !=3 的任务(not finished task) 
+	strSQL.Format("select * from t_EMBTask where nDispatchID = %s and nState <> %d and nState <> %d", cNum, embtaskstate_finished, embtaskstate_error);
+
+	if(dbCtrl.OpenRecordset(strSQL))
+	{
+		if(dbCtrl.GetCount() > 0)
+		{
+			dbCtrl.MoveFirst();
+			do 
+			{
+				dbCtrl.GetSpecialValue("strExtendInfoXml",&strXml);
+				vTasks.push_back(strXml);
+
+				dbCtrl.MoveNext();
+			} while (!dbCtrl.IsEnd());
+		}
+	}
+
+	dbCtrl.CloseRecordset();
+	dbCtrl.CloseDB();
+
 	return S_OK;
 }
 
 void EMB::CEMBStorageDB::SetDBConnectString(CString strDBCon)
 {
 	m_strDBCon = strDBCon;
+}
+
+CString EMB::CEMBStorageDB::GetTaskKind(ST_TASKSAVEDATA taskInfo)
+{
+	return "15";
+}
+
+CString EMB::CEMBStorageDB::Timet2CString(time_t tm)
+{
+	struct tm *local;
+	CString stime;
+	int nYear, nMonth, nDate, nHour, nMin, nSec;
+
+	local = localtime(&tm);
+	nYear = local->tm_year + 1900;
+	nMonth = local->tm_mon + 1;
+	nDate = local->tm_mday;
+	nHour = local->tm_hour;
+	nMin = local->tm_min;
+	nSec = local->tm_sec;
+
+	CTime ptime(nYear, nMonth, nDate, nHour, nMin, nSec);
+	stime = ptime.Format("%Y-%m-%d %H:%M:%S");
+
+	return stime;
 }

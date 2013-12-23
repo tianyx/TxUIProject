@@ -151,3 +151,18 @@ HCURSOR CEMBClientDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+HRESULT CEMBClientDlg::OnMessage(int nMaster, CString& strMsg, CString& strRet )
+{
+	return S_OK;
+}
+
+HRESULT CEMBClientDlg::OnConnStateChange( int nMaster, int nStateIn )
+{
+	if (nMaster == embSvrType_master)
+	{
+		CAutoLock lcok(&m_csLive);
+	}
+
+	return S_OK;
+}
+

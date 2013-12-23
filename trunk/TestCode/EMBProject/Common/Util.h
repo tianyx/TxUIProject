@@ -8,6 +8,9 @@
 
 #pragma once
 #include "Markup.h"
+#include "EmbStructDef.h"
+#include "EMBDocDef.h"
+
 
 // 释放指针
 #define PTRDELETE(ptr)	\
@@ -26,9 +29,10 @@ public:
 public:
 	/*
     Description：提交任务
-	Input：		strFileName 文件名 strXmlContent 文件内容
+	Input：		strFileName 文件名 tskReport 任务信息
 	Return:		true 成功; 
 	History：
 	*/
-	static bool SaveXmlFile(const CString& strFileName, const CString& strXmlContent);
+	static bool XmlFileAppend(const CString& strFileName, ST_TASKREPORT& tskReport);
+	static bool QueryXmlFile(const CString& strFileName, const CString& strTaskGuid, ST_TASKREPORT& tskInfor );
 };

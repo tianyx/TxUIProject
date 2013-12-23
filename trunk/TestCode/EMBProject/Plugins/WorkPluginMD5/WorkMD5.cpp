@@ -158,8 +158,18 @@ BOOL EMB::CWorkMD5::RunTaskLoop()
 
 		if(WriteMD5File(strRetMD5, m_taskInfo.strFileToWriteResult))
 		{
-			report.code = S_OK;
-			report.nPercent = 100;
+			if (!m_taskInfo.strMD5Compare.IsEmpty()
+				&& m_taskInfo.strMD5Compare.Compare(strRetMD5) != 0)
+			{
+					//md5 not match!!!
+					report.code = EMBERR_NOTMATCH;
+					CFWriteLog(0, TEXT("calc md5 not match with orgin md5, file =%s comp =%s, cal =%s"), m_taskInfo.strFileToCheck, m_taskInfo.strMD5Compare, strRetMD5);
+			}
+			else
+			{
+				report.code = S_OK;
+				report.nPercent = 100;
+			}
 		}
 		else
 		{

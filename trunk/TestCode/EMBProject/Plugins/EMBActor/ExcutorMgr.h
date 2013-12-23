@@ -46,11 +46,24 @@ public:
 	EXCUTORID CreateNewExcutor();
 	BOOL StopExcutor(const EXCUTORID guidIn);
 	//interface for IExcutorMgrInterface
+	// 向Executor发送任务消息
 	virtual HRESULT SendToExcutor(const EXCUTORID excutorId,CString& szInfo);
 private:
 	//HRESULT SendMessageToExcutor(const EXCUTORID guid, WPARAM wParam, LPARAM lParam);
+	/*
+    Description：查询可用的Executor
+	Input：		
+	Return:		Executor标识  INVALID_ID: 无可用的Executor.exe
+	History：
+	*/
 	EXCUTORID GetFirstNotUsedExcutorId();
 	HRESULT CheckExcutor();
+	/*
+    Description：启动Executor.exe
+	Input：		excId Executor.exe编号，dwProcessId 进程标识
+	Return:		TRUE 成功
+	History：
+	*/
 	BOOL LaunchExcutorFile(const EXCUTORID excId, DWORD& dwProcessId);
 public:
 	/*
@@ -79,7 +92,9 @@ public:
 	HANDLE CreateExchangemapping(EXCUTORID excId);
 
 	HRESULT GetExecutors(vector<ST_EXCUTORINFO>& vExecutor);
-
+	HRESULT SetExecutorState( EXCUTORID id, EXE_STATE eState );
+	bool QueryExecutor(const EXCUTORID& id, ST_EXCUTORINFO& infor);
+	int GetExcResUsage();
 public:
 	HWND m_hMessageWnd;
 

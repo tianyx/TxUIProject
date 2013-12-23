@@ -151,13 +151,16 @@ public:
 	//*Input Param: see GetElemVal
 	//*Return Param: 
 	//*History: 
-	BOOL SetElemVal(LPCTSTR szKey, CTxStrConvert& valIn);
+	BOOL SetElemValRef(LPCTSTR szKey, CTxStrConvert& valIn);
+	BOOL SetElemVal(LPCTSTR szKey, CTxStrConvert valIn){return SetElemValRef(szKey, valIn);}
+
 
 	//*Description: set node attribrate value
 	//*Input Param: see GetElemVal
 	//*Return Param: 
 	//*History: 
-	BOOL SetAttribVal(LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrConvert& valIn );
+	BOOL SetAttribValRef(LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrConvert& valIn );
+	BOOL SetAttribVal(LPCTSTR szKey, LPCTSTR szAttribKey, CTxStrConvert valIn ){return SetAttribValRef(szKey, szAttribKey, valIn);}
 
 	
 	//*Description: return the sub xml string of a node

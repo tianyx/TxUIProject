@@ -33,6 +33,12 @@
 #define EMBERR_WORKERBUSY	0x800A000B
 #define EMBERR_FILEACCESS	0x800A000C
 #define EMBERR_TASKSUBMIT	0x800A000D		// 任务提交失败：xml格式不正确
+#define EMBERR_NOTMATCH		0x800A000E
+#define EMBERR_DBOPEN		0x800A000F
+#define EMBERR_SQLEXEC		0x800A0010
+#define EMBERR_NOTFOUND		0x800A0011
+
+
 
 //////////////////////////////////////////////////////////////////////////
 //TCP消息类型
@@ -47,6 +53,9 @@
 #define embmsgtype_ExcutorToActorMsg	15
 #define embmsgtype_ActorToExcutorMsg	16
 #define embmsgtype_DispatchToActorMsg	17
+#define embmsgtype_UIClientToUIServerMsg	18
+#define embmsgtype_UIServerToUIClientMsg	19
+
 #define embmsgtype_max					100
 //XML消息类型
 #define embxmltype_none				0
@@ -59,13 +68,18 @@
 #define embxmltype_svrActive		7
 #define embxmltype_excOnIdle		8
 
+#define embxmltype_svrInfo		21
+#define embxmltype_actorList	22
+#define embxmltype_taskList		23
+#define embxmltype_taskRunState	24
+
 
 
 //////////////////////////////////////////////////////////////////////////
 #define embtaskupdatetype_none		0
 #define embtaskupdatetype_finish	1
 #define embtaskupdatetype_del		2
-#define mebtaskupdatetype_changepri	3
+#define embtaskupdatetype_change	3
 //////////////////////////////////////////////////////////////////////////
 //任务执行状态
 #define embtaskstate_none			-1
@@ -107,6 +121,13 @@
 #define embStorageType_db	1
 //////////////////////////////////////////////////////////////////////////
 #define embTaskproberType_tcp 1
+
+//////////////////////////////////////////////////////////////////////////
+#define  embUIProberType_tcp 1
+//////////////////////////////////////////////////////////////////////////
+
+#define embDBTypeSql	1
+#define embDBTypeOracle	2
 
 #define MSG_EMBMSGMIN	WM_USER +1700
 #define MSG_EMBTOEXCUTORMSG WM_USER+1888

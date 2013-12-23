@@ -8,6 +8,8 @@
 
 #pragma once
 #include "TxParamString.h"
+#include "Markup.h"
+#include "SystemResourceInfo.h"
 
 interface IXmlMeta
 {
@@ -171,4 +173,22 @@ public:
 public:
 	CCommonRequest	m_request;
 	CTaskInfo		m_taskInfo;
+};
+
+// edoc_main 
+class CEdocMain : public IXmlMeta
+{
+public:
+	CEdocMain();
+	~CEdocMain();
+
+	virtual CString ToXml();
+	virtual BOOL    ToMeta(const CString& strXml, const CString& strPath);
+
+public: 
+	CString m_strVer;
+	int		m_nType;
+	CString m_strGuid;
+
+	vector<CSystemResourceInfo> m_arrSysRes;
 };

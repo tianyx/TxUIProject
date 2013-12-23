@@ -32,7 +32,8 @@ enum ENUM_PLUGINTYPE
 	PluginType_ActorManager		= 0x8,
 	PluginType_Actor			= 0x10,
 	PluginType_Storage			= 0x20,
-	PluginType_Wroker			=0x40
+	PluginType_Wroker			= 0x40,
+	PluginType_UIServer			= 0x80,
 };
 
 enum ENUM_SUBTYPE
@@ -42,7 +43,9 @@ enum ENUM_SUBTYPE
 	SubType_FileCodec	= 2,
 	SubType_MediaCheck	= 4,
 	SubType_MD5Check	= 8,
-	SubType_WorkSample	=16,
+	SubType_WorkSample	= 16,
+	SubType_DBWriter	= 32,
+	SubType_MCResultMerge	= 64,
 
 };
 
@@ -52,6 +55,7 @@ interface ITxUnkown
 {
 	int m_nRef;
 	ITxUnkown():m_nRef(0){}
+	virtual ~ITxUnkown(){}
 	virtual void AddRef()
 	{
 		++m_nRef;
@@ -199,6 +203,26 @@ interface IPluginStorageInterface:virtual public ITxUnkown
 interface IActorUI : virtual public ITxUnkown
 {
 	virtual HRESULT GetExecutors(vector<CString>& vExecutor) = 0;
+	virtual HRESULT GetTaskInActor(vector<CString>& vTask) = 0;
+};
+
+//to implement this interface for process UI call
+interface IUIMessageProcessInterface : virtual public ITxUnkown
+{
+	virtual HRESULT OnUIMessage(CTaskString& strMsg, CTaskString& szRet) = 0;
+};
+
+
+//
+interface IDispatchNotifyCallbackInterface
+{
+	virtual HRESULT OnDispatchNotify(CTaskString& strNotify) = 0;
+};
+
+interface IDispatchNotifyRegisterInterface: virtual public ITxUnkown
+{
+	virtual HRESULT RegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier) = 0;
+	virtual HRESULT UnRegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier) = 0;
 };
 
 

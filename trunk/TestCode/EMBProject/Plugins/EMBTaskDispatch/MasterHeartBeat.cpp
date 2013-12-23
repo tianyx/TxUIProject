@@ -4,6 +4,7 @@
 CMasterHeartBeat::CMasterHeartBeat(void)
 {
 	m_pLastSock = NULL;
+	m_pSvrLiveCallback = NULL;
 }
 
 CMasterHeartBeat::~CMasterHeartBeat(void)
@@ -24,13 +25,7 @@ HRESULT CMasterHeartBeat::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType
 {
 	HRESULT hr = S_OK;
 	int nLen = 0;
-
-	if(m_pIRemoteCallInterface == NULL)
-	{
-		ASSERT(FALSE);
-		return E_NOINTERFACE;
-	}
-
+	
 	int nRetUsed = 0;
 	char buffer[MAXRECVBUFF];
 
@@ -45,6 +40,7 @@ HRESULT CMasterHeartBeat::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType
 		OnLiveMsgIn(msgIn);
 		//get live info
 		FillLivePack(msgIn);
+		msgIn.nMsgState = msgState_A;
 		int nChUsed = 0;
 		HRESULT hr = PackMBCMsg(msgIn,  buffer, MAXRECVBUFF, nRetUsed);
 
@@ -116,7 +112,8 @@ HRESULT CMasterHeartBeat::GetRemoteSvrState( ST_SVRLIVEINFO& infoOut )
 {
 	infoOut = m_RemoteInfo;
 	infoOut.nConnState = embConnState_error;
-	if (m_pLastSock && m_mapSockIns.find(m_pLastSock)== m_mapSockIns.end())
+	CAutoLock lock(&m_csSockIn);
+	if (m_pLastSock && m_mapSockIns.find(m_pLastSock)!= m_mapSockIns.end())
 	{
 		infoOut.nConnState =(m_pLastSock->GetState() == MBCSOCKSTATE_OK)? embConnState_ok:embConnState_error;
 	}

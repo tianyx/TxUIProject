@@ -16,7 +16,7 @@
 #endif
 
 #include "resource.h"		// 主符号
-
+#include "MiniDump.h"
 
 // CEMBServerApp:
 // 有关此类的实现，请参阅 EMBServer.cpp
@@ -35,6 +35,8 @@ public:
 
 	DECLARE_MESSAGE_MAP()
 	virtual int ExitInstance();
+protected:
+	CMiniDump m_dump;
 };
 
 extern CEMBServerApp theApp;

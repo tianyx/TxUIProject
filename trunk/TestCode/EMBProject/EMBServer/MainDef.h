@@ -14,6 +14,11 @@
 #include "EmbStructDef.h"
 using namespace std;
 
+#define pluginSerialID_TaskRiser	0
+#define pluginSerialID_TaskStorage	1
+#define pluginSerialID_TaskDispatch	2
+#define pluginSerialID_UIServer		3
+
 //全局信息存储结构体
 struct ST_GLOBAL
 {

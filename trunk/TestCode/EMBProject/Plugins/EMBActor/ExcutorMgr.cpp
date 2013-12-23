@@ -35,7 +35,7 @@ BOOL RegisterExcMgrWnd()
 	if ( 0== RegisterClassEx (&wndclassex))
 	{
 		HRESULT hr = GetLastError();
-		ASSERT(FALSE);
+		ASSERT(hr == 0x00000582);
 
 	}
 
@@ -129,9 +129,9 @@ DWORD __stdcall MsgPoolCheckProc(LPVOID lparam)
 CExcutorMgr* CExcutorMgr::m_spExcMgr = NULL;
 CExcutorMgr::CExcutorMgr(void)
 {
-	nfgExcutorLaunchTimeout = 10;
+	nfgExcutorLaunchTimeout = 30;
 #ifdef _DEBUG
-	nfgExcutorLaunchTimeout = 9999;
+	nfgExcutorLaunchTimeout = 30;
 
 #endif // _DEBUG
 
@@ -210,8 +210,10 @@ HRESULT CExcutorMgr::OnExcutorMessage( ST_EMBWNDMSG& msgIn)
 			{
 				CloseHandle(itf->second.hmemMap);
 			}
+			// m_mapExcutors 删除对应的信息
+			m_mapExcutors.erase(itf);
+			CFWriteLog(0, TEXT("remove executor: %d infor from m_mapExcutors"), excId);
 		}
-		
 	}
 	return S_OK;
 }
@@ -316,33 +318,60 @@ HRESULT CExcutorMgr::Stop()
 
 EXCUTORID CExcutorMgr::GetFirstNotUsedExcutorId()
 {
-	EXCUTORID nRet;
+	EXCUTORID nRet = INVALID_ID;
+
 	if (m_mapExcutors.size() == 0)
 	{
 		nRet = m_nMinExcutorId;
 	}
 	else
 	{
-		MAPEXCUTORS::reverse_iterator itrb =m_mapExcutors.rbegin(); 
-		if (itrb->first != m_nMaxExcutorId)
+		// m_mapExcutors 查询空闲的Executor
+// 		MAPEXCUTORS::iterator itor = m_mapExcutors.begin();
+// 		for(; itor != m_mapExcutors.end(); ++itor)
+// 		{
+// 			if (EXE_IDLE == itor->second.m_eState )
+// 			{
+// 				nRet = itor->first; // idle executor
+// 				break;
+// 			}
+// 		}
+
+		// 若没有查询到空闲Executor
+		if (INVALID_ID == nRet && m_mapExcutors.size() < (m_nMaxExcutorId - m_nMinExcutorId + 1))
 		{
-			nRet = itrb->first+1;
-		}
-		else
-		{
-			//find first idle excutor
-			for (EXCUTORID i = m_nMinExcutorId; i <= m_nMaxExcutorId; ++i)
+			for(EXCUTORID id = m_nMinExcutorId; id <= m_nMaxExcutorId; ++id)
 			{
-				if (m_mapExcutors.find(i) == m_mapExcutors.end())
+				MAPEXCUTORS::iterator findItor = m_mapExcutors.find(id);
+
+				if (findItor == m_mapExcutors.end()) // id 号未使用
 				{
-					nRet= i;
+					nRet = id;
+					break;
 				}
 			}
 		}
+
+		//------------------------------------------------------------------
+		//MAPEXCUTORS::reverse_iterator itrb = m_mapExcutors.rbegin(); 
+		//if (itrb->first != m_nMaxExcutorId)
+		//{
+		//	nRet = itrb->first+1;
+		//}
+		//else
+		//{
+		//	//find first idle excutor
+		//	for (EXCUTORID i = m_nMinExcutorId; i <= m_nMaxExcutorId; ++i)
+		//	{
+		//		if (m_mapExcutors.find(i) == m_mapExcutors.end())
+		//		{
+		//			nRet= i;
+		//		}
+		//	}
+		//}
 	}
 
 	return nRet;
-	
 }
 
 
@@ -354,12 +383,14 @@ EXCUTORID CExcutorMgr::CreateNewExcutor()
 	//
 	if (excId != INVALID_ID)
 	{
-		//
-		CAutoLock lock(&m_csExcutors);
-		ST_EXCUTORINFO excInfo;
-		excInfo.excutorId = excId;
-		excInfo.hmemMap = CreateExchangemapping(excId);
-		m_mapExcutors[excId] = excInfo;
+		MAPEXCUTORS::iterator itor = m_mapExcutors.find(excId);
+		if (itor == m_mapExcutors.end()) // 不存在于m_mapExcutors
+		{
+			ST_EXCUTORINFO excInfo;
+			excInfo.excutorId = excId;
+			excInfo.hmemMap = CreateExchangemapping(excId);
+			m_mapExcutors[excId] = excInfo;
+		}
 	}
 	
 	return excId;
@@ -399,6 +430,7 @@ HRESULT CExcutorMgr::CheckExcutor()
 					ASSERT(FALSE);
 					vToRemove.push_back(itb->first);
 				}
+				excInfo.m_eState = EXE_RUN; // 置为运行
 				excInfo.tmLastcheck = time(NULL);
 			}
 			else
@@ -423,8 +455,6 @@ HRESULT CExcutorMgr::CheckExcutor()
 						}
 						vToRemove.push_back(itb->first);
 					}
-					
-					
 				}
 				else
 				{
@@ -443,6 +473,7 @@ HRESULT CExcutorMgr::CheckExcutor()
 			{
 				m_pIExcCallBack->OnExcutorExit(vToRemove[i]);
 				CAutoLock lock(&m_csExcutors);
+				CFWriteLog(0, TEXT("executor%d lost!"), vToRemove[i]);
 				m_mapExcutors.erase(vToRemove[i]);
 			}
 		}
@@ -523,6 +554,16 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 		}
 	}
 
+	// Executor 是否在运行?
+	ST_EXCUTORINFO infor;
+	if (QueryExecutor(excId, infor) && ::IsWindow(infor.hwnd)) // 在运行
+	{
+		// 向 Executor 发送  MSG_EMBEXCUTORREGED
+		::SendMessage(infor.hwnd, MSG_EMBEXCUTORREGED, 1,0);
+
+		return TRUE;
+	}
+	// -----------------------------------------------------------------
 
 	//run it
 	BOOL bRet = FALSE;
@@ -537,16 +578,6 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 	strRunStr += TEXT("\"");
 	if (_access(strExcExePath, 04) != -1)
 	{
-		//
-// 		HINSTANCE hIns = ShellExecute(NULL, 0, strExcExePath, strRunStr, NULL, SW_SHOW);
-// 		if ((int)hIns <=32)
-// 		{
-// 			ASSERT(FALSE);
-// 		}
-// 		else
-// 		{
-// 			bRet = TRUE;
-// 		}
 		STARTUPINFO si;
 		PROCESS_INFORMATION pi;
 
@@ -729,7 +760,7 @@ HANDLE CExcutorMgr::CreateExchangemapping( EXCUTORID excId )
 	}
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		ASSERT(FALSE);
+		//ASSERT(FALSE);
 	}
 	return hRecvMap;
 }
@@ -788,4 +819,40 @@ HRESULT CExcutorMgr::GetExecutors( vector<ST_EXCUTORINFO>& vExecutor )
 	}
 
 	return S_OK;
+}
+
+HRESULT CExcutorMgr::SetExecutorState( EXCUTORID id, EXE_STATE eState )
+{
+	CAutoLock lock(&m_csExcutors);
+
+	MAPEXCUTORS::iterator itor = m_mapExcutors.find(id);
+
+	if (itor != m_mapExcutors.end())
+	{
+		itor->second.m_eState = eState;
+	}
+
+	return S_OK;
+}
+
+bool CExcutorMgr::QueryExecutor( const EXCUTORID& id, ST_EXCUTORINFO& infor )
+{
+	CAutoLock lock(&m_csExcutors);
+
+	MAPEXCUTORS::iterator itor = m_mapExcutors.find(id);
+	bool ok = false;
+
+	if (itor != m_mapExcutors.end())
+	{
+		infor = itor->second;
+		ok = true;
+	}
+
+	return ok;
+}
+
+int CExcutorMgr::GetExcResUsage()
+{
+	CAutoLock lock(&m_csExcutors);
+	return ((int)m_mapExcutors.size()*100/(m_nMaxExcutorId - m_nMinExcutorId+1));
 }

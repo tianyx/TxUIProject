@@ -28,7 +28,14 @@ private:
 	Return:		
 	History£∫
 	*/
-	void GetExecutors(CArray<tagExecutorProcess, tagExecutorProcess>& m_arrExecutors); 
+	void GetExecutors(CArray<tagExecutorProcess, tagExecutorProcess>& arrExecutors, CArray<ST_TASKRUNSTATE, ST_TASKRUNSTATE>& arrTask); 
+
+	// ≤‚ ‘
+	CString m_strVideoPath;
+	CString m_strXmlTemplate;
+	CArray<CString, CString> m_arrVideo;
+	int m_nIdx;
+	// ------------
 
 //  µœ÷
 protected:
@@ -39,6 +46,8 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
+	//test
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnDestroy();
@@ -46,4 +55,6 @@ public:
 	afx_msg void OnBnClickedButtonRefresh();
 	afx_msg void OnClose();
 	afx_msg void OnBnClickedLuanchexec();
+	CListCtrl m_lstTask;
+	afx_msg void OnBnClickedButtonAutotest();
 };

@@ -111,17 +111,17 @@ BOOL EMB::CWorkSample::RunTaskLoop()
 {
 	//
 	CFWriteLog(NULL, TEXT("work started!!....."));
-	for (size_t i = 0; i <= 10; ++i)
+	for (size_t i = 0; i <= 100; ++i)
 	{
 		Sleep(1000);
-		m_nPercent = i*10;
+		m_nPercent = i;
 		if (m_pReportCallback)
 		{
 			CString strReport;
 			ST_WORKERREPORT report;
 			report.nPercent = m_nPercent;
 			report.ToString(strReport);
-			m_pReportCallback->OnDllReportTaskProgress(strReport);
+			//m_pReportCallback->OnDllReportTaskProgress(strReport);
 		}
 	}
 	

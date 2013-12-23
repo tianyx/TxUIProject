@@ -8,6 +8,7 @@
 #include "EmbStructDef.h"
 using namespace EMB;
 #define MAXACTORPALOAD 0x00FFFFFF
+#define ACTORSTATETIMEOUT 10
 //////////////////////////////////////////////////////////////////////////
 /*
 *Description：任务分配线程
@@ -66,16 +67,19 @@ CTaskDispatchMgr::CTaskDispatchMgr(void)
 	nfgTaskLostTimeOutMax = 60;
 
 	nfgActorLostTimeOutMax = 30;
-	nfgActorCheckInterval = 10;
-
+	nfgActorCheckInterval = 8;
+	nfgActorStateOutdate = 10;
+	nfgActorAssignTaskCD = 10;
 
 	nfgCpuWeight = 1;
 	nfgMemWeight = 1;
-	nfgDiskWeight =0;
+	nfgDiskIOWeight =1;
+	nfgNetIOWeight = 0;
 
-	nfgMaxActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskWeight)*4/5;
-	nfgLowActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskWeight)/5;
+	nfgMaxActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskIOWeight +nfgNetIOWeight)*4/5;
+	nfgLowActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskIOWeight +nfgNetIOWeight)/5;
 
+	m_FreeActorIds.RemoveAll();
 }
 
 CTaskDispatchMgr::~CTaskDispatchMgr(void)
@@ -188,15 +192,6 @@ HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 {
 	Stop_Plugin();
 
-	// 启动任务分配线程
-	m_bCheckBackSvr = TRUE;
-	m_hThdCheck = CreateThread(NULL, 0, TDCheckProc,  (LPVOID)this, 0, 0);
-	ASSERT(m_hThdCheck);
-
-	// 启动主备监听线程
-	m_hThdFtask = CreateThread(NULL, 0, TDFTaskProc, (LPVOID)this, 0, 0);
-	ASSERT(m_hThdFtask);
-
 	SOCKADDR_IN addrHolder;
 	addrHolder = GetAddrFromStr(m_config.strIpActorHolder);
 	SOCKADDR_IN addrMaster;
@@ -217,19 +212,32 @@ HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 	CMBCBaseObj* pRemote = NULL;
 	if(m_nMaster == embSvrType_master)
 	{
-		pRemote = new CMasterHeartBeat;
+		CMasterHeartBeat* pObj = new CMasterHeartBeat;
+		pObj->SetLiveCallback(this);
+		pRemote = pObj;
 		pRemote->SetScokAddr(&addrMaster, &addrMaster);
 
 	}
 	else
 	{
-		pRemote = new CSlaveHeartBeat;
+		CSlaveHeartBeat* pObj = new CSlaveHeartBeat;
+		pObj->SetLiveCallback(this);
+		pRemote = pObj;
 		pRemote->SetScokAddr(&addrMaster, &addrLocal);
 	}
 	pRemote->Run();
 	ASSERT(m_pIbackSvr == NULL);
 	m_pIbackSvr = dynamic_cast<IRemoteSvrLiveInterface*>(pRemote) ;
 	ASSERT(m_pIbackSvr);
+
+	// 启动任务分配线程
+	m_bCheckBackSvr = TRUE;
+	m_hThdCheck = CreateThread(NULL, 0, TDCheckProc,  (LPVOID)this, 0, 0);
+	ASSERT(m_hThdCheck);
+
+	// 启动主备监听线程
+	m_hThdFtask = CreateThread(NULL, 0, TDFTaskProc, (LPVOID)this, 0, 0);
+	ASSERT(m_hThdFtask);
 
 	if (m_hThdCheck && m_hThdFtask)
 	{
@@ -324,6 +332,7 @@ HRESULT EMB::CTaskDispatchMgr::SubmitTask( const CTaskString& szTaskIn, CTaskStr
 	{
 		hr = EMBERR_INVALIDARG;
 		ASSERT(FALSE);
+		CFWriteLog(0, TEXT("task format error: %s"), szTaskIn);
 		return hr;
 	}
 	time_t tmNow = time(NULL);
@@ -448,8 +457,9 @@ HRESULT EMB::CTaskDispatchMgr::OnActorConnect( const ACTORID& szActorGuid )
 	CAutoLock lock(&m_csCacheDisActor);
 	ST_ACTORSTATE actState;
 	actState.actorId = szActorGuid;
-	actState.tmLastCheck = time(NULL);
-	actState.tmLastReport = time(NULL);
+	actState.nConnState = embActorConnState_ok;
+	actState.tmLastCheck = 0;
+	actState.tmLastReport = 0;
 	m_mapActors[actState.actorId] = actState;
 	CFWriteLog(0, TEXT("actor connected %d"), actState.actorId);
 
@@ -680,25 +690,40 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	}
 	else if (taskIn.taskRunState.nState == embtaskstate_zero)
 	{
-		//not assigned,assign it;
-		ACTORID actid = GetFirstIdleActor(taskIn.taskBasic.nFixActor, taskIn.taskBasic.nPriority);
-		if (actid != INVALID_ID)
+		//multe split task
+		if (TaskNeedSplit(taskIn.strTask)
+			&& TryDispatchSplitTask(taskIn))
 		{
-			HRESULT hr = m_actHolder.SendToActor(actid, taskIn.strTask);
-			if (hr == S_OK)
+			//split mode
+		}
+		else
+		{
+			ACTORID actid = GetFirstIdleActor(taskIn.taskBasic.nFixActor, taskIn.taskBasic.nPriority);
+			if (actid != INVALID_ID)
 			{
-				taskIn.taskRunState.actorId = actid;
-				taskIn.taskRunState.nState = embtaskstate_dispatching;
-				CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, actid);
+				HRESULT hr = m_actHolder.SendToActor(actid, taskIn.strTask);
+				if (hr == S_OK)
+				{
+					taskIn.taskRunState.actorId = actid;
+					taskIn.taskRunState.nState = embtaskstate_dispatching;
+					SetActorInCD(actid);
+					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, actid);
 
-				
+
+				}
+				else
+				{
+					ASSERT(FALSE);
+					//waiting for next loop 
+				}
 			}
 			else
 			{
-				ASSERT(FALSE);
-				//waiting for next loop 
+				TRACE("\nno idle actor wait next examtask");
 			}
 		}
+		
+	
 	}
 	else if (taskIn.taskRunState.nState == embtaskstate_dispatching)
 	{
@@ -759,7 +784,18 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 						}
 						else
 						{
-							//may be switched active now wait for actor report 
+							if (tmSpan2.GetTotalSeconds() > nfgTaskCheckProgressIntervalMax*2)
+							{
+								//task may not assigned
+								taskIn.taskRunState.nState = embtaskstate_zero;
+								taskIn.taskRunState.tmLastCheck = tmNow;
+								CFWriteLog(0, TEXT("actor id is invalid and no actor report, task %s reseted..."), taskIn.taskBasic.strGuid);
+							}
+							else
+							{
+								//may be switched active now, wait for actor report 
+
+							}
 						}
 
 
@@ -779,6 +815,65 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	}
 
 	return bRet;
+}
+
+/*
+* Description：生成拆分任务XML
+* Input Param：
+*		strTaskIn：原始任务XML
+*       nStart: 分成几个模块
+*       nSize：拆分个数
+* Return Param：返回XML
+* History：
+*/
+CString EMB::CTaskDispatchMgr::CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize)
+{
+	CString strOut = "";
+
+	CTxParamString txParam(strTaskIn);
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.GoIntoKey(EK_TASKBASIC);
+
+	CTxStrConvert strVal;
+
+	strVal.SetVal(nStart);
+	txParam.SetAttribVal(NULL, TEXT("nSplit"), strVal);
+
+	strVal.SetVal(nSize);
+	txParam.SetAttribVal(NULL, TEXT("nTotalSplitCount"), strVal);
+	txParam.UpdateData();
+	strOut = txParam;
+
+	return strOut;
+}
+
+/*
+* Description：生成合并任务XML
+* Input Param：
+*		strTaskIn：原始任务XML
+*       nSize：拆分个数
+* Return Param：返回XML
+* History：
+*/
+CString EMB::CTaskDispatchMgr::CreateCombinedTaskXml(CString strTaskIn,int nSize)
+{
+	CString strOut = "";
+
+	CTxParamString txParam(strTaskIn);
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.GoIntoKey(EK_TASKBASIC);
+
+	CTxStrConvert strVal;
+
+	strVal.SetVal(-1);
+	txParam.SetAttribVal(NULL, TEXT("nSplit"), strVal);
+
+	strVal.SetVal(nSize);
+	txParam.SetAttribVal(NULL, TEXT("nTotalSplitCount"), strVal);
+	txParam.UpdateData();
+	strOut = txParam;
+
+	return strOut;
 }
 
 /*
@@ -910,7 +1005,7 @@ BOOL EMB::CTaskDispatchMgr::SetActive( int nActive )
 HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 {
 	HRESULT hr = S_OK;
-	CFWriteLog(0, TEXT("svr(%d) active change to %d"), m_nMaster,  m_nActive);
+	CFWriteLog(0, TEXT("svr[%d](master=%d) active change to %d"), m_nSvrId, m_nMaster,  m_nActive);
 	if (GetActive() == embSvrState_active)
 	{
 		//get tasks that already assigned to me
@@ -918,7 +1013,7 @@ HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 		{
 			VECTASKS vTasks;
 			m_pIStorage->GetDispatchedTaskFromStorage(m_nSvrId, vTasks);
-
+			CFWriteLog(0, TEXT("try get previous tasks before active. num = %d"), vTasks.size());
 			CAutoLock lock(&m_csFTask);
 			//set task state all to dispatched, add task to check loop
 			for (size_t i = 0; i < vTasks.size(); ++i)
@@ -942,6 +1037,7 @@ HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 					ASSERT(FALSE);
 					continue;
 				}
+				ftask.strTask = szTaskIn;
 				time_t tmNow = time(NULL);
 				ftask.taskRunState.guid = guid;
 				ftask.taskRunState.nState = embtaskstate_dispatched;
@@ -961,6 +1057,16 @@ HRESULT EMB::CTaskDispatchMgr::OnActiveStateChanged()
 
 	//inform actorHolder
 	m_actHolder.SetSvrState(m_nActive, m_nMaster);
+
+	//inform notifier
+	ST_SVRLIVEINFO livInfo;
+	livInfo.nMaster = m_nMaster;
+	livInfo.nActive = m_nActive;
+	livInfo.nsvrId = m_nSvrId;
+	livInfo.nConnState = embConnState_ok;
+	CString strLivInfo;
+	livInfo.ToString(strLivInfo);
+	BroadcastToNotifier(strLivInfo);
 	return S_OK;
 }
 
@@ -1063,10 +1169,12 @@ ACTORID EMB::CTaskDispatchMgr::GetFirstIdleActor( const ACTORID nDesiredActor, i
 		{	
 			ST_ACTORSTATE& actInfoRef = itf->second;
 			CTimeSpan tmSpan(tmNow - actInfoRef.tmLastReport);
+			CTimeSpan tmSpanLastAssign(tmNow - actInfoRef.tmLastAssignTask);
 			if (actInfoRef.nConnState == embConnState_ok
-				&& tmSpan.GetTotalSeconds() < 10
+				&& tmSpanLastAssign.GetTotalSeconds() > nfgActorAssignTaskCD
+				&& tmSpan.GetTotalSeconds() < nfgActorStateOutdate
 				&& actInfoRef.nCpuUsage > INVALID_VALUE
-				&& actInfoRef.nActorLevel < nPriority)
+				&& actInfoRef.nActorLevel <= nPriority)
 			{
 				int nVal = CalcActorPayload(actInfoRef);
 				if ( nVal < nfgMaxActorLoad && nVal < nMinValue)
@@ -1085,10 +1193,13 @@ ACTORID EMB::CTaskDispatchMgr::GetFirstIdleActor( const ACTORID nDesiredActor, i
 	{
 		ST_ACTORSTATE& actInfoRef = itb->second;
 		CTimeSpan tmSpan(tmNow - itb->second.tmLastReport);
+		CTimeSpan tmSpanLastAssign(tmNow - actInfoRef.tmLastAssignTask);
+
 		if (actInfoRef.nConnState == embConnState_ok
-			&& tmSpan.GetTotalSeconds() < 10
+			&& tmSpanLastAssign.GetTotalSeconds() > nfgActorAssignTaskCD
+			&& tmSpan.GetTotalSeconds() < nfgActorStateOutdate
 			&& actInfoRef.nCpuUsage > INVALID_VALUE
-			&& actInfoRef.nActorLevel < nPriority)
+			&& actInfoRef.nActorLevel <= nPriority)
 		{
 			int nVal = CalcActorPayload(actInfoRef);
 			if ( nVal < nfgMaxActorLoad && nVal < nMinValue)
@@ -1106,6 +1217,64 @@ ACTORID EMB::CTaskDispatchMgr::GetFirstIdleActor( const ACTORID nDesiredActor, i
 	
 
 	return nActorRet;
+}
+
+/*
+* Description：获取空闲ACTOR信息
+* Input Param：
+*		strActorTeam : 指定的执行组
+*       nPriority ：优先级
+* Return Param：返回ACTORID
+* History：
+*/
+BOOL EMB::CTaskDispatchMgr::GetIdleActors( CString strActorTeam,int nPriority )
+{
+	CAutoLock lock(&m_csActor);
+	//max figure is 80% all usage
+
+	time_t tmNow = time(NULL);
+	//get min resource used actor;
+	ACTORID nActorRet = INVALID_ID;
+	int nMinValue = nfgMaxActorLoad;
+
+	m_FreeActorIds.RemoveAll();
+	//go normal process
+	MAPACTORSTATES::iterator itb = m_mapActors.begin();
+	MAPACTORSTATES::iterator ite = m_mapActors.end();
+	for (; itb != ite; ++itb)
+	{
+		ST_ACTORSTATE& actInfoRef = itb->second;
+		CTimeSpan tmSpan(tmNow - itb->second.tmLastReport);
+		if (actInfoRef.nConnState == embConnState_ok
+			&& tmSpan.GetTotalSeconds() < nfgActorStateOutdate
+			&& actInfoRef.nCpuUsage > INVALID_VALUE
+			&& actInfoRef.nActorLevel <= nPriority)
+		{
+			int nVal = CalcActorPayload(actInfoRef);
+			if ( nVal < nfgMaxActorLoad && nVal < nMinValue)
+			{
+				nMinValue = nVal;
+				nActorRet = actInfoRef.actorId;
+				if (nMinValue < nfgLowActorLoad)
+				{
+					//判断是否获取组内执行端，如果没有设置则返回
+					if((strActorTeam.GetLength() > 0 && actInfoRef.strTeam == strActorTeam) || (strActorTeam.GetLength() == 0))
+					{
+						//add to free actor list
+						ST_ACTDISCONNINFO adtorInfo;
+						adtorInfo.actorid = nActorRet;
+						adtorInfo.tmReport = NULL;
+
+						m_FreeActorIds.Add(adtorInfo);
+					}
+					continue;
+				}
+			}
+		}
+	}
+
+
+	return nActorRet != INVALID_ID;
 }
 
 /*
@@ -1202,8 +1371,10 @@ BOOL EMB::CTaskDispatchMgr::TryFetchTask()
 			
 				VECTASKS vTasks;
 				m_pIStorage->FetchTaskFromStorage(m_nSvrId, embtaskPriority_normal, 10, vTasks);
+
 				if (vTasks.size() > 0)
 				{
+					CFWriteLog(0, TEXT("try fetch tasks. num = %d"), vTasks.size());
 					for (size_t i = 0; i < vTasks.size(); ++i)
 					{
 						CTaskString strRet;
@@ -1220,6 +1391,8 @@ BOOL EMB::CTaskDispatchMgr::TryFetchTask()
 			m_pIStorage->FetchTaskFromStorage(m_nSvrId, embtaskPriority_high, 10, vTasks);
 			if (vTasks.size() > 0)
 			{
+				CFWriteLog(0, TEXT("try fetch high pri tasks. num = %d"), vTasks.size());
+
 				for (size_t i = 0; i < vTasks.size(); ++i)
 				{
 					CTaskString strRet;
@@ -1235,11 +1408,22 @@ BOOL EMB::CTaskDispatchMgr::TryFetchTask()
 
 int EMB::CTaskDispatchMgr::CalcActorPayload( ST_ACTORSTATE& actInfo )
 {
-	if (actInfo.nCpuUsage > 80 || actInfo.nMemUsage > 80 || actInfo.nDiscUsage > 90)
+	if (actInfo.nCpuUsage < 0 || actInfo.nMemUsage < 0 || actInfo.nDiscIOUsage < 0
+		|| actInfo.nExcResUsage < 0 || actInfo.nDiscIOUsage < 0
+		|| actInfo.nNetIOUsage < 0)
+	{
+		CFWriteLog(TEXT("actor %d not inited!"), actInfo.actorId);
+		return MAXACTORPALOAD;
+	}
+
+	if (actInfo.nCpuUsage > 80 || actInfo.nMemUsage > 80 || actInfo.nDiscIOUsage > 90
+		||actInfo.nExcResUsage > 90 || actInfo.nDiscIOUsage > 80
+		||actInfo.nNetIOUsage > 80)
 	{
 		return MAXACTORPALOAD;
 	}
-	return (actInfo.nCpuUsage* nfgCpuWeight + actInfo.nMemUsage* nfgMemWeight + actInfo.nDiscUsage * nfgDiskWeight);
+	return (actInfo.nCpuUsage* nfgCpuWeight + actInfo.nMemUsage* nfgMemWeight + actInfo.nDiscIOUsage * nfgDiskIOWeight
+		+actInfo.nNetIOUsage * nfgNetIOWeight);
 }
 
 /*
@@ -1265,24 +1449,30 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 		taskRun.tmLastReport = time(NULL);
 		if (reportIn.nState == embtaskstate_error)
 		{
-			ASSERT(reportIn.actorId == taskRun.actorId);
+			if(reportIn.actorId != taskRun.actorId)
+			{
+				//ASSERT(FALSE);
+				return FALSE;
+			}
 			// 判断具体错误，是否重置任务?
-			if (reportIn.NeedResetTask())
+			if (FALSE)
 			{
 				//reset the task
 				CFWriteLog(0, TEXT("reset task"));
 				taskRun.nState = embtaskstate_zero;
 				taskRun.actorId = INVALID_ID;
 				taskRun.excId = INVALID_ID;
+				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task error and reset the task (%s), nSubErrorCode:%X"), 
+					reportIn.actorId, reportIn.excutorId, reportIn.strGuid, reportIn.nSubErrorCode);
 			}
 			else
 			{
 				// 不需要重置, 结束任务
-				taskRun.nState = embtaskstate_finished;
+				taskRun.nState = embtaskstate_error;
 				taskRun.nPercent = reportIn.nPercent;
 				taskRun.nCurrStep = reportIn.nStep;
 				taskRun.tmLastReport = time(NULL);
-				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task finished (%s), nSubErrorCode:%X"), 
+				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task error (%s), nSubErrorCode:%X"), 
 					reportIn.actorId, reportIn.excutorId, reportIn.strGuid, reportIn.nSubErrorCode);
 			}	
 		}
@@ -1299,6 +1489,19 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 					taskRun.nPercent = reportIn.nPercent;
 					taskRun.nCurrStep = reportIn.nStep;
 					taskRun.tmLastReport = time(NULL);
+
+					ST_TASKUPDATE upInfo;
+					upInfo.nUpdateType = embtaskupdatetype_change;
+					upInfo.guid = guid;
+					upInfo.data_end.dispatchid = m_nSvrId;
+					upInfo.data_end.actorid = taskRun.actorId;
+					upInfo.data_end.excutorid = reportIn.excutorId;
+					upInfo.data_end.nEndState = embtaskstate_dispatched;
+
+					CString strUpInfo = "";
+					upInfo.ToString(strUpInfo);
+					m_pIStorage->UpdateTaskToStorage(m_nSvrId,strUpInfo);
+					CFWriteLog(0, TEXT("task[%s] dispatched successfully to actor:%d, exc = %d"), reportIn.strGuid, reportIn.actorId, reportIn.excutorId);
 				}
 				
 			}
@@ -1317,7 +1520,7 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 				taskRun.nPercent = reportIn.nPercent;
 				taskRun.nCurrStep = reportIn.nStep;
 				taskRun.tmLastReport = time(NULL);
-				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task (%s),  step = %d, percent = %d%%"), reportIn.actorId,reportIn.excutorId, reportIn.strGuid,reportIn.nStep, reportIn.nPercent);
+				//CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task (%s),  step = %d, percent = %d%%"), reportIn.actorId,reportIn.excutorId, reportIn.strGuid,reportIn.nStep, reportIn.nPercent);
 
 			}
 		}
@@ -1325,7 +1528,8 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 		{
 			ASSERT(taskRun.actorId == reportIn.actorId
 				&& taskRun.excId == reportIn.excutorId
-				&& taskRun.nState == embtaskstate_dispatched);
+				&& (taskRun.nState == embtaskstate_dispatched
+					||taskRun.nState == embtaskstate_finished));
 			taskRun.nState = embtaskstate_finished;
 			taskRun.nPercent = reportIn.nPercent;
 			taskRun.nCurrStep = reportIn.nStep;
@@ -1353,15 +1557,305 @@ BOOL EMB::CTaskDispatchMgr::UpdateActorState( ST_ACTORSTATE& stateIn )
 	if (itf != m_mapActors.end())
 	{
 		ST_ACTORSTATE& actState = itf->second;
+		time_t tmLastAssignTask = actState.tmLastAssignTask;
+		actState = stateIn;
+		actState.tmLastAssignTask = tmLastAssignTask;
 		actState.nConnState = embConnState_ok;
-		actState.nCpuUsage = stateIn.nCpuUsage;
-		actState.nMemUsage = stateIn.nMemUsage;
-		actState.nDiscUsage = stateIn.nDiscUsage;
-		actState.nActorLevel = stateIn.nActorLevel;
 		actState.tmLastCheck = time(NULL);
 		actState.tmLastReport = actState.tmLastCheck;	
+
 	}
 
 	return TRUE;
 }
+
+BOOL EMB::CTaskDispatchMgr::TaskNeedSplit( CString strTaskIn )
+{
+	//should pre check that if task need split after fetchtask() 
+	return FALSE;
+}
+
+BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
+{
+	BOOL bRet = FALSE;
+	GetIdleActors(taskIn.taskBasic.strTaskFrom,taskIn.taskBasic.nPriority);
+	int nSize = m_FreeActorIds.GetSize();
+
+	//not assigned,assign it;
+	if(nSize > 1)
+	{
+		if(taskIn.taskBasic.nTaskSplit > 0)
+		{
+			//拆分任务
+			bool bSplitSuccess = true;
+			for(int i = 0 ; i < nSize ; i++)
+			{
+				CString strXml = CreateSplitTaskXml(taskIn.strTask,i,nSize);
+
+				if(strXml.GetLength() == 0)
+				{
+					bSplitSuccess = false;
+					break;
+				}
+
+				ST_ACTDISCONNINFO ActorInfo = m_FreeActorIds.GetAt(i);
+
+				HRESULT hr = m_actHolder.SendToActor(ActorInfo.actorid, strXml);
+				if (hr == S_OK)
+				{
+					taskIn.taskRunState.actorId = ActorInfo.actorid;
+					taskIn.taskRunState.nState = embtaskstate_dispatching;
+					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, ActorInfo.actorid);
+				}
+				else
+				{
+					ASSERT(FALSE);
+					//waiting for next loop 
+				}
+			}
+
+			//分发总任务
+			if(bSplitSuccess)
+			{
+				CString strXml = CreateCombinedTaskXml(taskIn.strTask,nSize);
+
+				if(strXml.GetLength() == 0)
+				{
+					ASSERT(FALSE);
+				}
+
+				ST_ACTDISCONNINFO ActorInfo = m_FreeActorIds.GetAt(0);
+
+				HRESULT hr = m_actHolder.SendToActor(ActorInfo.actorid, strXml);
+				if (hr == S_OK)
+				{
+					taskIn.taskRunState.actorId = ActorInfo.actorid;
+					taskIn.taskRunState.nState = embtaskstate_dispatching;
+					CFWriteLog(0, TEXT("assign Combined task (%s) to actor %d"), taskIn.taskBasic.strGuid, ActorInfo.actorid);
+					bRet = TRUE;
+				}
+				else
+				{
+					ASSERT(FALSE);
+					//waiting for next loop 
+				}
+			}
+		}
+	}
+	
+	return bRet;
+}
+
+BOOL EMB::CTaskDispatchMgr::IsLiveActor( const ACTORID nActorId )
+{
+	CAutoLock lock(&m_csActor);
+	MAPACTORSTATES::iterator itf = m_mapActors.find(nActorId);
+	return itf != m_mapActors.end();
+}
+
+BOOL EMB::CTaskDispatchMgr::SetActorInCD( const ACTORID actorId )
+{
+	CAutoLock lock(&m_csActor);
+	MAPACTORSTATES::iterator itf = m_mapActors.find(actorId);
+	if (itf != m_mapActors.end())
+	{
+		itf->second.tmLastAssignTask = time(NULL);
+	}
+
+	return TRUE;
+}
+
+HRESULT EMB::CTaskDispatchMgr::OnUIMessage( CTaskString& strMsg, CTaskString& szRet )
+{
+	HRESULT hr = S_OK;
+	ST_EMBXMLMAININFO mainInfo;
+	GetEmbXmlMainInfo(strMsg, mainInfo);
+	if (mainInfo.nType == embxmltype_svrInfo)
+	{
+		hr = GetSvrInfo(szRet);
+	}
+	else if (mainInfo.nType == embxmltype_actorList)
+	{
+		hr = GetActorList(szRet);
+	}
+	else if (mainInfo.nType == embxmltype_actorState)
+	{
+		ST_ACTORSTATE tmpState;
+		tmpState.FromString(strMsg);
+		hr = GetActorState(tmpState.actorId, szRet);
+	}
+	else if (mainInfo.nType == embxmltype_taskList)
+	{
+		hr = GetTaskList(szRet);
+	}
+	else if (mainInfo.nType == embxmltype_taskRunState)
+	{
+		ST_TASKBASIC bsInfo;
+		GetTaskBasicInfo(strMsg, bsInfo);
+		TXGUID taskid(String2Guid(bsInfo.strGuid));
+		hr = GetTaskRunState(taskid, szRet);
+	}
+	else if (mainInfo.nType == embxmltype_taskupdate)
+	{
+		//to be added...
+		ASSERT(FALSE);
+	}
+	else
+	{
+		hr = EMBERR_INVALIDARG;
+	}
+	
+	if (szRet.IsEmpty())
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	CTxParamString txParam(szRet);
+	txParam.SetAttribVal(EK_MAIN, EA_MAIN_TYPE, mainInfo.nType);
+	txParam.SetAttribVal(EK_MAIN, EA_MAIN_ERRCODE, hr);
+	txParam.SetAttribVal(EK_MAIN, EA_MAIN_GUID, mainInfo.guid);
+	txParam.UpdateData();
+	szRet = txParam;
+
+	return hr;
+}
+
+HRESULT EMB::CTaskDispatchMgr::GetSvrInfo( CString& strRet )
+{
+	ST_SVRLIVEINFO livInfo;
+	livInfo.nActive = m_nActive;
+	livInfo.nMaster = m_nMaster;
+	livInfo.nsvrId = m_nSvrId;
+	CString strTmp;
+	livInfo.ToString(strRet);
+	return S_OK;
+}
+
+HRESULT EMB::CTaskDispatchMgr::GetActorState( ACTORID actorID, CString& strRet )
+{
+	HRESULT hr = S_OK;
+	ST_ACTORSTATE stateRet;
+	CAutoLock lock(&m_csActor);
+	MAPACTORSTATES::iterator itf = m_mapActors.find(actorID);
+	if (itf != m_mapActors.end())
+	{
+		//found it
+		stateRet = itf->second;
+	}
+	else
+	{
+		hr = EMBERR_NOTFOUND;
+	}
+	
+	stateRet.ToString(strRet);
+	return hr;
+}
+
+HRESULT EMB::CTaskDispatchMgr::GetTaskList( CString& strRet )
+{
+	ST_TASKLISTINFO tsInfo;
+	{//for lock
+		CAutoLock lock(&m_csFTask);
+		MAPFILETASKS::iterator itb =m_mapTasks.begin();
+		MAPFILETASKS::iterator ite = m_mapTasks.end();
+		for (; itb != ite; ++itb)
+		{
+			tsInfo.vlist.push_back(itb->first);
+		}
+	}
+
+	tsInfo.ToString(strRet);
+	return S_OK;
+}
+
+HRESULT EMB::CTaskDispatchMgr::GetTaskRunState( TXGUID& taskGuid, CString& strRet )
+{
+	HRESULT hr = S_OK;
+	ST_TASKRUNSTATE taskState;
+	taskState.guid = taskGuid;
+	{//for lock
+		CAutoLock lock(&m_csFTask);
+		MAPFILETASKS::iterator itf = m_mapTasks.find(taskGuid);
+		if (itf != m_mapTasks.end())
+		{
+			taskState  = itf->second.taskRunState;
+		}
+		else
+		{
+			hr = EMBERR_NOTFOUND;
+		}
+	}
+
+	taskState.ToString(strRet, TRUE);
+	
+	return hr;
+}
+
+HRESULT EMB::CTaskDispatchMgr::GetActorList( CString& strRet )
+{
+	ST_ACTORLISTINFO tsInfo;
+	{//for lock
+
+		CAutoLock lock(&m_csActor);
+		MAPACTORSTATES::iterator itb =m_mapActors.begin();
+		MAPACTORSTATES::iterator ite = m_mapActors.end();
+		for (; itb != ite; ++itb)
+		{
+			CTxStrConvert val(itb->first);
+			tsInfo.vlist.push_back(val.GetAsString());
+		}
+	}
+	tsInfo.ToString(strRet);
+
+	return S_OK;
+}
+
+HRESULT EMB::CTaskDispatchMgr::RegisterNotifier( IDispatchNotifyCallbackInterface* pNotifier )
+{
+	if (!pNotifier)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	CAutoLock lock(&m_csNotifier);
+	MAPDISNOTIFYS::iterator itf = m_mapDisNotifys.find(pNotifier);
+	if (itf == m_mapDisNotifys.end())
+	{
+		m_mapDisNotifys[pNotifier] = pNotifier;
+	}
+	else
+	{
+		ASSERT(FALSE);
+	}
+	return S_OK;
+}
+
+HRESULT EMB::CTaskDispatchMgr::UnRegisterNotifier( IDispatchNotifyCallbackInterface* pNotifier )
+{
+	CAutoLock lock(&m_csNotifier);
+	MAPDISNOTIFYS::iterator itf = m_mapDisNotifys.find(pNotifier);
+	if (itf != m_mapDisNotifys.end())
+	{
+		m_mapDisNotifys.erase(itf);
+	}
+	else
+	{
+		ASSERT(FALSE);
+	}
+	return S_OK;
+}
+
+BOOL EMB::CTaskDispatchMgr::BroadcastToNotifier( CString& strInfo )
+{
+	CAutoLock lock(&m_csNotifier);
+	MAPDISNOTIFYS::iterator itb = m_mapDisNotifys.begin();
+	MAPDISNOTIFYS::iterator ite = m_mapDisNotifys.end();
+	for (; itb != ite; ++itb)
+	{
+		itb->first->OnDispatchNotify(strInfo);
+	}
+
+	return TRUE;
+}
+
 

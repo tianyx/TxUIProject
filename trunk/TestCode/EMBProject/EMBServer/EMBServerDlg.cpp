@@ -9,6 +9,7 @@
 #include "MainDef.h"
 #include "TxParamString.h"
 #include "Resource.h"
+#include "ADOCtrl.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -108,6 +109,8 @@ BOOL CEMBServerDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	InitUI();
 
+	AfxOleInit();       //为调用ADO数据库
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -168,6 +171,12 @@ HCURSOR CEMBServerDlg::OnQueryDragIcon()
 */
 void CEMBServerDlg::OnBnClickedBtnStart()
 {
+	/*CADOCtrl dbCtrl;
+	dbCtrl.SetODBCDatabase("Provider=SQLOLEDB; Server=ZHOU-LIANG; Database=Dbas_henyang; uid=sa; pwd=123;");
+	if(!dbCtrl.OpenDB())
+	{
+		return ;
+	}*/
 	// TODO: 在此添加控件通知处理程序代码
 	if (m_bRunning)
 	{

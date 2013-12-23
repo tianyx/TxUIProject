@@ -12,6 +12,9 @@ typedef int (__cdecl *GETPLUGININSTANCE)(LPVOID& pInterface);
 
 BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut)
 {
+		int nPos = strFileIn.ReverseFind(_T('\\'));
+		CString strDllPath = strFileIn.Left(nPos);
+		SetDllDirectory(strDllPath);
 		hModuleOut = LoadLibrary(strFileIn);
 		if (hModuleOut != NULL)
 		{
@@ -33,6 +36,9 @@ BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterf
 BOOL TxLoadPluginVC6( const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut )
 {
 
+	int nPos = strFileIn.ReverseFind(_T('\\'));
+	CString strDllPath = strFileIn.Left(nPos);
+	SetDllDirectory(strDllPath);
 	hModuleOut = LoadLibrary(strFileIn);
 	if (hModuleOut != NULL)
 	{

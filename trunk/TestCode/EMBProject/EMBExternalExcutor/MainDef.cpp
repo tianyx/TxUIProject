@@ -74,11 +74,11 @@ BOOL InitGlobalConfig()
 BOOL LoadPluginManager()
 {
 	CString strFile = g_GlobalInfo.szAppPath;
-	strFile +=TEXT("\\EMBPluginMgr.dll");
+	strFile +=TEXT("\\EMBPluginMgr.epl");
 	if (_access(strFile, 0) == -1)
 	{
 		ASSERT(FALSE);
-		CFWriteLog(LOGKEYMAIN, TEXT("EMBPluginMgr.dll not Found"));
+		CFWriteLog(LOGKEYMAIN, TEXT("EMBPluginMgr.epl not Found"));
 		return FALSE;
 	}
 	
@@ -89,7 +89,7 @@ BOOL LoadPluginManager()
 		g_pIPluginMgr->QueryInterface(GuidEMBPlugin_IPluginManager, (LPVOID&) *&apPluginMgr);
 		if (apPluginMgr)
 		{
-			apPluginMgr->InitPluginsSearch(TRUE, TEXT("dll"));
+			apPluginMgr->InitPluginsSearch(TRUE, NULL);
 		}
 
 	}

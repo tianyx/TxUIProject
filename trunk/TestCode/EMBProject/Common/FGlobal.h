@@ -134,8 +134,8 @@ struct TXGUID
 		}
 	}
 
-	operator GUID(){return guid;}
-	operator CString(){return Guid2String(guid);}
+	operator GUID() const {return guid;}
+	operator CString() const{return Guid2String(guid);}
 	TXGUID& operator =(const GUID& guidIn)
 	{
 	

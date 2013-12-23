@@ -36,7 +36,7 @@ public:
 
 protected:
 	//fill the live info of this
-	virtual HRESULT FillLIvePack(ST_TXMSG_LIVEQA& msg){return S_OK;}
+	virtual HRESULT FillLivePack(ST_TXMSG_LIVEQA& msg){return S_OK;}
 
 	//called when live msg incoming
 	virtual HRESULT OnLiveMsgIn(ST_TXMSG_LIVEQA& msg){return S_OK;}

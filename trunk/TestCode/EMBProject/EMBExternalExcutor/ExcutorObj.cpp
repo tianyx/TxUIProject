@@ -36,7 +36,7 @@ BOOL RegisterExcObjectWnd()
 	if ( 0 == RegisterClassEx (&wndclassex))
 	{
 		HRESULT hr = GetLastError();
-		ASSERT(FALSE);
+		ASSERT(hr == 0x00000582);
 	}
 
 	return TRUE;
@@ -138,9 +138,9 @@ CExcutorObj::CExcutorObj( )
 	m_hwndExcMsg = NULL;
 
 	nfgTaskCheckInterval = 1;
-	nfgIdleReportInterval = 10;
-	nfgIdleTimeoutForQuit = 60;
-
+	nfgIdleReportInterval = 5;
+	nfgIdleTimeoutForQuit = 20;
+	nfgTaskRetryMax = 1;
 	ASSERT(g_pExcObject == NULL);
 	g_pExcObject  = this;
 	LoadPluginManager();
@@ -266,7 +266,7 @@ BOOL CExcutorObj::OnExcutorRegistered( )
 	CString strMsg;
 	strMsg.Format(EDOC_MAINHEADERFMT, 1, embxmltype_excOnIdle,  strVal);
 	m_bRegistered = TRUE;
-	SendToActor(strMsg);
+	SendToActor(strMsg); // Executor处于空闲
 
 	return TRUE;
 }
@@ -481,6 +481,7 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 			CAutoLock lock(&m_csTaskInfo);
 			m_strTask = strInfo;
 			m_runState.nState = embtaskstate_dispatched;
+			m_runState.nPercent = 0;
 
 		}
 	}
@@ -503,8 +504,16 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 		{
 			CAutoLock lock(&m_csTaskInfo);
 			report.nState = m_runState.nState;
-			report.nStep = m_runState.nCurrStep;
-			report.nPercent = m_runState.nPercent;
+			if (m_runState.nCurrStep == -1)
+			{
+				report.nStep = 0;
+				report.nPercent = 0;
+			}
+			else
+			{
+				report.nStep = m_runState.nCurrStep;
+				report.nPercent = m_runState.nPercent;
+			}
 		}
 		report.ToString(strRet);
 	}
@@ -525,7 +534,8 @@ HRESULT CExcutorObj::TaskCheckLoop()
 		{
 			BOOL bIdle = TRUE;
 			if (m_bRegistered)
-			{		
+			{
+				CAutoLock lock(&m_csTaskInfo);
 				BOOL bReport = FALSE;
 				CTaskString szInfo;
 				if (!m_strTask.IsEmpty())
@@ -533,19 +543,42 @@ HRESULT CExcutorObj::TaskCheckLoop()
 					if (m_runState.nState == embtaskstate_error)
 					{
 						//task error;
-						OnTaskProgress(-1);
+						//unload the dll
+						UnLoadTaskDll();
+						//clean the task
+						m_strTask.Empty();
+						m_vSubTasks.clear();
+						m_runState.nState = embtaskstate_none;
+						
 						continue;
 					}
 					else if (m_runState.nState == embtaskstate_dispatched)
 					{
+						OutputDebugString("---check step task");
 						if (m_runState.nPercent == 100)
 						{
+							OutputDebugString("---next step");
 							//start next step
 							m_runState.nCurrStep++;  // 当前处理步骤
 							m_runState.nPercent = 0;
 							//change dll, and send sub task info
-							LaunchTask();
+							HRESULT hr = LaunchTask();
+							if (hr != S_OK)
+							{
+								//dll launch failed
+								m_runState.nState = embtaskstate_error;
+							}
+							continue;
 						}
+					}
+					else if (m_runState.nState == embtaskstate_finished)
+					{
+						//clear task
+						UnLoadTaskDll();
+						m_strTask.Empty();
+						m_vSubTasks.clear();
+						m_runState.nState = embtaskstate_none;
+						continue;
 					}
 					
 					// task 
@@ -554,12 +587,12 @@ HRESULT CExcutorObj::TaskCheckLoop()
 					{
 						//first dispatched, create sub task and reset task run state
 						InitTask();
+						OutputDebugString("---inittask");
 					}
 					else
 					{
 						nTaskCheckTime = (++nTaskCheckTime)%nfgTaskCheckInterval;
 						{
-							CAutoLock lock(&m_csTaskInfo);
 							if (nTaskCheckTime == 0 && m_pTaskDllInterface)
 							{
 								int nPercent = 0;
@@ -594,15 +627,26 @@ HRESULT CExcutorObj::TaskCheckLoop()
 					nIdleCheckTime = (++nIdleQuitTime)%nfgIdleReportInterval;
 					if (nIdleCheckTime == 0)
 					{
-						OnExcutorRegistered();
+						//not send idle, disable it temporarily
+						//OnExcutorRegistered();
 					}
 				}
 				nIdleQuitTime++;
 				if (nIdleQuitTime > nfgIdleTimeoutForQuit)
 				{
-					Quit();
-					nIdleQuitTime = 0;
-					break;
+					//if debug mode not quit
+					if (m_executorReg.hwndActor != GetDesktopWindow())
+					{
+						Quit();
+						nIdleQuitTime = 0;
+						break;
+
+					}
+					else
+					{
+						continue;
+					}
+					
 				}
 			}
 			else
@@ -669,9 +713,9 @@ HRESULT CExcutorObj::InitTask()
 	basicInfo.FromString(txBasicStr); // xml to Task
 	if (txBasicStr.IsEmpty() ||basicInfo.strGuid.IsEmpty())
 	{
-		ASSERT(FALSE);
+		//ASSERT(FALSE);
 		//clean task
-		m_strTask.Empty();
+		ResetTaskInfor();
 		m_runState.nState = embtaskstate_none;
 		return EMBERR_INVALIDARG;
 	}
@@ -736,6 +780,7 @@ HRESULT CExcutorObj::InitTask()
 		m_runState.actorId = m_executorReg.actorId;
 		m_runState.excId = m_executorReg.guid;
 		m_runState.nCurrStep = basicInfo.nStartStep;
+		m_runState.nPercent = 0;
 
 		// 启动媒体处理分步任务
 		hr = LaunchTask();
@@ -744,20 +789,20 @@ HRESULT CExcutorObj::InitTask()
 	{
 		//report error;
 		//set task string none
-		m_strTask.Empty();
-		m_vSubTasks.clear();
+		ResetTaskInfor();
 		ST_TASKREPORT report;
 		report.nState = embtaskstate_error;
 		report.strGuid = basicInfo.strGuid;
 		report.nSubErrorCode = hr;	// 具体错误信息
 		CString strRet;
 		report.ToString(strRet);
+		CFWriteLog(0, TEXT("task %s init failed, report to actor "), report.strGuid);
 		SendToActor(strRet);
 	}
 	return hr;	
 }
 
-void CExcutorObj::OnTaskProgress( int nPercent )
+void CExcutorObj::OnTaskProgress( int nPercent, HRESULT codeIn )
 {
 	CFWriteLog(0, TEXT("task %s step %d, percent %d"), Guid2String(m_runState.guid), m_runState.nCurrStep, nPercent);
 	if (nPercent < 0 || nPercent > 100)
@@ -774,20 +819,32 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 		{
 			//task finished
 			m_runState.nState = embtaskstate_finished;
-			//clear task 
-			m_strTask.Empty();
-			m_vSubTasks.clear();
 		}
 		else
 		{
 			//wait check thread to launch next workdll
 		}
+		m_runState.nPercent = 100;
 	}
 	else if (nPercent < 0)
 	{
-		//error
-		m_runState.nState = embtaskstate_error;
+		if (codeIn !=EMBERR_INVALIDARG &&m_runState.nRetry < nfgTaskRetryMax)
+		{
+			m_runState.nRetry++;
+			m_runState.nState = embtaskstate_dispatched;
+			m_runState.nCurrStep--;
+			m_runState.nPercent =100;
+			//back to the task init
+			CFWriteLog(0, TEXT("task setp [%d] err, rollback and retry!"), m_runState.nCurrStep+1);
+		}
+		else
+		{
+			//error
+			m_runState.nState = embtaskstate_error;
+		}
+
 	}
+
 	
 
 	ST_TASKREPORT report;
@@ -804,7 +861,7 @@ void CExcutorObj::OnTaskProgress( int nPercent )
 
 BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 {
-	BOOL ok = FALSE;
+	BOOL bOk = FALSE;
 	CFWriteLog(0, TEXT("lunch task dll type = %d"), nTaskType);
 	ST_LOADEDPLUGIN tmpPlugin;
 	if (LoadPluginByPluginMgr(PluginType_Wroker, nTaskType, g_pIPluginMgr, tmpPlugin))
@@ -817,15 +874,21 @@ BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 		}
 		else
 		{
-			ok = TRUE;
+			bOk = TRUE;
 		}
 	}
 
-	return ok;
+	if (!bOk)
+	{
+		CFWriteLog(0, TEXT("workplugin load failed! type = %d"), nTaskType);
+	}
+
+	return bOk;
 }
 
 BOOL CExcutorObj::UnLoadTaskDll()
 {
+	CFWriteLog(0, TEXT("unload work dll"));
 	if (m_pTaskDllInterface)
 	{
 		m_pTaskDllInterface->Release();
@@ -850,8 +913,8 @@ HRESULT CExcutorObj::LaunchTask()
 	UnLoadTaskDll();
 
 	// 根据分步任务类型，加载对应的功能dll
-	BOOL ok = LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
-	if (!ok)
+	BOOL bOk = LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
+	if (!bOk)
 	{
 		OutputDebugString("---未加载功能dll");
 		return EMBERR_SUBTASKLOADDLL; // 未加载功能dll
@@ -888,9 +951,17 @@ BOOL CExcutorObj::TestRunTask( CString& strTaskIn )
 		return FALSE;
 	}
 	m_bRegistered = TRUE;
+	m_vSubTasks.clear();
 	m_strTask = strTaskIn;
 	m_runState.nState = embtaskstate_dispatched;
+	m_runState.nPercent = 0;
 	return TRUE;
+}
+
+void CExcutorObj::ResetTaskInfor()
+{
+	m_strTask.Empty();
+	m_vSubTasks.clear();
 }
 
 

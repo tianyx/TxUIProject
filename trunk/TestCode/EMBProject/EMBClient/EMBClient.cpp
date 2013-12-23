@@ -5,6 +5,8 @@
 #include "stdafx.h"
 #include "EMBClient.h"
 #include "EMBClientDlg.h"
+#include "FGlobal.h"
+#include "MainDef.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -49,7 +51,26 @@ BOOL CEMBClientApp::InitInstance()
 	CWinAppEx::InitInstance();
 
 	AfxEnableControlContainer();
+	
+	ST_UICLIENTCONFIG config;
+	CString strRet;
+	config.ToString(strRet);
+	if (!InitGlobalConfig())
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
 
+
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (wsaData.wVersion != MAKEWORD(2,2))
+	{
+		int nErr = WSAGetLastError();
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	MACRO_CREATEOUTPUTCONSOLE
 	// 标准初始化
 	// 如果未使用这些功能并希望减小
 	// 最终可执行文件的大小，则应移除下列
@@ -76,4 +97,12 @@ BOOL CEMBClientApp::InitInstance()
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
 	return FALSE;
+}
+
+int CEMBClientApp::ExitInstance()
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	WSACleanup();
+	MACRO_FREEOUTPUTCONSOLE
+	return CWinAppEx::ExitInstance();
 }

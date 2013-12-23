@@ -17,7 +17,7 @@ public:
 	~CMasterHeartBeat(void);
 
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
-	BOOL SetLiveCallback(IServerLiveInterface* pCallbackIn){m_pSvrLiveCallback = pCallbackIn;}
+	BOOL SetLiveCallback(IServerLiveInterface* pCallbackIn){m_pSvrLiveCallback = pCallbackIn; return TRUE;}
 
 	//for IRemoteSvrLiveInterface
 	virtual HRESULT GetRemoteSvrState(ST_SVRLIVEINFO& infoOut);

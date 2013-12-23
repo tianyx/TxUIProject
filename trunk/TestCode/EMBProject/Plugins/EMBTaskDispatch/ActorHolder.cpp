@@ -214,8 +214,8 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 		UnPackMBCMsg(bufferIn, nUsed, msgIn);
 		msgIn.nMsgState = msgState_A;
 		//get live info
-		char buffer[256];
-		HRESULT hr = PackMBCMsg(msgIn,  buffer, MAXRECVBUFF, nRetUsed);
+		char buffer[SMALLBUFSIZE];
+		HRESULT hr = PackMBCMsg(msgIn,  buffer, SMALLBUFSIZE, nRetUsed);
 		if (nRetUsed > 0)
 		{
 			hr = send(*pMBCSock, buffer, nRetUsed, 0);
@@ -508,3 +508,4 @@ HRESULT CActorHolder::BroadcastToActor( CString& szMsg )
 
 	return S_OK;
 }
+

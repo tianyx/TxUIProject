@@ -14,7 +14,7 @@
 #endif
 
 #include "resource.h"		// 主符号
-
+#include "MiniDump.h"
 
 // CEMBExternalExcutorApp:
 // 有关此类的实现，请参阅 EMBExternalExcutor.cpp
@@ -33,6 +33,8 @@ public:
 
 	DECLARE_MESSAGE_MAP()
 	virtual int ExitInstance();
+protected:
+	CMiniDump m_dump;
 };
 
 extern CEMBExternalExcutorApp theApp;

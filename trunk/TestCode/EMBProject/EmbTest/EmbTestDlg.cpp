@@ -7,6 +7,7 @@
 #include "EmbTestDlg.h"
 #include "TxParamString.h"
 #include "EmbStructDef.h"
+#include "TxADOConn.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -42,6 +43,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
+	
 END_MESSAGE_MAP()
 
 
@@ -59,6 +61,7 @@ CEmbTestDlg::CEmbTestDlg(CWnd* pParent /*=NULL*/)
 void CEmbTestDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_EDIT_DBSTR, m_edtdbStr);
 }
 
 BEGIN_MESSAGE_MAP(CEmbTestDlg, CDialog)
@@ -69,6 +72,10 @@ BEGIN_MESSAGE_MAP(CEmbTestDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON1, &CEmbTestDlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CEmbTestDlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON3, &CEmbTestDlg::OnBnClickedButton3)
+	ON_BN_CLICKED(IDC_BTN_TESTADO, &CEmbTestDlg::OnBnClickedBtnTestado)
+	ON_BN_CLICKED(IDC_BUTTON5, &CEmbTestDlg::OnBnClickedButton5)
+	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_BTN_AUTOGENTASK, &CEmbTestDlg::OnBnClickedBtnAutogentask)
 END_MESSAGE_MAP()
 
 
@@ -103,6 +110,7 @@ BOOL CEmbTestDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
+	m_edtdbStr.SetWindowText(TEXT("Provider=SQLOLEDB; Server=.; Database=emb; uid=sa; pwd=123"));
 	// TODO: 在此添加额外的初始化代码
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -162,9 +170,24 @@ void CEmbTestDlg::OnBnClickedButton1()
 {
 	CTxParamString str(TEXT("<edoc_main bbb=\"10\"></edoc_main>"));
 	str.GoIntoKey(TEXT("edoc_main"));
+	int nTick = GetTickCount();
+	for (int i = 0; i < 2000 ; i++)
+	{
+		CTxStrConvert val;
+		val.SetVal(10);
+		CString strTmp;
+		strTmp.Format(TEXT("keyvalue-%02d"), i);
+		str.SetElemVal(strTmp, val);
+		str.SetAttribVal(strTmp, TEXT("attrib1"), val);
+	}
+
+	str.UpdateData();
+	CString strRerr= str;
+	nTick = GetTickCount() - nTick;
+
 	CTxStrConvert val;
 	val.SetVal(10);
-	str.SetAttribVal(NULL, "aaa", val);
+	str.SetAttribVal(NULL, "aaa", "1123");
 	//str.SetAttribVal(NULL, "bbb", val);
 	str.UpdateData();
 	CString strRet = str;
@@ -213,6 +236,7 @@ typedef int (__cdecl *GETPLUGININSTANCE)(LPVOID& pInterface);
 
 void CEmbTestDlg::OnBnClickedButton3()
 {
+
 	// TODO: 在此添加控件通知处理程序代码
 	HMODULE hModuleOut = NULL;
 	CString strFile = TEXT("TestWorkString.dll");
@@ -237,4 +261,98 @@ void CEmbTestDlg::OnBnClickedButton3()
 		}
 
 	}
+}
+
+void CEmbTestDlg::OnBnClickedBtnTestado()
+{
+	CString strTaskGuid;
+	GUID   guid; 
+	if (S_OK != ::CoCreateGuid(&guid)) 
+	{
+		return;
+	}
+
+	strTaskGuid = Guid2String(guid);
+
+	// TODO: 在此添加控件通知处理程序代码
+	
+	
+	CTxADOCommand command;
+	VECSTRINGS vStr;
+
+	CFile file;
+	CString strFileAuto = GetAppPath().c_str();
+	strFileAuto += TEXT("\\autotemplate.xml");
+	CString strXml;
+
+	if(file.Open(strFileAuto, CFile::modeRead, NULL))
+	{
+		int nLen = file.GetLength();
+		char szbuff[4096];
+		ZeroMemory(szbuff, 4096);
+		file.Read(szbuff, 4096);
+		file.Close();
+		strXml = szbuff;
+	}
+	
+
+	if (strXml.IsEmpty())
+	{
+		return;
+	}
+	strXml.Replace("{TaskGuid}", strTaskGuid);
+	strXml.Replace("{TaskDesFile}", strTaskGuid);
+
+	CString strTmp;
+	strTmp.Format(TEXT("insert into T_EMBTask (strTaskID, nPRI, nState,strExtendInfoXml, nRetry) values ('%s', '80','0', '%s', '3')"), strTaskGuid, strXml);
+	
+	CTxADORecordSet rs;
+	rs.ExecuteSQL(strTmp);
+
+	//CTxADODBMgr::ReleaseDBMgr();
+}
+
+void CEmbTestDlg::OnBnClickedButton5()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CFileDialog dlg(TRUE);
+	dlg.DoModal();
+}
+
+void CEmbTestDlg::OnTimer( UINT_PTR nIDEvent )
+{
+	if (nIDEvent == 1000)
+	{
+		OnBnClickedBtnTestado();
+	}
+
+	CDialog::OnTimer(nIDEvent);
+}
+
+void CEmbTestDlg::OnBnClickedBtnAutogentask()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	static BOOL bstRun = FALSE;
+	bstRun = !bstRun;
+	if (bstRun)
+	{
+		
+		CString strConn;
+		m_edtdbStr.GetWindowText(strConn);
+		if(CTxADODBMgr::GetADODBMgr()->OpenDB(1, strConn))
+		{
+			SetTimer(1000, 10000, NULL); // 间隔为3分钟 
+		}
+		else
+		{
+			bstRun = FALSE;
+		}
+
+	}
+	else
+	{
+		CTxADODBMgr::ReleaseDBMgr();
+		KillTimer(1000);
+	}
+	GetDlgItem(IDC_BTN_AUTOGENTASK)->SetWindowText(bstRun? TEXT("stop"):TEXT("start"));
 }

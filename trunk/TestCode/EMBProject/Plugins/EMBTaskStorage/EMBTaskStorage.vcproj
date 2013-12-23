@@ -5,6 +5,10 @@
 	Name="EMBTaskStorage"
 	ProjectGUID="{288D42E6-88C4-4D32-8B5A-88D8D67BF000}"
 	RootNamespace="EMBTaskStorage"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -68,8 +72,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).dll"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib embdbconnlib.lib"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).epl"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\EMBTaskStorage.def"
@@ -154,8 +158,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).dll"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib embdbconnlib.lib"
+				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).epl"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\EMBTaskStorage.def"

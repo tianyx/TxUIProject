@@ -182,7 +182,7 @@ void CMBCEndObj::CopyCacheData( char* buffIn, const int nLenIn )
 
 	if(nLenIn <= 0 || nLenIn%TS_PACKET_SIZE != 0)
 	{
-		ASSERT(FALSE);
+		//ASSERT(FALSE);
 		return;
 	}
 	static int snPackCount = 0;
@@ -902,5 +902,20 @@ HRESULT CMBCEndObj::StopUDPSockLoop()
 	}
 
 	return S_OK;
+}
+
+BOOL CMBCEndObj::GetRelayedAddrs( VECRELAYADDRS& vaddrOut )
+{
+	CAutoLock lock(&m_lockrelaysock);
+	for (size_t i = 0; i < m_vRelaySocks.size(); ++i)
+	{
+		CMBCSocket* pSock = m_vRelaySocks[i];
+		if (pSock)
+		{
+			vaddrOut.push_back(pSock->m_addrs.addrRemote);
+		}
+	}
+
+	return TRUE;
 }
 

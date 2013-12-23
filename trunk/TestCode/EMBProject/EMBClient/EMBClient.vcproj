@@ -208,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MainDef.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -227,6 +231,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\UIClientConnector.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -242,6 +250,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MainDef.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Resource.h"
 				>
 			</File>
@@ -251,6 +263,10 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UIClientConnector.h"
 				>
 			</File>
 		</Filter>

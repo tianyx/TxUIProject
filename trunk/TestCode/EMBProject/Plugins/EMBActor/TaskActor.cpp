@@ -7,17 +7,34 @@
 #include "TxParamString.h"
 #include "EMBDocDef.h"
 #include "Util.h"
+#include "SystemResourceInfo.h"
 
 using namespace EMB;
+//////////////////////////////////////////////////////////////////////////
+DWORD __stdcall CalcResUsageProc(LPVOID lparam)
+{
+	CTaskActor* pActor = (CTaskActor*)lparam;
+	if (pActor)
+	{
+		pActor->CalcResLoop();
+	}
+	return 0;
+}
+//////////////////////////////////////////////////////////////////////////
+
 CTaskActor::CTaskActor(void)
 {
 	m_bRuning = FALSE;
 	m_nActiveConn = 0;
+	nfgRetryMax = 3;
+	m_nDiskIOUsage = INVALID_VALUE;
+	m_nCpuUsage = INVALID_VALUE;
+	m_nNetIOUsage INVALID_VALUE;
 	m_actorconnMain.SetActorConnectorCallback(this);
 	m_actorconnSlave.SetActorConnectorCallback(this);
 	m_pExcutorMgr = CExcutorMgr::GetExcutorMgr();
 	ASSERT(m_pExcutorMgr);
-
+	m_hEventQuit = CreateEvent(NULL, TRUE, FALSE, NULL);
 	// -------------------------
 	m_strTaskXmlPath = GetAppPath().c_str(); // 执行程序目录
 	m_strTaskXmlPath += "\\TaskXml";
@@ -109,6 +126,9 @@ HRESULT CTaskActor::Run_Plugin()
 	MUSTBESOK(hr);
 	hr = m_pExcutorMgr->Run();
 	MUSTBESOK(hr);
+	
+	ResetEvent(m_hEventQuit);
+	m_hThreadCPULoop = CreateThread(NULL, 0, CalcResUsageProc, (LPVOID)this, 0, 0);
 	m_bRuning = TRUE;
 	return S_OK;
 }
@@ -120,6 +140,12 @@ HRESULT CTaskActor::Stop_Plugin()
 	m_actorconnSlave.Stop();
 	m_pExcutorMgr->Stop();
 
+	if (m_hThreadCPULoop)
+	{
+		SetEvent(m_hEventQuit);
+		WaitForSingleObject(m_hThreadCPULoop, INFINITE);
+		m_hThreadCPULoop = NULL;
+	}
 
 	return S_OK;
 }
@@ -156,16 +182,36 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			if(m_mapTaskinActor.find(guid) == m_mapTaskinActor.end())
 			{
 				//add to map and wait for embxmltype_excOnIdle message of actor
-				m_mapTaskinActor[guid] = task;
+				AddTask(guid, task);
 				m_mapExcTask[excId] = guid;
+				m_pExcutorMgr->SetExecutorState(excId, EXE_ASSIGN); // 置为已分配
 			}
 			else
 			{
-				ASSERT(FALSE);
+				CFWriteLog(0, TEXT("---task already exist in actor"));
+				//ASSERT(FALSE);
+				// 任务已提交
+				ST_TASKREPORT tskReport;
+				tskReport.actorId = m_ActRegInfo.actorId;
+				tskReport.strGuid = guid;
+				tskReport.nSubErrorCode = EMBERR_EXISTED;
+				tskReport.nState = embtaskstate_error;
+
+				tskReport.ToString(strRet);
 			}
 		}
+		else // 无可用的Executor
+		{
+			CFWriteLog(0, TEXT("no available executor"));
+			// 提交失败
+			ST_TASKREPORT tskReport;
+			tskReport.strGuid = guid;
+			tskReport.actorId = m_ActRegInfo.actorId;
+			tskReport.nSubErrorCode = EMBERR_FULL; // 任务已达上限数量
+			tskReport.nState = embtaskstate_error;
 
-		//process task
+			tskReport.ToString(strRet);
+		}
 	}
 	else if (mainInfo.nType == embxmltype_taskReport) // 查询任务
 	{
@@ -251,7 +297,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			}
 			else
 			{
-				ASSERT(FALSE);
+				//safe, not change
 			}
 		}
 		else
@@ -261,17 +307,24 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 	}
 	else if (mainInfo.nType == embxmltype_actorState) // 查询Actor.exe状态
 	{
-		CFWriteLog(0, TEXT("svr request report actor state!"));
 		//active svr changed;
 		ST_ACTORSTATE actorInfo;
 		actorInfo.actorId = m_ActRegInfo.actorId;
 		actorInfo.nActorLevel = m_ActRegInfo.nActorLevel;
 		actorInfo.nConnState = embConnState_ok;
-		actorInfo.nCpuUsage = 10;//getcpuusage
-		actorInfo.nDiscUsage = 10;
-		actorInfo.nMemUsage = 10;
+		// cpu 使用率
+		actorInfo.nCpuUsage = m_nCpuUsage;
+		actorInfo.nDiscIOUsage = m_nDiskIOUsage;
+		// memory 使用率
+		CMemoryRes memRes;
+		memRes.GetInfor();
+		actorInfo.nMemUsage = memRes.m_nUsedPercent;
+		actorInfo.nExcResUsage = m_pExcutorMgr->GetExcResUsage();
+		actorInfo.nNetIOUsage = m_nNetIOUsage;
+		CFWriteLog(0, TEXT("svr request report actor state! cpu =%d, mem = %d, disc = %d, net = %d, exc = %d"), actorInfo.nCpuUsage, actorInfo.nMemUsage, actorInfo.nDiscIOUsage, actorInfo.nNetIOUsage, actorInfo.nExcResUsage);
+
+
 		actorInfo.ToString(strRet);
-		
 	}
 	else
 	{
@@ -354,7 +407,7 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 	else if (mainInfo.nType == embxmltype_taskReport) // 任务状态更新
 	{
 		//excutor report
-		CFWriteLog(0, TEXT("exc%d report %s"), excutorId, szInfoIn);
+		//CFWriteLog(0, TEXT("exc%d report %s"), excutorId, szInfoIn);
 		ST_TASKREPORT report;
 		report.FromString(szInfoIn);
 		TXGUID guid = String2Guid(report.strGuid);
@@ -387,22 +440,29 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 				if (taskRef.nState == embtaskstate_finished) // 任务完成，m_mapTaskinActor 删除任务
 				{
 					CFWriteLog(0, TEXT("task finished %s"), Guid2String(taskRef.taskGuid));
-					m_mapTaskinActor.erase(itftask);
+					
 					m_mapExcTask.erase(excutorId);
+					m_pExcutorMgr->SetExecutorState(excutorId, EXE_IDLE); // 置空闲
 
 					// 保存任务结果
 					TaskResultSaveXmlFile(report);
 				}
 				else if (embtaskstate_error == taskRef.nState)
 				{
-					// 不需重置任务
-					if (!report.NeedResetTask())
-					{
-						CFWriteLog(0, TEXT("task submit error: %s SubError:%X"), 
+					CFWriteLog(0, TEXT("excutor report error: %s SubError:%X"), 
 							Guid2String(taskRef.taskGuid), report.nSubErrorCode);
-						m_mapTaskinActor.erase(itftask);
-						m_mapExcTask.erase(excutorId);
-					}
+// 					// 不需重置任务
+// 					if (!report.NeedResetTask())
+// 					{
+// 						CFWriteLog(0, TEXT("task submit error: %s SubError:%X"), 
+// 							Guid2String(taskRef.taskGuid), report.nSubErrorCode);
+// 						
+// 						m_pExcutorMgr->SetExecutorState(excutorId, EXE_IDLE); // 置空闲
+// 					}
+					TXGUID guidTmp = taskRef.taskGuid;
+					m_mapTaskinActor.erase(guidTmp);
+					m_mapExcTask.erase(excutorId);
+
 
 					// 保存任务结果
 					TaskResultSaveXmlFile(report);
@@ -443,13 +503,11 @@ HRESULT EMB::CTaskActor::OnExcutorExit( const EXCUTORID excutorId )
 				ReportTaskState(taskInfoRef);
 				//save to the recent deque;
 				m_dqRecentFinishedTasks.push_back(itftask->first);
-				//remove the task
-				m_mapTaskinActor.erase(itftask);
 			}
 			else
 			{
 				BOOL bReSuc = FALSE;
-				++taskInfoRef.nRetry;
+				/*++taskInfoRef.nRetry;
 				if (taskInfoRef.nRetry < nfgRetryMax)
 				{
 					//assign to a new actor
@@ -462,23 +520,27 @@ HRESULT EMB::CTaskActor::OnExcutorExit( const EXCUTORID excutorId )
 						//change exc task map
 						m_mapExcTask[newExcId] = taskInfoRef.taskGuid;
 						bReSuc = TRUE;
+						m_pExcutorMgr->SetExecutorState(newExcId, EXE_ASSIGN); // 已分配
 					}
 					else
 					{
-						ASSERT(FALSE);
+						CFWriteLog(0, TEXT("retry, but not find available executor"));
+						//ASSERT(FALSE);
 					}
 				}
 				else
 				{
 					ASSERT(FALSE);
-				}
+				}*/
 
 				if (!bReSuc)
 				{
 					taskInfoRef.nState = embtaskstate_error;
 					ReportTaskState(taskInfoRef);
-					m_mapTaskinActor.erase(itftask);
 				}
+				TXGUID tmpGuid= taskInfoRef.taskGuid;
+				m_mapTaskinActor.erase(tmpGuid);
+
 				
 			}
 		}
@@ -520,7 +582,7 @@ BOOL EMB::CTaskActor::OnExcutorIdle( const EXCUTORID excutorId )
 	int nStartStep = 0;
 	{
 		CAutoLock lock(&m_csmapLock);
-		MAPEXCTASKS::iterator itf = m_mapExcTask.find(excutorId);
+		MAPEXCTASKS::iterator itf = m_mapExcTask.find(excutorId); // 查询任务
 		if (itf != m_mapExcTask.end())
 		{
 			MAPTASKINACTOR::iterator itftask = m_mapTaskinActor.find(itf->second);
@@ -530,7 +592,7 @@ BOOL EMB::CTaskActor::OnExcutorIdle( const EXCUTORID excutorId )
 				ST_TASKINACTOR& taskInfoRef = itftask->second;
 				if (taskInfoRef.excId == INVALID_ID)
 				{
-					strTask = taskInfoRef.strTask;
+					strTask = taskInfoRef.strTask; // 任务 xml信息
 					nStartStep = taskInfoRef.nCurrStep;
 					taskInfoRef.tmLastReport = time(NULL);
 					taskInfoRef.excId = excutorId;
@@ -554,12 +616,10 @@ BOOL EMB::CTaskActor::OnExcutorIdle( const EXCUTORID excutorId )
 			txParam.UpdateData();
 			strTask = txParam;
 		}
-		else
-		{
-			CFWriteLog(0, TEXT("send task to excutor %d"), excutorId);
-			m_pExcutorMgr->SendToExcutor(excutorId, strTask);
 
-		}
+		CFWriteLog(0, TEXT("send task to excutor %d"), excutorId);
+		m_pExcutorMgr->SendToExcutor(excutorId, strTask);
+
 	}
 
 	return TRUE;
@@ -567,37 +627,21 @@ BOOL EMB::CTaskActor::OnExcutorIdle( const EXCUTORID excutorId )
 
 bool EMB::CTaskActor::TaskResultSaveXmlFile( ST_TASKREPORT& tskReport )
 {
-	CString strXml;
-	tskReport.ToString(strXml);
-
+	// 按天保存xml
+	CTime tCurrent = CTime::GetCurrentTime();
 	CString strFileName;
-	strFileName.Format("%s\\%s.xml", m_strTaskXmlPath, tskReport.strGuid);
+	strFileName.Format("%s\\%s.xml", m_strTaskXmlPath, tCurrent.Format("%Y-%m-%d"));
 
-	return CUtil::SaveXmlFile(strFileName, strXml);
+	return CUtil::XmlFileAppend(strFileName, tskReport);
 }
 
 bool EMB::CTaskActor::QueryXmlFile( const CString& strTaskGuid, ST_TASKREPORT& tskInfor )
 {
+	CTime tCurrent = CTime::GetCurrentTime();
 	CString strFileName;
-	strFileName.Format("%s\\%s.xml", m_strTaskXmlPath, strTaskGuid);
+	strFileName.Format("%s\\%s.xml", m_strTaskXmlPath, tCurrent.Format("%Y-%m-%d"));
 
-	// 文件不存在
-	if (_access(strFileName, 0) == -1)
-	{
-		return false;
-	}
-
-	CMarkup xmlMark;
-	bool suc = xmlMark.Load(strFileName);
-
-	if (!suc)
-	{
-		return false;
-	}
-
-	// 解析xml信息
-	CString xmlContent = xmlMark.GetDoc();
-	suc = tskInfor.FromString(xmlContent);
+	bool suc = CUtil::QueryXmlFile(strFileName, strTaskGuid, tskInfor);
 
 	return suc;
 }
@@ -655,4 +699,83 @@ bool EMB::CTaskActor::FindTask( const EXCUTORID& strExecutorId, ST_TASKINACTOR& 
 	}
 
 	return suc;
+}
+
+HRESULT EMB::CTaskActor::GetTaskInActor( vector<CString>& vTask )
+{
+	vTask.clear();
+
+	//
+	CAutoLock lock(&m_csmapLock);
+
+	MAPTASKINACTOR::iterator itor = m_mapTaskinActor.begin();
+	CString strInfo;
+
+	for (;itor != m_mapTaskinActor.end(); ++itor )
+	{
+		ST_TASKRUNSTATE tsk;
+		tsk.guid = itor->second.taskGuid.guid;
+		tsk.nState = itor->second.nState;
+		tsk.nCurrStep = itor->second.nCurrStep;
+		tsk.tmLastReport = itor->second.tmLastReport;
+		tsk.tmCommit = itor->second.tmCommit; // 提交时间
+
+		tsk.ToString(strInfo);
+		vTask.push_back(strInfo);
+	}
+
+	return S_OK;
+}
+
+bool EMB::CTaskActor::AddTask( TXGUID& tskGuid, const ST_TASKINACTOR& tsk )
+{
+	if (tskGuid.guid == GUID_NULL)
+	{
+		return false;
+	}
+
+	m_mapTaskinActor[tskGuid] = tsk;
+
+	if (m_mapTaskinActor.size() > 100)
+	{
+		// 保留1天之内的任务信息
+		time_t tNow = time(NULL);
+		static long sec = 24 * 60 * 60;
+		tNow -= sec; // 减去1天
+
+		for (MAPTASKINACTOR::iterator itor = m_mapTaskinActor.begin(); itor != m_mapTaskinActor.end();)
+		{
+			if (itor->second.tmCommit < tNow)
+			{
+				m_mapTaskinActor.erase(itor++);
+			}
+			else
+			{
+				++itor;
+			}
+		}
+	}
+	
+	return true;
+}
+
+DWORD EMB::CTaskActor::CalcResLoop()
+{
+	while(WaitForSingleObject(m_hEventQuit, 1000) != WAIT_OBJECT_0)
+	{
+		CCpuRes cpuRes;
+		cpuRes.GetInfor();
+		m_nCpuUsage = cpuRes.m_nUsedPercent;
+
+		CDiskRes diskRes;
+		diskRes.GetInfor();
+		m_nDiskIOUsage = diskRes.m_nIO*100/m_ActRegInfo.nMaxDiskIO;
+		TRACE("\nDiskUsage =%d", m_nDiskIOUsage);
+		CNetRes netRes;
+		netRes.GetInfor();
+		m_nNetIOUsage = netRes.m_nIO*100/m_ActRegInfo.nMaxNetIO;
+		TRACE("\nNetIOUsage =%d", m_nNetIOUsage);
+	}
+
+	return 0;
 }

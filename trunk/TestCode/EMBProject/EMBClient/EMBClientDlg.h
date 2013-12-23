@@ -7,10 +7,12 @@
 *********************************************************************/
 
 #pragma once
-
+#include "UIClientConnector.h"
+#include "EmbStructDef.h"
 
 // CEMBClientDlg 对话框
-class CEMBClientDlg : public CDialog
+class CEMBClientDlg : public CDialog,
+	public IUIClientMessageProcessInterface
 {
 // 构造
 public:
@@ -22,6 +24,18 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
+public:
+	//for IUIClientMessageProcessInterface
+	virtual HRESULT OnMessage(int nMaster, CString& strMsgIn, CString& strRet);
+	virtual HRESULT OnConnStateChange(int nMaster, int nStateIn);
+
+private:
+	CUIClientConnector m_connMaster;
+	CUIClientConnector m_connSlave;
+
+	CAutoCritSec m_csLive;
+	ST_SVRLIVEINFO m_svrInfoMaster;
+	ST_SVRLIVEINFO m_svrInfoSlave;
 
 // 实现
 protected:

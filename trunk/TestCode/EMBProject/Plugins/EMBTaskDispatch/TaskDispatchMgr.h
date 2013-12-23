@@ -14,6 +14,7 @@
 #include "FGlobal.h"
 #include "MasterHeartBeat.h"
 #include "SlaveHeartBeat.h"
+#include "IEMBBaseInterface.h"
 #include <map>
 using namespace std;
 
@@ -37,6 +38,8 @@ struct ST_ACTDISCONNINFO
 };
 typedef vector<ST_ACTDISCONNINFO> VECACTORDISCONNCACHE;
 
+typedef map<EMB::IDispatchNotifyCallbackInterface*, EMB::IDispatchNotifyCallbackInterface*> MAPDISNOTIFYS;
+
 namespace EMB{
 
 class CTaskDispatchMgr:
@@ -46,7 +49,9 @@ class CTaskDispatchMgr:
 	public IPluginConfigInterface,
 	public IPluginConnectorInterce,
 	public IEMBActorHolderCallBackInterface,
-	public IServerLiveInterface
+	public IServerLiveInterface,
+	public IUIMessageProcessInterface,
+	public IDispatchNotifyRegisterInterface
 {
 public:
 	CTaskDispatchMgr(void);
@@ -83,6 +88,14 @@ public:
 	virtual HRESULT GetParam(const CTaskString& szIn, CTaskString& szOut);
 	virtual HRESULT SetParam(const CTaskString& szIn, CTaskString& szOut);
 
+	//for IUIMessageProcessInterface
+	virtual HRESULT OnUIMessage(CTaskString& strMsg, CTaskString& szRet);
+
+	//for IDispatchNotifyRegisterInterface
+	virtual HRESULT RegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier);
+	virtual HRESULT UnRegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier);
+
+
 public:
 	virtual HRESULT GetSelfState(ST_SVRLIVEINFO& infoOut);
 public:
@@ -108,9 +121,28 @@ private:
 	HRESULT OnActiveStateChanged();
 
 	ACTORID GetFirstIdleActor(const ACTORID nDesiredActor, int nPriority);
+	BOOL SetActorInCD(const ACTORID actorId);
+
 	HRESULT OnRemoveActor(const ACTORID nActorid);
 	BOOL UpdateTaskRunState(ST_TASKREPORT& reportIn);
 	BOOL UpdateActorState(ST_ACTORSTATE& stateIn);
+	BOOL IsLiveActor(const ACTORID nActorId);
+
+	BOOL GetIdleActors( CString strActorTeam,int nPriority );
+	CString CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize);
+	CString CreateCombinedTaskXml(CString strTaskIn,int nSize);
+	BOOL TaskNeedSplit(CString strTaskIn);
+	BOOL TryDispatchSplitTask(ST_FILETASKDATA& taskIn);
+
+	BOOL BroadcastToNotifier(CString& strInfo);
+private:
+	//func for ui interaction
+	//
+	HRESULT GetSvrInfo(CString& strRet);
+	HRESULT GetActorList(CString& strRet);
+	HRESULT GetActorState(ACTORID actorID, CString& strRet);
+	HRESULT GetTaskList(CString& strRet);
+	HRESULT GetTaskRunState(TXGUID& taskGuid, CString& strRet);
 
 private:
 	// 全部任务列表
@@ -120,10 +152,13 @@ private:
 	//for  OnActorDisConnect
 	// 未连接设备列表
 	VECACTORDISCONNCACHE m_vCachedDisconnActor;
+	//notifiers, will called when dispatcher state changed.
+	MAPDISNOTIFYS m_mapDisNotifys;
 private:
 	CAutoCritSec m_csFTask; //lock for m_mapTasks
 	CAutoCritSec m_csActor; //lock for m_mapActors
 	CAutoCritSec m_csCacheDisActor; //lock for m_vCachedDisconnActor
+	CAutoCritSec m_csNotifier;
 
 	CActorHolder m_actHolder;                 // ACTOR执行端控制着，控制所有ACTOR
 	IPluginStorageInterface * m_pIStorage;    // 任务存储指针
@@ -151,13 +186,17 @@ private:
 	
 	int nfgActorLostTimeOutMax;
 	int nfgActorCheckInterval;
-	
+	int nfgActorStateOutdate;
+	int nfgActorAssignTaskCD;
 	//
 	int nfgCpuWeight;
 	int nfgMemWeight;
-	int nfgDiskWeight;
+	int nfgDiskIOWeight;
+	int nfgNetIOWeight;
 	int nfgMaxActorLoad;
 	int nfgLowActorLoad;
+
+	CArray<ST_ACTDISCONNINFO,ST_ACTDISCONNINFO&> m_FreeActorIds;    //free actor list
 };
 
 }

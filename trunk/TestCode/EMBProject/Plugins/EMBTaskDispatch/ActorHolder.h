@@ -79,13 +79,12 @@ public:
 	//for IEMBActorSenderInterface
 	virtual HRESULT SendToActor(const ACTORID actorId, CString& szMsg);
 	virtual HRESULT BroadcastToActor(CString& szMsg);
-
+	
 	//
 	BOOL SetActorCallbackInterface(IEMBActorHolderCallBackInterface* pCallIn);
 	BOOL HasActor(const ACTORID actorId);
 
 	virtual HRESULT SetSvrState(int nActiveStateIn, int nMaster);
-	
 
 private:
 	//

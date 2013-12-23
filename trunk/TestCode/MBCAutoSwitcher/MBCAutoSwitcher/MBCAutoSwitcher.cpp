@@ -10,6 +10,9 @@
 #include "FGlobal.h"
 #include "TxFontLoader.h"
 #include "TxLogManager.h"
+#ifndef _DEBUG
+#include "..\..\..\..\..\Encrypt\ZQProtectDef.h"
+#endif // _DEBUG
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -56,6 +59,9 @@ BOOL CMBCAutoSwitcherApp::InitInstance()
 
 	CWinApp::InitInstance();
 
+#ifndef _DEBUG
+	//MACROZQLCCHECK(TRUE, MACROERRRETFALSE);
+#endif // _DEBUG
 	// ≥ı ºªØ OLE ø‚
 	if (!AfxOleInit())
 	{

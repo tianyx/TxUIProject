@@ -133,6 +133,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile="$(SolutionDir)lib\$(ConfigurationName)\$(ProjectName).lib"
+				AdditionalLibraryDirectories="$(SolutionDir)lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -160,18 +161,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\Common\EmbStructDef.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\EMBTask.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\EMBWorkString.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -198,18 +187,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\Common\EmbStructDef.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\EMBTask.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Common\EMBWorkString.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>
@@ -228,6 +205,14 @@
 			Name="common"
 			>
 			<File
+				RelativePath="..\Common\ADOCtrl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\ADOCtrl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Common\AutoCritSec.cpp"
 				>
 			</File>
@@ -245,6 +230,30 @@
 			</File>
 			<File
 				RelativePath="..\Common\EMBMessageDef.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EmbStructDef.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EmbStructDef.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBTask.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBTask.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBWorkString.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\EMBWorkString.h"
 				>
 			</File>
 			<File
@@ -341,6 +350,14 @@
 			</File>
 			<File
 				RelativePath="..\Common\StrConvert.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\SystemResourceInfo.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\SystemResourceInfo.h"
 				>
 			</File>
 			<File

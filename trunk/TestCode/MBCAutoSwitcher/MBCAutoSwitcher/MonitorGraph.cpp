@@ -17,10 +17,10 @@ void DelMBCObjProc(CMBCBaseObj* pObj)
 CMonitorGraph::CMonitorGraph(void)
 {
 	m_bRunning = FALSE;
-	m_nCoolDownInterval = 1000;
+	m_nCoolDownInterval = 200;
 	m_nStatCheckInterval = g_GlobalInfo.nStateCheckInterval;
-	m_nSwitchCD = g_GlobalInfo.nSwitchCD;
-	m_nRelyCD = g_GlobalInfo.nRelayCD;
+	m_nSwitchCD = g_GlobalInfo.nSwitchCD* (1000/m_nCoolDownInterval);
+	m_nRelyCD = g_GlobalInfo.nRelayCD* (1000/m_nCoolDownInterval);
 	m_gsHostObj.m_addrLocal = g_GlobalInfo.addrGStateHostListen;
 	m_nRelay2to1Mode = g_GlobalInfo.nRelay2to1Mode;
 	m_gsHostObj.SetGraphStateCallback(this);
@@ -370,9 +370,15 @@ HRESULT CMonitorGraph::CheckGraphState()
 				//if have more than 2 addr, notify relay end obj to stop relay
 				CMBCEndObj* pMasterEndObj = (CMBCEndObj* )objInfo.pObj;
 				CheckMasterRecvState(pMasterEndObj);
+				CheckLocalRelayWhen2to1Mode(pMasterEndObj);
 			}
 		}
-		ASSERT(hr == S_OK);
+		else
+		{
+			ASSERT(hr == S_OK);
+
+		}
+
 	}
 
 	return hr;
@@ -910,4 +916,98 @@ HRESULT CMonitorGraph::ChangeRelay( ST_CHANGERELAY& relayIn )
 	
 
 	return hr;
+}
+
+BOOL CMonitorGraph::FindMasterEnd( SOCKADDR_IN& addrMaster, CMBCEndObj*& pEndObjOut )
+{
+	pEndObjOut = NULL;
+	for (size_t imaster = 0; imaster < m_graphState.vEndInfo.size(); ++imaster)
+	{
+		//master will down, find other back end to relay
+		ST_OBJSTATEINFO& objInfomaster= m_graphState.vEndInfo[imaster];
+		if (objInfomaster.addrRemote == addrMaster && objInfomaster.nObjType == MBCOBJTYPE_ENDMASTER)
+		{
+			pEndObjOut = (CMBCEndObj*)objInfomaster.pObj;
+			break;
+		}
+	}
+
+	return pEndObjOut != NULL;
+}
+
+HRESULT CMonitorGraph::CheckLocalRelayWhen2to1Mode( CMBCEndObj* pMasterEndObj )
+{
+	if (g_GlobalInfo.nRelay2to1Mode !=1)
+	{
+		return S_FALSE;
+	}
+
+	if (IsChannelActInCD(pMasterEndObj->m_strCHID))
+	{
+		return S_OK;
+	}
+
+	std::vector<SOCKADDR_IN> vSrcAddrs;
+	pMasterEndObj->GetRecvAddrs(vSrcAddrs);
+	if (vSrcAddrs.size() ==1)
+	{
+		//notify other relay end obj to stop if the addr is in it's relay addrs.
+		std::vector<CMBCEndObj*> vSelfRelayObj;
+		std::vector<SOCKADDR_IN> vSelfRelayAddrs;
+
+		for (size_t ir  = 0; ir < m_graphData.vEnd.size(); ++ir)
+		{
+			CMBCEndObj* pRelayObj = m_graphData.vEnd[ir];
+			if (pRelayObj->m_nObjType == MBCOBJTYPE_ENDBACK)
+			{
+				int nRet = 0;
+				int nPos = 0;
+				for (size_t ik = 0; ik < vSrcAddrs.size(); ++ik)
+				{
+					nRet =pRelayObj->IsLocalAddrOfRelaySock(pMasterEndObj->m_addrRemote, vSrcAddrs[ik]);
+					if (nRet ==2)
+					{
+						break;
+					}
+				}
+
+				if (nRet >= 1)
+				{
+					//means i relay to the addr
+					vSelfRelayObj.push_back(pRelayObj);
+					if (nRet == 2)
+					{
+						//means the src addr is mine
+						vSelfRelayAddrs.push_back(vSrcAddrs[nPos]);
+					}
+				}
+
+			}
+		}
+
+		if (vSelfRelayObj.size() == 0)
+		{
+			//client obj switch err, find lastest err client and change it
+			//back stream down,find next relay back end
+			CString strCHIdM = pMasterEndObj->m_strCHID;
+
+			CFWriteLog(SWITCHERLOGKEY, TEXT("warning: bak end is down,start change relayed master channel:chid = %s"), strCHIdM);
+
+			//master will down, find other back end to relay
+			CMBCEndObj* pBackEndObj = NULL;
+			if (FindFirstValidBackEnd(strCHIdM, pBackEndObj))
+			{
+				CFWriteLog(SWITCHERLOGKEY, TEXT("found available back end obj, start relay from %s to %s"),  Addr2String(pBackEndObj->m_addrRemote).c_str(),  Addr2String(pMasterEndObj->m_addrRemote).c_str());
+				ST_MBCACTCOOLDOWN cdmsg;
+				cdmsg.nCoolDownCount = m_nRelyCD;
+				cdmsg.pObj = pBackEndObj;
+				cdmsg.actMsg.nMsgId = actid_notsended;
+				cdmsg.actMsg.nActType = actType_relayDest;
+				cdmsg.actMsg.addrDest = pMasterEndObj->m_addrRemote;
+				StrCpy(cdmsg.actMsg.strChId, strCHIdM.GetBuffer());
+				cdmsg.strChId = strCHIdM;
+				AddCDMsg(cdmsg);
+			}
+		}
+	}
 }

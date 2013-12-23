@@ -51,11 +51,12 @@ HRESULT CTaskProberTcp::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, 
 		if (nRetUsed > 0)
 		{
 			hr = send(*pMBCSock, buffer, nRetUsed, 0);
-			CFWriteLog(TEXT("=send back to soc %d"), pMBCSock->m_hSock);
 			if(hr == SOCKET_ERROR)
 			{
 				ASSERT(FALSE);
 				hr = WSAGetLastError();
+				CFWriteLog(TEXT("prober send back to soc %d error %d"), pMBCSock->m_hSock, hr);
+
 			}
 		}
 		return hr;

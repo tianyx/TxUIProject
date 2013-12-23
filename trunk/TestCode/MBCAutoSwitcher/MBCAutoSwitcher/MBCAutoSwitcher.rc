@@ -157,13 +157,13 @@ BEGIN
     BEGIN
         BLOCK "080403a8"
         BEGIN
-            VALUE "CompanyName", "TODO: <公司名>"
-            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "CompanyName", "北京正奇联讯科技有限公司"
+            VALUE "FileDescription", "MBCAutoSwitcher"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "MBCAutoSwitcher.exe"
-            VALUE "LegalCopyright", "TODO: (C) <公司名>。保留所有权利。"
+            VALUE "LegalCopyright", "北京正奇联讯科技有限公司 保留所有权利。"
             VALUE "OriginalFilename", "MBCAutoSwitcher.exe"
-            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "ProductName", "MBCAutoSwitcher"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

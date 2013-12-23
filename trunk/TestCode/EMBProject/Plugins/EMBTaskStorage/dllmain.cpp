@@ -39,6 +39,8 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 
 		new CDynLinkLibrary(EMBTaskStorageDLL);
 
+		CoInitialize(NULL);
+
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)
 	{
@@ -47,5 +49,6 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		// 在调用析构函数之前终止该库
 		AfxTermExtensionModule(EMBTaskStorageDLL);
 	}
+
 	return 1;   // 确定
 }

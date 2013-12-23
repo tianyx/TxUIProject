@@ -59,6 +59,16 @@ class CTxStrConvert
 public:
 	CTxStrConvert(){}
 	CTxStrConvert(LPCTSTR szParamIn){m_szParam = szParamIn;}
+	CTxStrConvert(const CString& szParamIn){m_szParam = szParamIn;}
+
+	CTxStrConvert(int valIn){SetVal(valIn);}
+	CTxStrConvert(unsigned int valIn){SetVal(valIn);}
+	CTxStrConvert(INT64 valIn){SetVal(valIn);}
+	CTxStrConvert(bool valIn){SetVal(valIn);}
+	CTxStrConvert(double valIn){SetVal(valIn);}
+	CTxStrConvert(const VECSTRINGS& valIn){SetVal(valIn);}
+	CTxStrConvert(const VECINTS& valIn){SetVal(valIn);}
+
 	~CTxStrConvert(){};
 	CString m_szParam;
 public:
@@ -76,8 +86,8 @@ public:
 	void SetVal(INT64 nVal);
 	void SetVal(bool bVal);
 	void SetVal(LPCTSTR szVal);
-	void SetVal(VECSTRINGS& vVal);
-	void SetVal(VECINTS& vVal);
+	void SetVal(const VECSTRINGS& vVal);
+	void SetVal(const VECINTS& vVal);
 	void SetVal(double fVal);
 	void SetValX(int nVal); // 16½øÖÆ
 };

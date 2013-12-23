@@ -82,11 +82,13 @@ private:
 	HRESULT QueryGraphState();
 	HRESULT CheckGraphState();
 	HRESULT CheckMasterRecvState(CMBCEndObj* pMasterEndObj);
+	HRESULT CheckLocalRelayWhen2to1Mode(CMBCEndObj* pMasterEndObj);
 
 	//find slave client through link  slave end----> slave svr ---> slave client
 	BOOL FindFirstValidSlaveLinkPath(const CString& strCHId, CMBCEndObj*& pEndObjOut, CMBCSvrObj*& pObjSvrOut, CMBCClientObj*& pObjClientOut, SOCKADDR_IN& addrSvrCtrlOut);
 	BOOL FindSvr(const CString& strCHId, SOCKADDR_IN& AddrEnd, CMBCSvrObj*& pObjOut, SOCKADDR_IN& addrCtrlOut );
 	BOOL FindClient(const CString& strCHId, SOCKADDR_IN& AddrCtrl, CMBCClientObj*& pObjOut);
+	BOOL FindMasterEnd(SOCKADDR_IN& addrMaster, CMBCEndObj*& pEndObjOut);
 
 	BOOL FindFirstValidBackEnd(const CString& strCHId, CMBCEndObj*& pObjOut);
 	BOOL StopRelyBroadCast(SOCKADDR_IN& AddrRely);

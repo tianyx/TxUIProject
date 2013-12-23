@@ -56,11 +56,11 @@ BOOL LoadPluginManager()
 {
 	//插件管理动态库
 	CString strFile = g_GlobalInfo.szAppPath;
-	strFile +=TEXT("\\plugin\\EMBPluginMgr.dll");
+	strFile +=TEXT("\\plugin\\EMBPluginMgr.epl");
 	if (_access(strFile, 0) == -1)
 	{
 		ASSERT(FALSE);
-		CFWriteLog(LOGKEYMAIN, TEXT("EMBPluginMgr.dll not Found"));
+		CFWriteLog(LOGKEYMAIN, TEXT("EMBPluginMgr.epl not Found"));
 		return FALSE;
 	}
 	
@@ -72,7 +72,7 @@ BOOL LoadPluginManager()
 		g_pIPluginMgr->QueryInterface(GuidEMBPlugin_IPluginManager, (LPVOID&) *&apPluginMgr);
 		if (apPluginMgr)
 		{
-			apPluginMgr->InitPluginsSearch(FALSE, TEXT("dll"));
+			apPluginMgr->InitPluginsSearch(FALSE, NULL);
 		}
 
 	}
@@ -157,6 +157,15 @@ BOOL InitServer()
 	txParam.GetSubNodeString(strKeyPath, strTaskDispatchConfig);
 	ASSERT(!strTaskDispatchConfig.IsEmpty());
 
+	strKeyPath = EPATH_MAIN;
+	strKeyPath += TEXT("\\");
+	strKeyPath +=EK_UISVRCONFIG;
+	CTxParamString strUISvrConfig;
+	txParam.GetSubNodeString(strKeyPath, strUISvrConfig);
+	ASSERT(!strUISvrConfig.IsEmpty());
+
+
+
 	//load plugin, set param, then connect them
 	if (!g_pIPluginMgr)
 	{
@@ -185,10 +194,23 @@ BOOL InitServer()
 		g_GlobalInfo.vPlugins.push_back(tmpPlugin);
 	}
 
-	if (g_GlobalInfo.vPlugins.size() != 3)
+	if (g_GlobalInfo.vPlugins.size() < 3)
 	{
 		ASSERT(FALSE);
 		return FALSE;
+	}
+
+	if (LoadPluginByPluginMgr(PluginType_UIServer, SubType_None, g_pIPluginMgr, tmpPlugin))
+	{
+		CFWriteLog(LOGKEY_EMBSERVER, TEXT("ui server plugin founded."));
+		tmpPlugin.strParam = strUISvrConfig;
+		g_GlobalInfo.vPlugins.push_back(tmpPlugin);
+	}
+
+	if (g_GlobalInfo.vPlugins.size() < 4)
+	{
+		ASSERT(FALSE);
+		//no uiserver, but not quit
 	}
 	//set param;
 	for (size_t i = 0; i < g_GlobalInfo.vPlugins.size(); ++i)
@@ -196,8 +218,8 @@ BOOL InitServer()
 		CString strRet;
 		SetPluginParam(g_GlobalInfo.vPlugins[i].pIface, g_GlobalInfo.vPlugins[i].strParam, strRet);
 	}
-	//connect
-	for (size_t i = 0; i < g_GlobalInfo.vPlugins.size() -1; ++i)
+	//connect taskriser<-->storage<-->dispath
+	for (size_t i = 0; i < 2; ++i)
 	{
 		HRESULT hr = ConnectPlugins(g_GlobalInfo.vPlugins[i].pIface, g_GlobalInfo.vPlugins[i+1].pIface);
 		if (FAILED(hr))
@@ -205,6 +227,24 @@ BOOL InitServer()
 			return FALSE;
 		}
 	}
+
+	if (g_GlobalInfo.vPlugins.size() >3)
+	{
+		//connect uiserver -->dispatch
+		HRESULT hr = ConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_UIServer].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskDispatch].pIface);
+		if (FAILED(hr))
+		{
+			return FALSE;
+		}
+
+		//connect uiserver-->storage 
+		hr = ConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_UIServer].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskStorage].pIface);
+		if (FAILED(hr))
+		{
+			return FALSE;
+		}
+	}
+	
 
 	return TRUE;
 }
@@ -222,7 +262,7 @@ BOOL UnInitServer()
 		return TRUE;
 	}
 	//disconnect
-	for (int i = 0; i < g_GlobalInfo.vPlugins.size()-1; ++i)
+	for (int i = 0; i < 2; ++i)
 	{
 		HRESULT hr = DisConnectPlugins(g_GlobalInfo.vPlugins[i].pIface, g_GlobalInfo.vPlugins[i+1].pIface);
 		if (FAILED(hr))
@@ -230,6 +270,25 @@ BOOL UnInitServer()
 			ASSERT(FALSE);
 		}
 	}
+
+	if (g_GlobalInfo.vPlugins.size() > 3)
+	{
+		CFWriteLog(LOGKEY_EMBSERVER, TEXT("start conn ui server!"));
+		//disconnect uiserver -->dispatch
+		HRESULT hr = DisConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_UIServer].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskDispatch].pIface);
+		if (FAILED(hr))
+		{
+			return FALSE;
+		}
+
+		//disconnect uiserver-->storage 
+		hr = DisConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_UIServer].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskStorage].pIface);
+		if (FAILED(hr))
+		{
+			return FALSE;
+		}
+	}
+	
 
 	//unload 
 	for (int i = 0; i < g_GlobalInfo.vPlugins.size(); ++i)

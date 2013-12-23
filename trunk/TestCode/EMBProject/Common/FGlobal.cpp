@@ -91,7 +91,7 @@ void CFWriteLog( DWORD dwLogKey, LPCTSTR format,... )
 	va_end(ap);
 	
 	GetTxLogMgr()->WriteLog(dwLogKey, line);
-#ifdef _DEBUG
+#ifndef NOCONSOLEOUTPUT
 	if (g_hconsoleHandle)
 	{
 		DWORD dwWrited = 0;
@@ -159,7 +159,7 @@ void CFWriteLog2( HWND hwndIn, LPCTSTR format, va_list& ap )
 #endif // _UNICODE
 	va_end(ap);
 
-#ifdef _DEBUG
+#ifndef NOCONSOLEOUTPUT
 	if (g_hconsoleHandle)
 	{
 		DWORD dwWrited = 0;

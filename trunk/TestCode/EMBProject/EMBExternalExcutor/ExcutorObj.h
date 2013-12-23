@@ -76,7 +76,7 @@ private:
 	HRESULT OnActorMessage(CString& strInfo, CString& strRet);
 	void	ClearMsgPool();
 	HRESULT InitTask();
-	void	OnTaskProgress(int nPercent);
+	void	OnTaskProgress(int nPercent, HRESULT codeIn = S_OK);
 
 	BOOL	LunchTaskDll(int nTaskType);
 	BOOL	UnLoadTaskDll();
@@ -91,6 +91,7 @@ private:
 	History： 11-26 接口参数调整,使用ST_EXCUTORREG
 	*/
 	BOOL Init(ST_EXCUTORREG& tExecutorReg, HWND hMain);
+	void ResetTaskInfor();
 
 public:
 	HWND m_hwndExcMsg;	// 消息标识
@@ -120,6 +121,7 @@ private:
 	
 	int nfgTaskCheckInterval;	// 任务检查间隔
 	int nfgIdleReportInterval;	// 
+	int nfgTaskRetryMax;
 	int nfgIdleTimeoutForQuit;
 
 	static CExcutorObj* m_spExcObj;
