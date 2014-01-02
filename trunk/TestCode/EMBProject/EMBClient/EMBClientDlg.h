@@ -9,6 +9,7 @@
 #pragma once
 #include "UIClientConnector.h"
 #include "EmbStructDef.h"
+#include "afxwin.h"
 
 // CEMBClientDlg ¶Ô»°¿ò
 class CEMBClientDlg : public CDialog,
@@ -28,7 +29,10 @@ public:
 	//for IUIClientMessageProcessInterface
 	virtual HRESULT OnMessage(int nMaster, CString& strMsgIn, CString& strRet);
 	virtual HRESULT OnConnStateChange(int nMaster, int nStateIn);
+	virtual HRESULT SendToUISvr(CString& strMsg, BOOL bSendAll = FALSE);
 
+private:
+	CUIClientConnector* GetActiveConn();
 private:
 	CUIClientConnector m_connMaster;
 	CUIClientConnector m_connSlave;
@@ -47,4 +51,19 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	CEdit m_edtLog;
+	afx_msg void OnBnClickedBtnGetsvrinfo();
+protected:
+	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnBnClickedBtnGetactorlist();
+	afx_msg void OnBnClickedBtnGettasklist();
+	afx_msg void OnBnClickedBtnGetactorinfo();
+	afx_msg void OnBnClickedBtnGettaskinfo();
+	CEdit m_edtActorId;
+	CEdit m_edtTaskId;
+	afx_msg void OnDestroy();
 };
+

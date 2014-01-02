@@ -46,3 +46,6 @@ extern const GUID GuidEMBPlugin_IActorUI;
 
 //
 extern const GUID GuidEMBPlugin_IUIMessageProcess;
+
+// Server UI
+extern const GUID GuidEMBServer_IUI;

@@ -5,7 +5,7 @@
 
 interface IUISvrMsgCallbackInterface
 {
-	virtual HRESULT UIMessageCallback(CString& taskIn, CString& strRet) = 0;    //任务收集回调函数
+	virtual HRESULT UIMessageCallback(CString& strMsgIn, CString& strRet) = 0;    
 };
 
 interface IUISvrProberBase
@@ -35,6 +35,7 @@ public:
 	
 	//from CMBCRemoteObj
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
+	virtual HRESULT OnSockConnected(CMBCSocket* pMBCSock);
 
 private:
 	//

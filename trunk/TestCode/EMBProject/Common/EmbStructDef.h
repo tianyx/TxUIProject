@@ -362,6 +362,27 @@ struct ST_TASKDISPATCHCONFIG
 	int nSvrID;
 	CString strIpActorHolder;		//linsten addr for actor holder. actor will connect to this addr
 	CString strIpMaster;			//if nMaster == embSvrType_slave, fill the master ip to connect
+
+	//////////////////////////////////////////////////////////////////////////
+	//optional config
+	int nfgTaskPoolSizeMax;
+	//
+	int nfgTaskReDispatchMaxCount;
+	int nfgTaskDispatchCD;
+	int nfgTaskReportIntervalMax;
+	int nfgTaskCheckProgressIntervalMax;
+	int nfgTaskLostTimeOutMax;
+
+	int nfgActorLostTimeOutMax;
+	int nfgActorCheckInterval;
+	int nfgActorStateOutdate;
+	int nfgActorAssignTaskCD;
+	//
+	int nfgCpuWeight;
+	int nfgMemWeight;
+	int nfgDiskIOWeight;
+	int nfgNetIOWeight;
+	//////////////////////////////////////////////////////////////////////////
 	BOOL ToString(CString& strOut);	
 	BOOL FromString(const CString& strIn);
 	
@@ -423,6 +444,7 @@ struct ST_ACTORSTATE
 	// 	CString strHost;
 	// 	MAPDISKUSEAGE mapDiskUse;
 	CString strTeam;     //在指定组中
+	CString strPcName;
 	
 	time_t tmLastReport;
 	time_t tmLastCheck;
@@ -441,7 +463,7 @@ struct ST_ACTORSTATE
 		tmLastReport = 0;
 		tmLastCheck = 0;
 		tmLastAssignTask = 0;
-
+		strPcName = "";
 	}
 	
 	BOOL ToString(CString& strOut);
@@ -694,6 +716,7 @@ struct ST_FCVSTASKINFO
 	CString fileAdrType;
 	CString filePath;
 	CString fileName;
+	CString strSaveXmlPath; // 保存技审结果的xml路径
 	
 	CString fileAdrIP;
 	CString fileAdrUser;
@@ -715,6 +738,7 @@ struct ST_FCVSTASKINFO
 		fileAdrUser = "";
 		fileAdrPwd = "";
 		fileAdrPort = "";
+		strSaveXmlPath = "";
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);

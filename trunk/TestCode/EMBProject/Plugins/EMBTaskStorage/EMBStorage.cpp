@@ -488,7 +488,7 @@ HRESULT EMB::CEMBStorageDB::FetchTaskFromStorage( const DISPATCHID nDispatchID, 
 
 	
 
-	strSQL = "select * from t_EMBTask where (nState = 0) and (nDispatchID) (nPRI > ";
+	strSQL = "select * from t_EMBTask where (nState = 0) and (nDispatchID is null) and (nPRI > ";
 	itoa(nMinPriority,cNum,10);
 	strSQL += cNum;
 	
@@ -645,4 +645,25 @@ CString EMB::CEMBStorageDB::Timet2CString(time_t tm)
 	stime = ptime.Format("%Y-%m-%d %H:%M:%S");
 
 	return stime;
+}
+
+HRESULT EMB::CEMBStorageDB::UpdateActorID( CTaskString& strTaskGuid, ACTORID actorId )
+{
+	CString sql;
+	sql.Format("update T_EMBTask set nActorID='%d' where strTaskID = '%s'", actorId, strTaskGuid);
+
+	CADOCtrl dbCtrl;
+	dbCtrl.SetODBCDatabase(m_strDBCon);
+	if(!dbCtrl.OpenDB())
+	{
+		return FALSE;
+	}
+
+	if (!dbCtrl.ExecuteSQL(sql))
+	{
+		CFWriteLog(LOGKEY_TASKSTORAGE, "UpdateActorID() Fail ,SQL:");
+		CFWriteLog(LOGKEY_TASKSTORAGE, sql);
+	}
+
+	dbCtrl.CloseDB();
 }

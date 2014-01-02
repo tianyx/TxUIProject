@@ -10,6 +10,7 @@ CUIClientConnector::CUIClientConnector(void)
 {
 	m_nMaster = INVALID_VALUE;
 	m_connState = embConnState_error;
+	m_pIProcess = NULL;
 }
 
 CUIClientConnector::~CUIClientConnector(void)
@@ -62,6 +63,11 @@ HRESULT CUIClientConnector::SendtoUISvr( CString& strInfo )
 		return EMBERR_INVALIDARG;
 	}
 
+	if (GetState() != MBCSTATE_OK)
+	{
+		return EMBERR_NOTREADY;
+	}
+
 	ST_EMBTRANSMSG msgIn(embmsgtype_UIClientToUIServerMsg);
 	msgIn.strData = strInfo; 
 	CEMBAutoBuffer szbuff(msgIn);
@@ -108,4 +114,9 @@ BOOL CUIClientConnector::SetParam(int nMasterId, SOCKADDR_IN& addrConn )
 	m_nMaster = nMasterId;
 	SetScokAddr(&addrConn, NULL);
 	return TRUE;
+}
+
+void CUIClientConnector::SetMsgProcessor( IUIClientMessageProcessInterface* pIproce )
+{
+	m_pIProcess = pIproce;
 }

@@ -294,5 +294,9 @@
 		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value="EMBClient.rc"
+		/>
 	</Globals>
 </VisualStudioProject>

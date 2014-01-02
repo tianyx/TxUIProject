@@ -196,6 +196,7 @@ interface IPluginStorageInterface:virtual public ITxUnkown
 	virtual HRESULT UpdateTaskToStorage(const DISPATCHID nDispatchID, CTaskString& szTaskIn) = 0;
 	virtual HRESULT FetchTaskFromStorage(const DISPATCHID nDispatchID, int nMinPriority, int nDesiredNum, VECTASKS& vTasks) = 0;
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks) = 0;
+	virtual HRESULT UpdateActorID(CTaskString& strTaskGuid, ACTORID actorId){return S_OK;};
 
 };
 
@@ -223,6 +224,12 @@ interface IDispatchNotifyRegisterInterface: virtual public ITxUnkown
 {
 	virtual HRESULT RegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier) = 0;
 	virtual HRESULT UnRegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier) = 0;
+};
+
+// Server 界面获取信息接口
+interface IServerUI : virtual public ITxUnkown
+{
+	virtual HRESULT GetActors(vector<CString>& vActor) = 0;
 };
 
 

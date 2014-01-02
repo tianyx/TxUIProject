@@ -5,11 +5,16 @@
 #include "stdafx.h"
 #include "EMBClient.h"
 #include "EMBClientDlg.h"
+#include "MainDef.h"
+#include "StrConvert.h"
+#include "EMBCommonFunc.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+#define IDTIMER_GETSVRSTATE 1301
+#define IDTIMER_GETALL		1302
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
@@ -56,6 +61,9 @@ CEMBClientDlg::CEMBClientDlg(CWnd* pParent /*=NULL*/)
 void CEMBClientDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_EDIT_OUTPUT, m_edtLog);
+	DDX_Control(pDX, IDC_EDIT_ACTORID, m_edtActorId);
+	DDX_Control(pDX, IDC_EDIT_TASKGUID, m_edtTaskId);
 }
 
 BEGIN_MESSAGE_MAP(CEMBClientDlg, CDialog)
@@ -63,6 +71,13 @@ BEGIN_MESSAGE_MAP(CEMBClientDlg, CDialog)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
+	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_BTN_GETSVRINFO, &CEMBClientDlg::OnBnClickedBtnGetsvrinfo)
+	ON_BN_CLICKED(IDC_BTN_GETACTORLIST, &CEMBClientDlg::OnBnClickedBtnGetactorlist)
+	ON_BN_CLICKED(IDC_BTN_GETTASKLIST, &CEMBClientDlg::OnBnClickedBtnGettasklist)
+	ON_BN_CLICKED(IDC_BTN_GETACTORINFO, &CEMBClientDlg::OnBnClickedBtnGetactorinfo)
+	ON_BN_CLICKED(IDC_BTN_GETTASKINFO, &CEMBClientDlg::OnBnClickedBtnGettaskinfo)
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -98,7 +113,26 @@ BOOL CEMBClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+	m_connMaster.SetScokAddr(&g_GlobalInfo.uiclientCfg.addrMain, NULL);
+	m_connMaster.SetMsgProcessor(this);
+	m_connSlave.SetScokAddr(&g_GlobalInfo.uiclientCfg.addrSlave, NULL);
+	m_connSlave.SetMsgProcessor(this);
 
+	HRESULT hr = m_connMaster.Run();
+	if (hr != S_OK)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	//hr = m_connSlave.Run();
+	if (hr != S_OK)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	g_hwndLog = this->GetSafeHwnd();
+	//SetTimer(IDTIMER_GETSVRSTATE, 1000, NULL);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -153,6 +187,30 @@ HCURSOR CEMBClientDlg::OnQueryDragIcon()
 
 HRESULT CEMBClientDlg::OnMessage(int nMaster, CString& strMsg, CString& strRet )
 {
+	HRESULT hr = S_OK;
+	ST_EMBXMLMAININFO mainInfo;
+	GetEmbXmlMainInfo(strMsg, mainInfo);
+	if (mainInfo.nType == embxmltype_svrInfo)
+	{
+		ST_SVRLIVEINFO livInfo;
+		livInfo.FromString(strMsg);
+		if (livInfo.nMaster == embSvrType_master)
+		{
+			m_svrInfoMaster = livInfo;
+			m_svrInfoMaster.nConnState =embConnState_ok;
+		}
+		else if (livInfo.nMaster == embSvrType_slave)
+		{
+			m_svrInfoSlave = livInfo;
+			m_svrInfoSlave.nConnState = embConnState_ok;
+		}
+	}
+	else
+	{
+
+	}
+	CFWriteLog(strMsg);
+
 	return S_OK;
 }
 
@@ -161,8 +219,158 @@ HRESULT CEMBClientDlg::OnConnStateChange( int nMaster, int nStateIn )
 	if (nMaster == embSvrType_master)
 	{
 		CAutoLock lcok(&m_csLive);
+		m_svrInfoMaster.nConnState = nStateIn;
 	}
+	else if (nMaster == embSvrType_slave)
+	{
+		CAutoLock lock(&m_csLive);
+		m_svrInfoSlave.nConnState = nStateIn;
+	}
+	//refresh state ui
 
 	return S_OK;
 }
 
+
+void CEMBClientDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (nIDEvent == IDTIMER_GETSVRSTATE)
+	{
+		ST_SVRLIVEINFO info;
+		CString strReq;
+		info.ToString(strReq);
+		if (m_connMaster.GetState() == MBCSTATE_OK)
+		{
+			m_connMaster.SendtoUISvr(strReq);
+		}
+		if (m_connSlave.GetState() == MBCSTATE_OK)
+		{
+			m_connSlave.SendtoUISvr(strReq);
+		}
+	}
+	__super::OnTimer(nIDEvent);
+}
+
+
+void CEMBClientDlg::OnBnClickedBtnGetsvrinfo()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	ST_EMBXMLMAININFO mainInfo;
+	mainInfo.nType = embxmltype_svrInfo;
+	CString strReq;
+	mainInfo.ToString(strReq);
+	CFWriteLog(TEXT(strReq));
+	m_connMaster.SendtoUISvr(strReq);
+	m_connSlave.SendtoUISvr(strReq);
+}
+
+LRESULT CEMBClientDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	MACRO_EDITLOGOUTPUT
+	return __super::WindowProc(message, wParam, lParam);
+}
+
+CUIClientConnector* CEMBClientDlg::GetActiveConn()
+{
+	if (m_svrInfoMaster.nActive == 1 && m_svrInfoMaster.nConnState == embConnState_ok)
+	{
+		return &m_connMaster;
+	}
+
+	if (m_svrInfoSlave.nActive == 1 && m_svrInfoSlave.nConnState == embConnState_ok)
+	{
+		return &m_connSlave;
+	}
+
+	return NULL;
+}
+
+HRESULT CEMBClientDlg::SendToUISvr( CString& strMsg, BOOL bSendAll /*= FALSE*/ )
+{
+	CFWriteLog(strMsg);
+	HRESULT hr = S_FALSE;
+	if (bSendAll)
+	{
+		HRESULT hr1 =m_connMaster.SendtoUISvr(strMsg);
+		HRESULT hr2 =m_connSlave.SendtoUISvr(strMsg);
+		hr = (hr1==S_OK && hr2 == S_OK)? S_OK:E_FAIL;
+	}
+	else
+	{
+		CUIClientConnector* pConn = GetActiveConn();
+		if (pConn)
+		{
+			hr = pConn->SendtoUISvr(strMsg);
+		}
+	}
+
+	return hr;
+}
+
+void CEMBClientDlg::OnBnClickedBtnGetactorlist()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	ST_EMBXMLMAININFO mainInfo;
+	mainInfo.nType = embxmltype_actorList;
+	mainInfo.ver = 1;
+	CString strReq;
+	mainInfo.ToString(strReq);
+	SendToUISvr(strReq);
+}
+
+void CEMBClientDlg::OnBnClickedBtnGettasklist()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	ST_EMBXMLMAININFO mainInfo;
+	mainInfo.nType = embxmltype_taskList;
+	mainInfo.ver = 1;
+	CString strReq;
+	mainInfo.ToString(strReq);
+	SendToUISvr(strReq);
+}
+
+void CEMBClientDlg::OnBnClickedBtnGetactorinfo()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString strId;
+	m_edtActorId.GetWindowText(strId);
+	if (strId.IsEmpty())
+	{
+		return;
+	}
+	CTxStrConvert val(strId);
+	ST_ACTORSTATE info;
+	info.actorId = val.GetAsInt(-1);
+	CString strReq;
+	info.ToString(strReq);
+	SendToUISvr(strReq);
+
+}
+
+void CEMBClientDlg::OnBnClickedBtnGettaskinfo()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString strId;
+	m_edtTaskId.GetWindowText(strId);
+	if (strId.IsEmpty())
+	{
+		return;
+	}
+	CTxStrConvert val(strId);
+	ST_TASKRUNSTATE info;
+	info.guid = String2Guid(strId);
+	CString strReq;
+	info.ToString(strReq,TRUE);
+	SendToUISvr(strReq);
+}
+
+void CEMBClientDlg::OnDestroy()
+{
+	m_connMaster.Stop();
+	m_connSlave.Stop();
+	__super::OnDestroy();
+
+	// TODO: 在此处添加消息处理程序代码
+}

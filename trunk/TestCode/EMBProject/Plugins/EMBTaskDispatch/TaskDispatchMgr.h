@@ -51,7 +51,8 @@ class CTaskDispatchMgr:
 	public IEMBActorHolderCallBackInterface,
 	public IServerLiveInterface,
 	public IUIMessageProcessInterface,
-	public IDispatchNotifyRegisterInterface
+	public IDispatchNotifyRegisterInterface,
+	public IServerUI
 {
 public:
 	CTaskDispatchMgr(void);
@@ -80,7 +81,7 @@ public:
 	virtual HRESULT SubmitTask(const CTaskString& szTaskIn, CTaskString& szRet);
 
 	//for IEMBActorHolderCallBackInterface
-	virtual HRESULT OnActorConnect(const ACTORID& szActorGuid);
+	virtual HRESULT OnActorConnect(const ACTORID& szActorGuid, const CString& strPcName);
 	virtual HRESULT OnActorDisConnect(const ACTORID& szActorGuid);
 	virtual HRESULT OnActorMessage(const ACTORID& szActorGuid, CString& szActorInfoIn,  CString& szRet);
 
@@ -94,6 +95,9 @@ public:
 	//for IDispatchNotifyRegisterInterface
 	virtual HRESULT RegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier);
 	virtual HRESULT UnRegisterNotifier(IDispatchNotifyCallbackInterface* pNotifier);
+
+	// Server UI
+	virtual HRESULT GetActors(vector<CString>& vActor);
 
 
 public:

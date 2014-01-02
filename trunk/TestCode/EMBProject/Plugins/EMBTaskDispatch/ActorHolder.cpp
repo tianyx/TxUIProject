@@ -142,6 +142,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 					{
 						ASSERT(itf->second.strGuid == INVALID_ID);
 						itf->second.strGuid = actoridNew;
+						itf->second.strPcName = msgIn.strPcName;
 						m_mapActorMirrs[actoridNew] = pMBCSock;
 					}
 					else
@@ -181,7 +182,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 			}
 			if (m_pActorCallbackInterface)
 			{
-				m_pActorCallbackInterface->OnActorConnect(actoridNew);
+				m_pActorCallbackInterface->OnActorConnect(actoridNew, msgIn.strPcName);
 			}
 		}
 	}

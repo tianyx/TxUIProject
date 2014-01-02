@@ -377,6 +377,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Common\TxPerformMon.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\TxPerformMon.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Common\TxSerialize.cpp"
 				>
 			</File>

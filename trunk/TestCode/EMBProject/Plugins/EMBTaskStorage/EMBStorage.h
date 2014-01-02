@@ -115,6 +115,7 @@ public:
 	virtual HRESULT UpdateTaskToStorage(const DISPATCHID nDispatchID, CTaskString& szTaskIn);
 	virtual HRESULT FetchTaskFromStorage( const DISPATCHID nDispatchID,int nMinPriority, int nDesiredNum, VECTASKS& vTasks );
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
+	virtual HRESULT UpdateActorID(CTaskString& strTaskGuid, ACTORID actorId);
 
 	// 设置数据库连接字符串
 	void SetDBConnectString(CString strDBCon);

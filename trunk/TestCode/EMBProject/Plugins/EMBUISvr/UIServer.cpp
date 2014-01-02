@@ -228,6 +228,7 @@ HRESULT EMB::CUIServer::Run_Plugin()
 {
 
 	m_Prober.SetScokAddr(&m_cfgUISvr.addrListen, &m_cfgUISvr.addrListen);
+	m_Prober.SetMsgProcessor(this);
 	return m_Prober.Run_Prober();
 
 }

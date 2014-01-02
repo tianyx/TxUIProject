@@ -41,5 +41,6 @@ public:
 
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
 
+	virtual HRESULT OnSockConnected(CMBCSocket* pMBCSock);
 };
 

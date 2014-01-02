@@ -146,6 +146,16 @@ void CMBCRemoteObj::RemoveSock( CMBCSocket* pSock )
 
 void CMBCRemoteObj::AddSock( CMBCSocket* pSock )
 {
-	CAutoLock lock(&m_csSockIn);
-	m_mapSockIns[pSock] = pSock;
+	{//for lock
+		CAutoLock lock(&m_csSockIn);
+		m_mapSockIns[pSock] = pSock;
+	}
+
+
+	OnSockConnected(pSock);
+}
+
+HRESULT CMBCRemoteObj::OnSockConnected( CMBCSocket* pMBCSock )
+{
+	return S_OK;
 }

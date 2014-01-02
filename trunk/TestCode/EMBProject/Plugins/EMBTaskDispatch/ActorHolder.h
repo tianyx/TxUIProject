@@ -16,7 +16,7 @@ using namespace std;
 interface IEMBActorHolderCallBackInterface
 {
 	// 执行端连接回调函数
-	virtual HRESULT OnActorConnect(const ACTORID& szActorGuid) = 0;
+	virtual HRESULT OnActorConnect(const ACTORID& szActorGuid, const CString& strPcNam) = 0;
 	// 执行端断开连接回调函数
 	virtual HRESULT OnActorDisConnect(const ACTORID& szActorGuid) = 0;
 	// 执行端发送消息给任务管理回调函数
@@ -38,12 +38,15 @@ struct ST_ACTORDATA
 	int  nActorConnState;
 	// 执行端SOCKET连接指针
 	CMBCSocket* pSock;
+	CString strPcName;
+
     // 构造函数
 	ST_ACTORDATA()
 	{
 		pSock = NULL;
 		strGuid = INVALID_ID;
 		nActorConnState = embActorConnState_none;
+		strPcName = "";
 	}
 };
 

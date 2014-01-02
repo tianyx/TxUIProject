@@ -23,7 +23,7 @@
 #define EDOC_WORKDBWRITERFMT TEXT("<dbwriter dbtype=\"%d\" conn =\"%s\"> cmdlist =\"%s\"></dbwriter>")
 #define EDOC_MAINHEADERFMT2 TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\" errcode=\"%d\"></edoc_main>")
 #define EDOC_TASKLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><taskList count =\"%d\" >%s</taskList></edoc_main>")
-#define EDOC_ACTORLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><actorList count =\"%d\" >%s</taskList></edoc_main>")
+#define EDOC_ACTORLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><actorList count =\"%d\" >%s</actorList></edoc_main>")
 
 //ÏûÏ¢Í·×Ö·û´®
 #define EK_MAIN TEXT("edoc_main")

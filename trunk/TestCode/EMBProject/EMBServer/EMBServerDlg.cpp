@@ -10,6 +10,10 @@
 #include "TxParamString.h"
 #include "Resource.h"
 #include "ADOCtrl.h"
+#include "IEMBBaseInterface.h"
+#include "TxAutoComPtr.h"
+
+using namespace EMB;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -62,16 +66,19 @@ CEMBServerDlg::CEMBServerDlg(CWnd* pParent /*=NULL*/)
 void CEMBServerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_LIST_Actor, m_actorList);
 }
 
 BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_WM_TIMER()
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_START, &CEMBServerDlg::OnBnClickedBtnStart)
 	ON_BN_CLICKED(IDC_BTNTEST, &CEMBServerDlg::OnBnClickedBtntest)
 	ON_BN_CLICKED(IDC_BUTTON_XML, &CEMBServerDlg::OnBnClickedButtonXml)
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -240,6 +247,14 @@ void CEMBServerDlg::InitUI()
 
 	SetDlgItemText(IDC_EDIT_TESTXML, strfile);
 	UpdateData(FALSE);
+
+	// 初始化actor列表
+	m_actorList.InsertColumn(0, "Actor标识", LVCFMT_LEFT, 100);
+	m_actorList.InsertColumn(1, "状态", LVCFMT_LEFT, 100);
+	m_actorList.InsertColumn(2, "计算机名", LVCFMT_LEFT, 100);
+
+	// 启动timer
+	this->SetTimer(1001, 3000, NULL); // 间隔3秒
 }
 
 void CEMBServerDlg::OnBnClickedButtonXml()
@@ -253,4 +268,69 @@ void CEMBServerDlg::OnBnClickedButtonXml()
 		SetDlgItemText(IDC_EDIT_TESTXML, xmlFile);
 		UpdateData(FALSE);
 	}
+}
+
+// 刷新Actor列表
+void CEMBServerDlg::RefreshActorList()
+{
+	m_actorList.DeleteAllItems();
+
+	if (!m_bRunning) // 未运行时
+	{
+		return;
+	}
+
+	if (NULL == g_pTaskDispatchMgr)
+	{
+		return;
+	}
+
+	CTxAutoComPtr<IServerUI> ptrServerUI;
+
+	if (S_OK == g_pTaskDispatchMgr->QueryInterface(GuidEMBServer_IUI, (LPVOID&)(*&ptrServerUI)))
+	{
+		vector<CString> vInfor;
+		ptrServerUI->GetActors(vInfor);
+
+		CString strTem;
+
+		for (int i = 0; i < vInfor.size(); ++i)
+		{
+			ST_ACTORSTATE st;
+			st.FromString(vInfor[i]);
+
+			strTem.Format("%d", i);
+			m_actorList.InsertItem(i, strTem);
+
+			// actorid
+			strTem.Format("%d", st.actorId);
+			m_actorList.SetItemText(i, 0, strTem);
+			// 连接状态
+			m_actorList.SetItemText(i, 1, "运行");
+			// 计算机名
+			m_actorList.SetItemText(i, 2, st.strPcName);
+		}
+	}
+	
+}
+
+void CEMBServerDlg::OnTimer( UINT_PTR nIDEvent )
+{
+	if (1001 == nIDEvent)
+	{
+		RefreshActorList();
+	}
+
+	CDialog::OnTimer(nIDEvent);
+}
+
+void CEMBServerDlg::OnClose()
+{
+	// 提示
+	if (IDNO == MessageBox("确认退出程序?", "提示", MB_YESNO))
+	{
+		return;
+	}
+
+	CDialog::OnClose();
 }

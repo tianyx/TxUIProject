@@ -177,6 +177,16 @@ HRESULT CStorageMgr::SubmitTask( const CTaskString& szTaskIn, CTaskString& szRet
 	return E_NOTIMPL;
 }
 
+HRESULT CStorageMgr::UpdateActorID(CTaskString& strTaskGuid, ACTORID actorId)
+{
+	if(m_pIStorage)
+	{
+		return m_pIStorage->UpdateActorID(strTaskGuid, actorId);
+	}
+
+	return E_NOTIMPL;
+}
+
 HRESULT CStorageMgr::UpdateTaskToStorage( const int nDispatchID, CTaskString& szTaskIn )
 {
 	if (m_pIStorage)

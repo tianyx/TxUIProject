@@ -14,6 +14,8 @@ struct ST_EMBTRANSMSG :public ST_TXMSGBASE
 {
 	CString strGuid;
 	CString strData;
+	CString strPcName;
+
 	ST_EMBTRANSMSG(int nMsgTypeIn)
 	{
 		nMsgType = nMsgTypeIn;
@@ -24,6 +26,8 @@ struct ST_EMBTRANSMSG :public ST_TXMSGBASE
 		ST_TXMSGBASE::operator <<(ar);
 		ar << strGuid;
 		ar << strData;
+		ar << strPcName;
+
 		return TRUE;
 	}
 
@@ -32,6 +36,8 @@ struct ST_EMBTRANSMSG :public ST_TXMSGBASE
 		ST_TXMSGBASE::operator >>(ar);
 		ar >> strGuid;
 		ar >> strData;
+		ar >> strPcName;
+
 		return TRUE;
 	}
 };

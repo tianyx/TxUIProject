@@ -44,6 +44,8 @@ extern HMODULE g_hModulePluginMgr;
 // 插件管理动态库指针
 extern EMB::IPluginBaseInterface* g_pIPluginMgr;
 
+extern EMB::ITxUnkown * g_pTaskDispatchMgr;
+
 BOOL InitGlobalConfig();
 BOOL LoadPluginManager();
 BOOL UnLoadPluginManager();

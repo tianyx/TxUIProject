@@ -423,6 +423,25 @@ BOOL ST_TASKDISPATCHCONFIG::FromString( const CString& strIn )
 	strIpActorHolder = txParam.GetAttribVal(NULL, TEXT("IpActorHolder")).GetAsString();
 	strIpMaster = txParam.GetAttribVal(NULL, TEXT("IpMaster")).GetAsString();
 
+	//////////////////////////////////////////////////////////////////////////
+	nfgTaskPoolSizeMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskPoolSizeMax")).GetAsInt(-1);
+	//
+	nfgTaskReDispatchMaxCount = txParam.GetAttribVal(NULL, TEXT("nfgTaskReDispatchMaxCount")).GetAsInt(-1);;
+	nfgTaskDispatchCD = txParam.GetAttribVal(NULL, TEXT("nfgTaskDispatchCD")).GetAsInt(-1);;
+	nfgTaskReportIntervalMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskReportIntervalMax")).GetAsInt(-1);;
+	nfgTaskCheckProgressIntervalMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskCheckProgressIntervalMax")).GetAsInt(-1);;
+	nfgTaskLostTimeOutMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskLostTimeOutMax")).GetAsInt(-1);;
+
+	nfgActorLostTimeOutMax = txParam.GetAttribVal(NULL, TEXT("nfgActorLostTimeOutMax")).GetAsInt(-1);;
+	nfgActorCheckInterval = txParam.GetAttribVal(NULL, TEXT("nfgActorCheckInterval")).GetAsInt(-1);;
+	nfgActorStateOutdate = txParam.GetAttribVal(NULL, TEXT("nfgActorStateOutdate")).GetAsInt(-1);;
+	nfgActorAssignTaskCD = txParam.GetAttribVal(NULL, TEXT("nfgActorAssignTaskCD")).GetAsInt(-1);;
+	//
+	nfgCpuWeight = txParam.GetAttribVal(NULL, TEXT("nfgCpuWeight")).GetAsInt(-1);;
+	nfgMemWeight = txParam.GetAttribVal(NULL, TEXT("nfgMemWeight")).GetAsInt(-1);;
+	nfgDiskIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgDiskIOWeight")).GetAsInt(-1);;
+	nfgNetIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgNetIOWeight")).GetAsInt(-1);;
+	//////////////////////////////////////////////////////////////////////////
 	return TRUE;
 }
 
@@ -588,6 +607,9 @@ BOOL ST_ACTORSTATE::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("excResUsage"), nExcResUsage);
 	txParam.SetAttribVal(NULL, TEXT("nNetIOUsage"), nNetIOUsage);
 
+	val.SetVal(strPcName);
+	txParam.SetAttribVal(NULL, TEXT("PcName"), strPcName);
+
 	txParam.UpdateData();
 	strOut = txParam;
 
@@ -614,6 +636,7 @@ BOOL ST_ACTORSTATE::FromString( const CString& strIn )
 	nNetIOUsage = txParam.GetAttribVal(NULL, TEXT("nNetIOUsage")).GetAsInt(INVALID_ID);
 
 	strTeam= txParam.GetAttribVal(NULL, TEXT("actorTeam")).GetAsString("");
+	strPcName = txParam.GetAttribVal(NULL, TEXT("PcName")).GetAsString("");
 	//strHost= txParam.GetAttribVal(NULL, TEXT("strHost")).GetAsString();
 // 	VECSTRINGS vStr;
 // 	txParam.GetAttribVal(NULL, TEXT("strHost")).GetAsStringArray(vStr);
@@ -742,6 +765,7 @@ BOOL ST_FCVSTASKINFO::FromString(const CString& strIn)
 	fileAdrType = txParam.GetAttribVal(NULL,TEXT("FileAdrType")).GetAsString();
 	filePath = txParam.GetAttribVal(NULL,TEXT("FilePath")).GetAsString();
 	fileName = txParam.GetAttribVal(NULL,TEXT("FileName")).GetAsString();
+	strSaveXmlPath = txParam.GetAttribVal(NULL, TEXT("SaveXmlPath")).GetAsString();
 
 	if (fileAdrType == TEXT("FTP"))
 	{
@@ -792,6 +816,11 @@ BOOL ST_FCVSTASKINFO::ToString(CString& strOut)
 	txParam.SetAttribVal(NULL,TEXT("FileAdrPwd"),val);
 	val.SetVal(fileAdrPort);
 	txParam.SetAttribVal(NULL,TEXT("FileAdrPort"),val);
+
+	//
+	val.SetVal(strSaveXmlPath);
+	txParam.SetAttribVal(NULL, TEXT("SaveXmlPath"), val);
+
 	txParam.UpdateData();
 	strOut = txParam;
 	return TRUE;	
@@ -1203,7 +1232,8 @@ BOOL ST_SVRLIVEINFO::FromString( const CString& strIn )
 
 BOOL ST_TASKLISTINFO::ToString( CString& strOut )
 {
-	strOut.Format(EDOC_TASKLISTFMT, EMBVER, embxmltype_taskList, TEXT(""), vlist.size(), vlist);
+	CTxStrConvert val(vlist);
+	strOut.Format(EDOC_TASKLISTFMT, EMBVER, embxmltype_taskList, TEXT(""), vlist.size(), val.GetAsString());
 	return TRUE;
 }
 
@@ -1227,7 +1257,8 @@ BOOL ST_TASKLISTINFO::FromString( const CString& strIn )
 
 BOOL ST_ACTORLISTINFO::ToString( CString& strOut )
 {
-	strOut.Format(EDOC_ACTORLISTFMT, EMBVER, embxmltype_taskList, TEXT(""), vlist.size(), vlist);
+	CTxStrConvert val(vlist);
+	strOut.Format(EDOC_ACTORLISTFMT, EMBVER, embxmltype_taskList, TEXT(""), vlist.size(), val.GetAsString());
 	return TRUE;
 
 }

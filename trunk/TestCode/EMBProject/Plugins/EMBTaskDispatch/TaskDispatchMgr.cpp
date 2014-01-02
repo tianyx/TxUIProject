@@ -69,12 +69,12 @@ CTaskDispatchMgr::CTaskDispatchMgr(void)
 	nfgActorLostTimeOutMax = 30;
 	nfgActorCheckInterval = 8;
 	nfgActorStateOutdate = 10;
-	nfgActorAssignTaskCD = 10;
+	nfgActorAssignTaskCD = 16;
 
 	nfgCpuWeight = 1;
 	nfgMemWeight = 1;
 	nfgDiskIOWeight =1;
-	nfgNetIOWeight = 0;
+	nfgNetIOWeight = 1;
 
 	nfgMaxActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskIOWeight +nfgNetIOWeight)*4/5;
 	nfgLowActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskIOWeight +nfgNetIOWeight)/5;
@@ -145,6 +145,18 @@ HRESULT EMB::CTaskDispatchMgr::QueryInterface( const GUID& guidIn, LPVOID& pInte
 		AddRef();
 		return S_OK;
 
+	}
+	else if (guidIn == GuidEMBPlugin_IUIMessageProcess)
+	{
+		pInterfaceOut = dynamic_cast<IUIMessageProcessInterface*>(this);
+		AddRef();
+		return S_OK;
+	}
+	else if (GuidEMBServer_IUI == guidIn)
+	{
+		pInterfaceOut = dynamic_cast<IServerUI*>(this);
+		AddRef();
+		return S_OK;
 	}
 	else
 	{
@@ -452,11 +464,12 @@ HRESULT EMB::CTaskDispatchMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 * Return Param：返回成功或失败
 * History：
 */
-HRESULT EMB::CTaskDispatchMgr::OnActorConnect( const ACTORID& szActorGuid )
+HRESULT EMB::CTaskDispatchMgr::OnActorConnect( const ACTORID& szActorGuid, const CString& strPcName )
 {
 	CAutoLock lock(&m_csCacheDisActor);
 	ST_ACTORSTATE actState;
 	actState.actorId = szActorGuid;
+	actState.strPcName = strPcName;
 	actState.nConnState = embActorConnState_ok;
 	actState.tmLastCheck = 0;
 	actState.tmLastReport = 0;
@@ -691,10 +704,10 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	else if (taskIn.taskRunState.nState == embtaskstate_zero)
 	{
 		//multe split task
-		if (TaskNeedSplit(taskIn.strTask)
-			&& TryDispatchSplitTask(taskIn))
+		if (TaskNeedSplit(taskIn.strTask))
 		{
 			//split mode
+			TryDispatchSplitTask(taskIn);
 		}
 		else
 		{
@@ -709,7 +722,7 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 					SetActorInCD(actid);
 					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, actid);
 
-
+					m_pIStorage->UpdateActorID(taskIn.taskBasic.strGuid, actid);
 				}
 				else
 				{
@@ -829,20 +842,42 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 CString EMB::CTaskDispatchMgr::CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize)
 {
 	CString strOut = "";
-
-	CTxParamString txParam(strTaskIn);
-	txParam.GoIntoKey(EK_MAIN);
-	txParam.GoIntoKey(EK_TASKBASIC);
+	// check nStart
+	if (nStart < 1 || nStart > nSize)
+	{
+		return strOut;
+	}
+	// -------------------------------------------
 
 	CTxStrConvert strVal;
 
+	//写到FCVSTask层
+	CTxParamString txParam1(strTaskIn);
+	txParam1.GoIntoKey(EK_MAIN);
+	txParam1.GoIntoKey("step1");
+	txParam1.GoIntoKey("FCVS");
+	txParam1.GoIntoKey("FCVSTask");
+
 	strVal.SetVal(nStart);
-	txParam.SetAttribVal(NULL, TEXT("nSplit"), strVal);
+	txParam1.SetAttribVal(NULL, TEXT("nSectionID"), strVal);
 
 	strVal.SetVal(nSize);
-	txParam.SetAttribVal(NULL, TEXT("nTotalSplitCount"), strVal);
-	txParam.UpdateData();
-	strOut = txParam;
+	txParam1.SetAttribVal(NULL, TEXT("nTotalSectionCount"), strVal);
+
+	txParam1.UpdateData();
+	strOut = txParam1;
+
+	if (1 == nStart) // 第1个任务：负责合并
+	{
+		CreateCombinedTaskXml(strOut, nSize);
+	}
+	else
+	{
+		CString strLog;
+		strLog.Format("--切片%d %s", nStart, strOut);
+		OutputDebugString(strLog);
+		CFWriteLog(0, TEXT("%s"), strLog);
+	}
 
 	return strOut;
 }
@@ -865,13 +900,50 @@ CString EMB::CTaskDispatchMgr::CreateCombinedTaskXml(CString strTaskIn,int nSize
 
 	CTxStrConvert strVal;
 
-	strVal.SetVal(-1);
-	txParam.SetAttribVal(NULL, TEXT("nSplit"), strVal);
+	strVal.SetVal("step1,step2");
+	txParam.SetAttribVal(NULL, "excList", strVal);
 
-	strVal.SetVal(nSize);
-	txParam.SetAttribVal(NULL, TEXT("nTotalSplitCount"), strVal);
+	// get filename
+	CTxParamString txTem(strTaskIn);
+	txTem.GoIntoKey(EK_MAIN);
+	txTem.GoIntoKey("step1");
+	txTem.GoIntoKey("FCVS");
+	txTem.GoIntoKey("FCVSTask");
+	CString strFilePath = txTem.GetAttribVal(NULL, "FilePath").GetAsString();
+	CString strFileName = txTem.GetAttribVal(NULL, "FileName").GetAsString();
+
+	// step2
+	/*<step2 acttype="64" actname ="FCVSResultTask">
+		<FCVSResultTask FilePath="F:\embtest\500000.mpg" NTotalSectionCount=3>
+		</FCVSResultTask>	
+	  </step2>
+	*/
+	ST_FCVSRESULTTASK tsk;
+	tsk.nTotalSectionCount = nSize;
+	tsk.filePath = strFilePath.TrimRight('\\');
+	tsk.filePath = tsk.filePath + "\\" + strFileName;
+	CString strTsk;
+	tsk.ToString(strTsk);
+
+	//
+	CTxParamString xStep2(TEXT("<step2></step2>"));
+	xStep2.GoToPath(TEXT(".\\step2"));
+	strVal.SetVal(SubType_MCResultMerge);
+	xStep2.SetAttribVal(NULL, "acttype", strVal);
+	strVal.SetVal("FCVSResultTask");
+	xStep2.SetAttribVal(NULL, "actname", strVal);
+
+	CTxParamString xResultTask(strTsk);
+	xStep2.SetSubNodeString(".\\step2", xResultTask);
+
+	txParam.SetSubNodeString(".\\edoc_main", xStep2);
+
 	txParam.UpdateData();
 	strOut = txParam;
+
+	OutputDebugString("--技审切片信息");
+	OutputDebugString(strOut);
+	CFWriteLog(0, TEXT("--技审切片信息 %s"), strOut);
 
 	return strOut;
 }
@@ -914,7 +986,24 @@ HRESULT EMB::CTaskDispatchMgr::SetParam( const CTaskString& szIn, CTaskString& s
 	m_nMaster = m_config.nMaster;
 	m_nSvrId = m_config.nSvrID;
 
+	//set optional param
+	nfgTaskPoolSizeMax = (m_config.nfgTaskPoolSizeMax > 0)? m_config.nfgTaskPoolSizeMax:nfgTaskPoolSizeMax;
+	nfgTaskDispatchCD = m_config.nfgTaskDispatchCD > 0? m_config.nfgTaskDispatchCD: nfgTaskDispatchCD;
+	nfgTaskReDispatchMaxCount = m_config.nfgTaskReDispatchMaxCount > 0? m_config.nfgTaskReDispatchMaxCount: nfgTaskReDispatchMaxCount;
+	nfgTaskReportIntervalMax =m_config.nfgTaskReportIntervalMax > 0? m_config.nfgTaskReportIntervalMax:nfgTaskReportIntervalMax;
 
+	nfgTaskCheckProgressIntervalMax =m_config.nfgTaskCheckProgressIntervalMax > 0? m_config.nfgTaskCheckProgressIntervalMax:nfgTaskCheckProgressIntervalMax;
+	nfgTaskLostTimeOutMax = m_config.nfgTaskLostTimeOutMax > 0? m_config.nfgTaskLostTimeOutMax:nfgTaskLostTimeOutMax;
+
+	nfgActorLostTimeOutMax =m_config.nfgActorLostTimeOutMax > 0? m_config.nfgActorLostTimeOutMax:nfgActorLostTimeOutMax;
+	nfgActorCheckInterval = m_config.nfgActorCheckInterval > 0? m_config.nfgActorCheckInterval : nfgActorCheckInterval;
+	nfgActorStateOutdate = m_config.nfgActorStateOutdate > 0? m_config.nfgActorStateOutdate:nfgActorStateOutdate;
+	nfgActorAssignTaskCD = m_config.nfgActorAssignTaskCD > 0? m_config.nfgActorAssignTaskCD:nfgActorAssignTaskCD;
+
+	nfgCpuWeight = m_config.nfgCpuWeight >=0? m_config.nfgCpuWeight:nfgCpuWeight;
+	nfgMemWeight = m_config.nfgMemWeight >= 0? m_config.nfgMemWeight:nfgMemWeight;
+	nfgDiskIOWeight = m_config.nfgDiskIOWeight >= 0? m_config.nfgDiskIOWeight: nfgDiskIOWeight;
+	nfgNetIOWeight = m_config.nfgNetIOWeight >= 0? m_config.nfgNetIOWeight : nfgNetIOWeight;
 	return S_OK;
 }
 
@@ -1558,7 +1647,10 @@ BOOL EMB::CTaskDispatchMgr::UpdateActorState( ST_ACTORSTATE& stateIn )
 	{
 		ST_ACTORSTATE& actState = itf->second;
 		time_t tmLastAssignTask = actState.tmLastAssignTask;
+		CString strPcName = actState.strPcName;
+
 		actState = stateIn;
+		actState.strPcName = strPcName;
 		actState.tmLastAssignTask = tmLastAssignTask;
 		actState.nConnState = embConnState_ok;
 		actState.tmLastCheck = time(NULL);
@@ -1572,7 +1664,13 @@ BOOL EMB::CTaskDispatchMgr::UpdateActorState( ST_ACTORSTATE& stateIn )
 BOOL EMB::CTaskDispatchMgr::TaskNeedSplit( CString strTaskIn )
 {
 	//should pre check that if task need split after fetchtask() 
-	return FALSE;
+	BOOL need = (strTaskIn.Find("<FCVSTask") > 0); // 技审需要切片
+	if (need)
+	{
+		need = strTaskIn.Find("BUseSection=\"1\"") > 0;
+	}
+
+	return need;
 }
 
 BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
@@ -1581,20 +1679,17 @@ BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 	GetIdleActors(taskIn.taskBasic.strTaskFrom,taskIn.taskBasic.nPriority);
 	int nSize = m_FreeActorIds.GetSize();
 
-	//not assigned,assign it;
 	if(nSize > 1)
 	{
-		if(taskIn.taskBasic.nTaskSplit > 0)
+		//if(taskIn.taskBasic.nTaskSplit > 0) 临时注释
 		{
 			//拆分任务
-			bool bSplitSuccess = true;
 			for(int i = 0 ; i < nSize ; i++)
 			{
-				CString strXml = CreateSplitTaskXml(taskIn.strTask,i,nSize);
+				CString strXml = CreateSplitTaskXml(taskIn.strTask,i + 1,nSize); // nStart 从1开始计数
 
 				if(strXml.GetLength() == 0)
 				{
-					bSplitSuccess = false;
 					break;
 				}
 
@@ -1606,33 +1701,6 @@ BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 					taskIn.taskRunState.actorId = ActorInfo.actorid;
 					taskIn.taskRunState.nState = embtaskstate_dispatching;
 					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, ActorInfo.actorid);
-				}
-				else
-				{
-					ASSERT(FALSE);
-					//waiting for next loop 
-				}
-			}
-
-			//分发总任务
-			if(bSplitSuccess)
-			{
-				CString strXml = CreateCombinedTaskXml(taskIn.strTask,nSize);
-
-				if(strXml.GetLength() == 0)
-				{
-					ASSERT(FALSE);
-				}
-
-				ST_ACTDISCONNINFO ActorInfo = m_FreeActorIds.GetAt(0);
-
-				HRESULT hr = m_actHolder.SendToActor(ActorInfo.actorid, strXml);
-				if (hr == S_OK)
-				{
-					taskIn.taskRunState.actorId = ActorInfo.actorid;
-					taskIn.taskRunState.nState = embtaskstate_dispatching;
-					CFWriteLog(0, TEXT("assign Combined task (%s) to actor %d"), taskIn.taskBasic.strGuid, ActorInfo.actorid);
-					bRet = TRUE;
 				}
 				else
 				{
@@ -1690,9 +1758,9 @@ HRESULT EMB::CTaskDispatchMgr::OnUIMessage( CTaskString& strMsg, CTaskString& sz
 	}
 	else if (mainInfo.nType == embxmltype_taskRunState)
 	{
-		ST_TASKBASIC bsInfo;
-		GetTaskBasicInfo(strMsg, bsInfo);
-		TXGUID taskid(String2Guid(bsInfo.strGuid));
+		ST_TASKRUNSTATE bsInfo;
+		bsInfo.FromString(strMsg, TRUE);
+		TXGUID taskid(bsInfo.guid);
 		hr = GetTaskRunState(taskid, szRet);
 	}
 	else if (mainInfo.nType == embxmltype_taskupdate)
@@ -1856,6 +1924,22 @@ BOOL EMB::CTaskDispatchMgr::BroadcastToNotifier( CString& strInfo )
 	}
 
 	return TRUE;
+}
+
+HRESULT CTaskDispatchMgr::GetActors( vector<CString>& vActor )
+{
+	CAutoLock lock(&m_csActor);
+	vActor.clear();
+
+	MAPACTORSTATES::iterator itor = m_mapActors.begin();
+	for (; itor != m_mapActors.end(); ++itor)
+	{
+		CString str;
+		itor->second.ToString(str);
+		vActor.push_back(str);
+	}
+
+	return S_OK;
 }
 
 

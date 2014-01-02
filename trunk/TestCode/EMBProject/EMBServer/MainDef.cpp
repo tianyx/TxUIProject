@@ -16,6 +16,8 @@ HMODULE g_hModulePluginMgr = NULL;
 // 插件管理插件指针
 EMB::IPluginBaseInterface* g_pIPluginMgr = NULL;
 
+ITxUnkown* g_pTaskDispatchMgr = NULL;
+
 /*
 *Description：初始化配置文件
 *Input Param：
@@ -192,6 +194,8 @@ BOOL InitServer()
 	{
 		tmpPlugin.strParam = strTaskDispatchConfig;
 		g_GlobalInfo.vPlugins.push_back(tmpPlugin);
+
+		g_pTaskDispatchMgr = tmpPlugin.pIface;
 	}
 
 	if (g_GlobalInfo.vPlugins.size() < 3)

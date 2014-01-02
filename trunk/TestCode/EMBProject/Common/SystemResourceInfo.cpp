@@ -80,6 +80,12 @@ double CSystemResourceInfo::GetCounter( LPCSTR pPath, DWORD nFormat,bool bTwoSam
 	{
 	}
 
+	// free mem
+	if (pCounterHandle)
+	{
+		::GlobalFree(pCounterHandle);
+	}
+
 	// close
 	pdhStatus = PdhCloseQuery(hQuery);
 
@@ -160,7 +166,6 @@ CNetRes::~CNetRes()
 
 bool CNetRes::GetInfor()
 {
-	//m_Bandwidth = (int)GetCounter("\\Network Interface(Realtek PCIe GBE Family Controller)\\Current Bandwidth", PDH_FMT_DOUBLE) / 1000000;
 	const char* netface = "Network Interface";  
 	const char* total_speed = "Bytes Total/sec";  
 
@@ -225,7 +230,9 @@ bool CNetRes::GetInfor()
 		}
 
 		m_nIO = int(t_bps / 1024);
-	}  
+	} 
+
+	PdhCloseQuery(m_hQuery);
 
 	return true;
 }

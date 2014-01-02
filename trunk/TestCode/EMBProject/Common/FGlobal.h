@@ -72,15 +72,27 @@ int GenRand();
 #define MUSTBESOK(hr) if(hr != S_OK){ASSERT(FALSE);return hr;}
 #define MUSTNOTNULL(ptr) if(ptr == NULL){ASSERT(FALSE);return E_FAIL;}
 
+//----------
+#ifdef _DEBUG
+
 #define MACRO_CREATEOUTPUTCONSOLE \
-g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);\
-if (g_hconsoleHandle == NULL)\
-{\
-	AllocConsole();\
 	g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);\
-}\
+	if (g_hconsoleHandle == NULL)\
+	{\
+		AllocConsole();\
+		g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);\
+	}\
 
 #define MACRO_FREEOUTPUTCONSOLE FreeConsole();
+
+#else
+
+#define MACRO_CREATEOUTPUTCONSOLE
+#define MACRO_FREEOUTPUTCONSOLE
+
+#endif
+
+// ---------------
 
 
 struct TXGUID

@@ -2,9 +2,11 @@
 #include "UISvrProber.h"
 #include "EMBMessageDef.h"
 #include "FGlobal.h"
+#include "EmbStructDef.h"
 
 CUISvrProber::CUISvrProber(void)
 {
+	m_pIProcessor = NULL;
 }
 
 CUISvrProber::~CUISvrProber(void)
@@ -99,10 +101,54 @@ HRESULT CUISvrProber::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 			}
 		}
 	}
+	if (nMsgType == msgtype_LIVEQA)
+	{
+		//extract msg
+		//CFWriteLog("recv live Q");
+		ST_TXMSG_LIVEQA msgRet;
+		UnPackMBCMsg(bufferIn, nUsed, msgRet);
+		//get live info
+		msgRet.nMsgState = msgState_A;
+		int nRetUsed = 0;
+		char buffer[MIDBUFFSIZE];
+		PackMBCMsg(msgRet, buffer, MIDBUFFSIZE, nRetUsed);
+		//send info back
+		if (nRetUsed > 0)
+		{
+			hr = send(*pMBCSock, buffer, nRetUsed, 0);
+			if(hr == SOCKET_ERROR)
+			{
+				hr = WSAGetLastError();
+				ASSERT(FALSE);
+
+			}
+		}
+
+	}
 	else
 	{
 		hr = E_FAIL;
 	}
 
 	return hr;
+}
+
+HRESULT CUISvrProber::OnSockConnected( CMBCSocket* pMBCSock )
+{
+	//send svr info to client
+	if (!m_pIProcessor)
+	{
+		return EMBERR_NOTIMPL;
+	}
+	ST_SVRLIVEINFO livInfo;
+	CString strReq, strRet;
+	livInfo.ToString(strReq);
+
+	m_pIProcessor->UIMessageCallback(strReq, strRet);
+	if (!strRet.IsEmpty())
+	{
+		SendToUI(strRet);
+	}
+
+	return S_OK;
 }

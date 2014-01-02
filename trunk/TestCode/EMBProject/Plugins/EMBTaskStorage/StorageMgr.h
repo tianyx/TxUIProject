@@ -54,6 +54,7 @@ public:
 	virtual HRESULT UpdateTaskToStorage(const int nDispatchID, CTaskString& szTaskIn);
 	virtual HRESULT FetchTaskFromStorage(const int nDispatchID,  int nMinPriority, int nDesiredNum, VECTASKS& vTasks);
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
+	virtual HRESULT UpdateActorID(CTaskString& strTaskGuid, ACTORID actorId);
 
 	IPluginStorageInterface* m_pIStorage;
 	IPluginTaskCommit* m_pTaskCommit;

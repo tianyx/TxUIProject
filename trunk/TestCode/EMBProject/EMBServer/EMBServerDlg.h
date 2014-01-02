@@ -8,6 +8,7 @@
 *********************************************************************/
 
 #pragma once
+#include "afxcmn.h"
 
 
 // CEMBServerDlg ¶Ô»°¿ò
@@ -25,6 +26,7 @@ public:
 
 private:
 	void InitUI();
+	void RefreshActorList();
 
 public:
 
@@ -38,6 +40,7 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedBtnStart();
@@ -45,4 +48,6 @@ public:
 
 	afx_msg void OnBnClickedBtntest();
 	afx_msg void OnBnClickedButtonXml();
+	CListCtrl m_actorList;
+	afx_msg void OnClose();
 };

@@ -11,15 +11,7 @@
 
 using namespace EMB;
 //////////////////////////////////////////////////////////////////////////
-DWORD __stdcall CalcResUsageProc(LPVOID lparam)
-{
-	CTaskActor* pActor = (CTaskActor*)lparam;
-	if (pActor)
-	{
-		pActor->CalcResLoop();
-	}
-	return 0;
-}
+
 //////////////////////////////////////////////////////////////////////////
 
 CTaskActor::CTaskActor(void)
@@ -27,14 +19,10 @@ CTaskActor::CTaskActor(void)
 	m_bRuning = FALSE;
 	m_nActiveConn = 0;
 	nfgRetryMax = 3;
-	m_nDiskIOUsage = INVALID_VALUE;
-	m_nCpuUsage = INVALID_VALUE;
-	m_nNetIOUsage INVALID_VALUE;
 	m_actorconnMain.SetActorConnectorCallback(this);
 	m_actorconnSlave.SetActorConnectorCallback(this);
 	m_pExcutorMgr = CExcutorMgr::GetExcutorMgr();
 	ASSERT(m_pExcutorMgr);
-	m_hEventQuit = CreateEvent(NULL, TRUE, FALSE, NULL);
 	// -------------------------
 	m_strTaskXmlPath = GetAppPath().c_str(); // 执行程序目录
 	m_strTaskXmlPath += "\\TaskXml";
@@ -127,8 +115,7 @@ HRESULT CTaskActor::Run_Plugin()
 	hr = m_pExcutorMgr->Run();
 	MUSTBESOK(hr);
 	
-	ResetEvent(m_hEventQuit);
-	m_hThreadCPULoop = CreateThread(NULL, 0, CalcResUsageProc, (LPVOID)this, 0, 0);
+	m_resMon.Run();
 	m_bRuning = TRUE;
 	return S_OK;
 }
@@ -140,12 +127,7 @@ HRESULT CTaskActor::Stop_Plugin()
 	m_actorconnSlave.Stop();
 	m_pExcutorMgr->Stop();
 
-	if (m_hThreadCPULoop)
-	{
-		SetEvent(m_hEventQuit);
-		WaitForSingleObject(m_hThreadCPULoop, INFINITE);
-		m_hThreadCPULoop = NULL;
-	}
+	m_resMon.Stop();
 
 	return S_OK;
 }
@@ -179,26 +161,35 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			task.nCurrStep = 0;
 			task.nState = embtaskstate_dispatching;
 			CAutoLock lock(&m_csmapLock);
-			if(m_mapTaskinActor.find(guid) == m_mapTaskinActor.end())
+			
+				// 12-24,执行过的任务可以重新执行
+			MAPTASKINACTOR::iterator temItor = m_mapTaskinActor.find(guid);
+			if(temItor != m_mapTaskinActor.end())
+			{
+				CFWriteLog(0, TEXT("---task already exist in actor, remove task"));
+				m_mapTaskinActor.erase(temItor);
+			}
+
+			//if(m_mapTaskinActor.find(guid) == m_mapTaskinActor.end())
 			{
 				//add to map and wait for embxmltype_excOnIdle message of actor
 				AddTask(guid, task);
 				m_mapExcTask[excId] = guid;
 				m_pExcutorMgr->SetExecutorState(excId, EXE_ASSIGN); // 置为已分配
 			}
-			else
-			{
-				CFWriteLog(0, TEXT("---task already exist in actor"));
-				//ASSERT(FALSE);
-				// 任务已提交
-				ST_TASKREPORT tskReport;
-				tskReport.actorId = m_ActRegInfo.actorId;
-				tskReport.strGuid = guid;
-				tskReport.nSubErrorCode = EMBERR_EXISTED;
-				tskReport.nState = embtaskstate_error;
+			//else
+			//{
+			//	CFWriteLog(0, TEXT("---task already exist in actor"));
+			//	//ASSERT(FALSE);
+			//	// 任务已提交
+			//	/*ST_TASKREPORT tskReport;
+			//	tskReport.actorId = m_ActRegInfo.actorId;
+			//	tskReport.strGuid = guid;
+			//	tskReport.nSubErrorCode = EMBERR_EXISTED;
+			//	tskReport.nState = embtaskstate_error;
 
-				tskReport.ToString(strRet);
-			}
+			//	tskReport.ToString(strRet);*/
+			//}
 		}
 		else // 无可用的Executor
 		{
@@ -313,15 +304,15 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 		actorInfo.nActorLevel = m_ActRegInfo.nActorLevel;
 		actorInfo.nConnState = embConnState_ok;
 		// cpu 使用率
-		actorInfo.nCpuUsage = m_nCpuUsage;
-		actorInfo.nDiscIOUsage = m_nDiskIOUsage;
+		actorInfo.nCpuUsage = m_resMon.GetUsage(restype_Processor);
+		actorInfo.nDiscIOUsage = m_resMon.GetUsage(restype_PhysicalDisk);
 		// memory 使用率
 		CMemoryRes memRes;
 		memRes.GetInfor();
-		actorInfo.nMemUsage = memRes.m_nUsedPercent;
+		actorInfo.nMemUsage = m_resMon.GetUsage(restype_Memory);
 		actorInfo.nExcResUsage = m_pExcutorMgr->GetExcResUsage();
-		actorInfo.nNetIOUsage = m_nNetIOUsage;
-		CFWriteLog(0, TEXT("svr request report actor state! cpu =%d, mem = %d, disc = %d, net = %d, exc = %d"), actorInfo.nCpuUsage, actorInfo.nMemUsage, actorInfo.nDiscIOUsage, actorInfo.nNetIOUsage, actorInfo.nExcResUsage);
+		actorInfo.nNetIOUsage = m_resMon.GetUsage(restype_Network);;
+		TRACE(TEXT("svr request report actor state! cpu =%d, mem = %d, disc = %d, net = %d, exc = %d"), actorInfo.nCpuUsage, actorInfo.nMemUsage, actorInfo.nDiscIOUsage, actorInfo.nNetIOUsage, actorInfo.nExcResUsage);
 
 
 		actorInfo.ToString(strRet);
@@ -759,23 +750,4 @@ bool EMB::CTaskActor::AddTask( TXGUID& tskGuid, const ST_TASKINACTOR& tsk )
 	return true;
 }
 
-DWORD EMB::CTaskActor::CalcResLoop()
-{
-	while(WaitForSingleObject(m_hEventQuit, 1000) != WAIT_OBJECT_0)
-	{
-		CCpuRes cpuRes;
-		cpuRes.GetInfor();
-		m_nCpuUsage = cpuRes.m_nUsedPercent;
 
-		CDiskRes diskRes;
-		diskRes.GetInfor();
-		m_nDiskIOUsage = diskRes.m_nIO*100/m_ActRegInfo.nMaxDiskIO;
-		TRACE("\nDiskUsage =%d", m_nDiskIOUsage);
-		CNetRes netRes;
-		netRes.GetInfor();
-		m_nNetIOUsage = netRes.m_nIO*100/m_ActRegInfo.nMaxNetIO;
-		TRACE("\nNetIOUsage =%d", m_nNetIOUsage);
-	}
-
-	return 0;
-}

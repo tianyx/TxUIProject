@@ -55,6 +55,12 @@ HRESULT CActorConnector::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType,
 		CTxStrConvert val;
 		val.SetVal(m_nActorId);
 		msgIn.strData = val.GetAsString(); 
+
+		// 本机电脑名
+		char pcName[128];
+		gethostname(pcName, sizeof(pcName));
+		msgIn.strPcName = pcName;
+
 		CEMBAutoBuffer szbuff(msgIn);
 		int nRetUsed = 0;
 		PackMBCMsg(msgIn, szbuff, szbuff.GetSize(), nRetUsed);

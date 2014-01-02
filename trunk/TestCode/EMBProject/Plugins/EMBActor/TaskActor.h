@@ -12,6 +12,7 @@
 #include "ActorConnector.h"
 #include "ExcutorMgr.h"
 #include "EmbStructDef.h"
+#include "TxPerformMon.h"
 #include <map>
 #include <deque>
 using namespace std;
@@ -118,9 +119,6 @@ public:
 	virtual HRESULT GetTaskInActor(vector<CString>& vTask);
 	// ------------------------------------------------------
 
-public:
-	//for cpu get loop
-	DWORD CalcResLoop();
 
 private:
 	BOOL SwitchActorConn(BOOL bMainConn);
@@ -154,11 +152,8 @@ private:
 	int nfgRetryMax;
 	CString m_strTaskXmlPath; // 保存xml文件的路径
 
-	HANDLE m_hThreadCPULoop; //to calc cpu usage
-	HANDLE m_hEventQuit;
-	int m_nCpuUsage;
-	int m_nDiskIOUsage;
-	int m_nNetIOUsage;
+	CTxPerformMon m_resMon;
+	CString m_strHostName; // 计算机名
 };
 
 

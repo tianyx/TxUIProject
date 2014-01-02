@@ -14,11 +14,11 @@ public:
 	virtual ~CUIClientConnector(void);
 	virtual HRESULT ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType, char* bufferIn, int nUsed);
 	virtual HRESULT SockStateChange(CMBCSocket* pMBCSock, ENUMMBCSOCKSTATE socStateIn);
-
+	
 	virtual HRESULT SendtoUISvr(CString& strInfo);
 	virtual HRESULT Run();
 	virtual HRESULT Stop();
-
+	void SetMsgProcessor(IUIClientMessageProcessInterface* pIproce);
 	BOOL SetParam(int nMaster, SOCKADDR_IN& addrConn);
 private:
 	IUIClientMessageProcessInterface* m_pIProcess;
