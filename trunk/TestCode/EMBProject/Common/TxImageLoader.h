@@ -29,3 +29,6 @@ public:
 	static void Release();
 
 };
+
+
+CString GetFullImagePath(LPCTSTR strFile);

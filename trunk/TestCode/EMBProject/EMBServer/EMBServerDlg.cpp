@@ -12,8 +12,10 @@
 #include "ADOCtrl.h"
 #include "IEMBBaseInterface.h"
 #include "TxAutoComPtr.h"
-
+#include "GDIDrawFunc.h"
+#include "TxImageLoader.h"
 using namespace EMB;
+using namespace Gdiplus;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -67,6 +69,7 @@ void CEMBServerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_Actor, m_actorList);
+	DDX_Control(pDX, IDC_BTN_START, m_btnStart);
 }
 
 BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
@@ -79,6 +82,7 @@ BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
 	ON_BN_CLICKED(IDC_BTNTEST, &CEMBServerDlg::OnBnClickedBtntest)
 	ON_BN_CLICKED(IDC_BUTTON_XML, &CEMBServerDlg::OnBnClickedButtonXml)
 	ON_WM_CLOSE()
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 
@@ -86,6 +90,9 @@ END_MESSAGE_MAP()
 
 BOOL CEMBServerDlg::OnInitDialog()
 {
+	m_btnStart.LoadBitmap(TEXT("btnstart.png"), TXBMP_STRETCH_NONE);
+	m_btnStart.SetForceRedrawParentBk(TRUE, this);
+	m_pbmpBack = CTxImageLoader::GetTxImageLoader().LoadBitmap(TEXT("back.bmp"));
 	CDialog::OnInitDialog();
 
 	// 将“关于...”菜单项添加到系统菜单中。
@@ -333,4 +340,24 @@ void CEMBServerDlg::OnClose()
 	}
 
 	CDialog::OnClose();
+}
+
+BOOL CEMBServerDlg::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (m_pbmpBack)
+	{
+		TRACE(TEXT("\n dlg back redraw"));
+		CRect rcThis;
+		GetClientRect(rcThis);
+		CRect rcEdge(5,5,5,5);
+		GPDrawStretchImage(pDC->GetSafeHdc(), m_pbmpBack, rcThis, NULL, TXBMP_STRETCH_MID_LRTB, NULL, NULL);
+	}
+	return TRUE;
+	//return CDialog::OnEraseBkgnd(pDC);
+}
+
+void CEMBServerDlg::GetParentBack( CDC* pDc )
+{
+	OnEraseBkgnd(pDc);
 }

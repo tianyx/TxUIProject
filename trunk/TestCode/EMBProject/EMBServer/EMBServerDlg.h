@@ -9,10 +9,12 @@
 
 #pragma once
 #include "afxcmn.h"
-
-
+#include "GdiPlusNewHeader.h"
+#include "TxImgButton.h"
+#include "afxwin.h"
 // CEMBServerDlg 对话框
-class CEMBServerDlg : public CDialog
+class CEMBServerDlg : public CDialog,
+	public IParentBackDrawInterface
 {
 // 构造
 public:
@@ -28,6 +30,7 @@ private:
 	void InitUI();
 	void RefreshActorList();
 
+	virtual void GetParentBack(CDC* pDc);
 public:
 
 	BOOL m_bRunning;    //是否正在运行
@@ -35,6 +38,8 @@ public:
 protected:
 	HICON m_hIcon;
 
+private:
+	Gdiplus::Bitmap* m_pbmpBack;
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -50,4 +55,6 @@ public:
 	afx_msg void OnBnClickedButtonXml();
 	CListCtrl m_actorList;
 	afx_msg void OnClose();
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	CTxImgButton m_btnStart;
 };

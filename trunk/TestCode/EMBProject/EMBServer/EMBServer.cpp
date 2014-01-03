@@ -7,11 +7,12 @@
 #include "EMBServerDlg.h"
 #include "MainDef.h"
 #include "FGlobal.h"
+#include "GdiPlusNewHeader.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
+using namespace Gdiplus;
 
 // CEMBServerApp
 
@@ -63,6 +64,11 @@ BOOL CEMBServerApp::InitInstance()
 	
 	MACRO_CREATEOUTPUTCONSOLE
 
+	GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR gdiplusToken;
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+
 	// 添加LOG日志
 	GetTxLogMgr()->AddNewLogFile(LOGKEYMAIN, "EMBServer.log");
 
@@ -101,6 +107,8 @@ BOOL CEMBServerApp::InitInstance()
 
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
+	GdiplusShutdown(gdiplusToken);
+
 	return FALSE;
 }
 

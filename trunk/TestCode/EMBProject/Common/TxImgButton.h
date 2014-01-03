@@ -11,6 +11,7 @@
 
 
 // CTxImgButton
+#include "GdiPlusNewHeader.h"
 #include "GDIDrawFunc.h"
 #include <vector>
 using namespace Gdiplus;
@@ -24,7 +25,10 @@ using namespace Gdiplus;
 
 typedef std::vector<Bitmap*> VECTXBITMAPS;
 
-
+interface IParentBackDrawInterface
+{
+	virtual void GetParentBack(CDC* pDc) = 0;
+};
 
 struct ST_TXBTNINFO 
 {
@@ -65,6 +69,11 @@ public:
 	BOOL AddBitmap(LPCTSTR szFileIn);
 	int GetCurrImgIdx(){return m_txInfo.nCurrBmps;}
 	int SetCurrImgIdx(int nIdx);
+	void SetForceRedrawParentBk(BOOL bRedraw = TRUE, IParentBackDrawInterface* pCallback = NULL)
+	{
+		m_bForceRedrawParent = bRedraw;
+		m_pIBackDraw = pCallback;
+	}
 private:
 	UINT GetBtnState();
 	void CheckRedraw();
@@ -74,6 +83,9 @@ private:
 	BOOL m_bMouseOver;
 	BOOL m_bSetLeaveTrack;
 	BOOL m_bPressed;
+	BOOL m_bForceRedrawParent;
+	BOOL m_bInternalDraw;
+	IParentBackDrawInterface* m_pIBackDraw;
 protected:
 	DECLARE_MESSAGE_MAP()
 	virtual void PreSubclassWindow();

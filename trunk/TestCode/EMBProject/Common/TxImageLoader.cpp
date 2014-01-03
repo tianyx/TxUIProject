@@ -9,8 +9,8 @@
 *********************************************************************/
 #include "StdAfx.h"
 #include "TxImageLoader.h"
-#include "io.h"
 #include "FGlobal.h"
+#include <io.h>
 
 CTxImageLoader::CTxImageLoader(void)
 {
@@ -27,9 +27,7 @@ Bitmap* CTxImageLoader::LoadBitmap( LPCTSTR szFileIn )
 	CString strFile(szFileIn);
 	if (_access(strFile,  04) == -1)
 	{
-		CString strPath = GetAppPath().c_str();
-		strPath +=TEXT("\\");
-		strFile = strPath + strFile;
+		strFile = GetFullImagePath(strFile);
 		if (_access(strFile, 04) == -1)
 		{
 			ASSERT(FALSE);
@@ -50,7 +48,7 @@ Bitmap* CTxImageLoader::LoadBitmap( LPCTSTR szFileIn )
 		if (!pImage || pImage->GetLastStatus() != Ok)
 		{
 			ASSERT(FALSE);
-			CFWriteLog(TEXT("LoadBitmap"), TEXT("failed load %s"), strFile);
+			TRACE(TEXT("failed load %s"), strFile);
 			if (pImage)
 			{
 				delete pImage;
@@ -82,4 +80,14 @@ CTxImageLoader& CTxImageLoader::GetTxImageLoader()
 {
 	static CTxImageLoader g_ImgLoader;
 	return g_ImgLoader;
+}
+
+CString GetFullImagePath( LPCTSTR strFile )
+{
+	CString strFileTmp =strFile;
+	strFileTmp.TrimLeft(TEXT("\\"));
+	CString strFullPath = GetAppPath().c_str();
+	strFullPath +=TEXT("\\skins\\");
+	strFullPath += strFile;
+	return strFullPath;
 }

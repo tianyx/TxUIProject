@@ -9,6 +9,7 @@
 *********************************************************************/
 #pragma once
 #include "GdiPlusNewHeader.h"
+//#include "preDef.h"
 using namespace Gdiplus;
 //
 

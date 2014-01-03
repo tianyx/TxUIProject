@@ -397,7 +397,7 @@ void GPDrawStretchImage( Graphics& gc, Bitmap* pImage, CRect& rcDes, CRect* prcI
 			gc.DrawImage(pImage, rRightBottom, rImgDraw.X, rImgDraw.Y, rImgDraw.Width, rImgDraw.Height, UnitPixel);
 
 			//bottom
-			Rect rBottom(rcMid.left, rcMid.bottom+1, rcMid.Width(), rcEdgeUse.bottom);
+			Rect rBottom(rcMid.left, rcMid.bottom, rcMid.Width(), rcEdgeUse.bottom);
 			rImgDraw = Rect(rcImgMid.left, rcImgMid.bottom, rcImgMid.Width(), rcEdgeUse.bottom);
 			gc.DrawImage(pImage, rBottom, rImgDraw.X, rImgDraw.Y, rImgDraw.Width, rImgDraw.Height, UnitPixel);
 

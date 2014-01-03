@@ -24,6 +24,9 @@ CTxImgButton::CTxImgButton()
 	m_bMouseOver = FALSE;
 	m_bSetLeaveTrack = FALSE;
 	m_bPressed = FALSE;
+	m_bInternalDraw = FALSE;
+	m_bForceRedrawParent = FALSE;
+	m_pIBackDraw = NULL;
 }
 
 CTxImgButton::~CTxImgButton()
@@ -142,7 +145,10 @@ void CTxImgButton::OnMouseLeave()
 
 void CTxImgButton::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 {
-
+	if (m_bInternalDraw)
+	{
+		return;
+	}
 	// TODO:  添加您的代码以绘制指定项
 	if (m_txInfo.nBmpWidth == 0 || m_txInfo.nBmpHeight == 0)
 	{
@@ -158,7 +164,6 @@ void CTxImgButton::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 	}
 
 	UINT nBtnState = GetBtnState();
-	//TRACE("\n draw state = %d", nBtnState);
 	CRect rcImgUse(0,0, m_txInfo.nSubBmpWidth, m_txInfo.nBmpHeight);
 	if (nBtnState & TX_BTNSTATE_GRAY)
 	{
@@ -173,7 +178,36 @@ void CTxImgButton::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 		rcImgUse.OffsetRect(1* m_txInfo.nSubBmpWidth, 0);
 	}
 
-	GPDrawStretchImage(lpDrawItemStruct->hDC, m_txInfo.m_vBmps[m_txInfo.nCurrBmps],  rcClient, &rcImgUse, TXBMP_STRETCH_MID_LRTB, &m_txInfo.rcEdge);
+	if (m_bForceRedrawParent && m_pIBackDraw != NULL)
+	{
+		Bitmap bmpMem(rcClient.Width(), rcClient.Height());
+		CBitmap bmpBack;
+		bmpBack.CreateBitmap(rcClient.Width(), rcClient.Height(), 1, 32,NULL);
+		Graphics gcMem(&bmpMem);
+		CRect rcInParent;
+		GetWindowRect(rcInParent);
+		CWnd* pWnd = GetParent();
+		if (pWnd)
+		{
+			pWnd->ScreenToClient(rcInParent);
+			m_bInternalDraw = TRUE;
+			CDC memDC;
+			memDC.CreateCompatibleDC(GetDC());
+			HGDIOBJ oldObj = memDC.SelectObject((HGDIOBJ) bmpBack);
+			memDC.OffsetViewportOrg(-rcInParent.left, -rcInParent.top);
+			m_pIBackDraw->GetParentBack(&memDC);
+			memDC.SetViewportOrg(0,0);
+			m_bInternalDraw = FALSE;
+			GPDrawStretchImage(memDC.GetSafeHdc(), m_txInfo.m_vBmps[m_txInfo.nCurrBmps],  rcClient, &rcImgUse, TXBMP_STRETCH_MID_LRTB, &m_txInfo.rcEdge);
+			BitBlt(lpDrawItemStruct->hDC, 0,0, rcClient.Width(), rcClient.Height(), memDC.GetSafeHdc(), 0,0, SRCCOPY);
+			memDC.SelectObject(oldObj);
+
+		}
+	}
+	else
+	{
+		GPDrawStretchImage(lpDrawItemStruct->hDC, m_txInfo.m_vBmps[m_txInfo.nCurrBmps],  rcClient, &rcImgUse, TXBMP_STRETCH_MID_LRTB, &m_txInfo.rcEdge);
+	}
 
 }
 
