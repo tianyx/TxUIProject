@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EPGCreater", "EPGCreater\EPGCreater.vcproj", "{7AA0C01C-0F40-44E1-90D3-7EBE4039C851}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 2
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = EPGCreater\\EPGCreater.vcproj
+		SccLocalPath1 = .
+		SccProjectFilePathRelativizedFromConnection1 = EPGCreater\\
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7AA0C01C-0F40-44E1-90D3-7EBE4039C851}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7AA0C01C-0F40-44E1-90D3-7EBE4039C851}.Debug|Win32.Build.0 = Debug|Win32
+		{7AA0C01C-0F40-44E1-90D3-7EBE4039C851}.Release|Win32.ActiveCfg = Release|Win32
+		{7AA0C01C-0F40-44E1-90D3-7EBE4039C851}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

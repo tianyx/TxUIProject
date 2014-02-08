@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GHClipImporter", "GHClipImporter\GHClipImporter.vcproj", "{1F1E53F0-4D61-41D8-9210-A9429FC05370}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FtpTest", "FtpTest\FtpTest.vcproj", "{01422520-AA61-4DF0-BC3A-884D0176E69F}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 3
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = GHClipImporter\\GHClipImporter.vcproj
+		SccLocalPath1 = .
+		SccProjectFilePathRelativizedFromConnection1 = GHClipImporter\\
+		SccProjectUniqueName2 = FtpTest\\FtpTest.vcproj
+		SccLocalPath2 = .
+		SccProjectFilePathRelativizedFromConnection2 = FtpTest\\
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+		ReleaseForMonitor|Win32 = ReleaseForMonitor|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1F1E53F0-4D61-41D8-9210-A9429FC05370}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1F1E53F0-4D61-41D8-9210-A9429FC05370}.Debug|Win32.Build.0 = Debug|Win32
+		{1F1E53F0-4D61-41D8-9210-A9429FC05370}.Release|Win32.ActiveCfg = Release|Win32
+		{1F1E53F0-4D61-41D8-9210-A9429FC05370}.Release|Win32.Build.0 = Release|Win32
+		{1F1E53F0-4D61-41D8-9210-A9429FC05370}.ReleaseForMonitor|Win32.ActiveCfg = ReleaseForMonitor|Win32
+		{1F1E53F0-4D61-41D8-9210-A9429FC05370}.ReleaseForMonitor|Win32.Build.0 = ReleaseForMonitor|Win32
+		{01422520-AA61-4DF0-BC3A-884D0176E69F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{01422520-AA61-4DF0-BC3A-884D0176E69F}.Debug|Win32.Build.0 = Debug|Win32
+		{01422520-AA61-4DF0-BC3A-884D0176E69F}.Release|Win32.ActiveCfg = Release|Win32
+		{01422520-AA61-4DF0-BC3A-884D0176E69F}.Release|Win32.Build.0 = Release|Win32
+		{01422520-AA61-4DF0-BC3A-884D0176E69F}.ReleaseForMonitor|Win32.ActiveCfg = Release|Win32
+		{01422520-AA61-4DF0-BC3A-884D0176E69F}.ReleaseForMonitor|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

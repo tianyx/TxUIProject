@@ -1,0 +1,284 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 中文(中华人民共和国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#pragma code_page(936)\r\n"
+    "#include ""res\\EPGCreater.rc2""  // 非 Microsoft Visual C++ 编辑的资源\r\n"
+    "#include ""l.CHS\\afxres.rc""      // 标准组件\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\EPGCreater.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 EPGCreater"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "EPGCreater，1.0 版",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2014",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "确定",IDOK,113,41,50,14,WS_GROUP
+END
+
+IDD_EPGCREATER_DIALOG DIALOGEX 0, 0, 435, 291
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "EPGCreater"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LIST_TASK,"SysListView32",LVS_REPORT | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,14,18,349,153
+    PUSHBUTTON      "删除策略",IDC_BTN_TASKDEL,370,67,50,14
+    PUSHBUTTON      "新建策略",IDC_BTN_TASKNEW,370,23,50,14
+    GROUPBOX        "生成策略列表",IDC_STATIC,7,7,421,170
+    PUSHBUTTON      "编辑策略",IDC_BTN_TASKEDIT,370,46,50,14
+    PUSHBUTTON      "手动生成EPG",IDC_BTN_GENMANUAL,370,107,50,30
+    EDITTEXT        IDC_EDIT_LOG,13,196,408,81,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | NOT WS_BORDER | WS_VSCROLL | WS_HSCROLL
+    GROUPBOX        "输出：",IDC_STATIC,7,185,421,99
+    CONTROL         "启用自动生成",IDC_CHECK_GENONTIME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,369,157,59,10
+END
+
+IDD_DLG_TASKEDIT DIALOGEX 0, 0, 551, 229
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定",IDOK,393,208,50,14
+    PUSHBUTTON      "取消",IDCANCEL,494,208,50,14
+    COMBOBOX        IDC_COMBO_CHN,203,25,130,30,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "频道:",IDC_STATIC,177,28,20,8
+    COMBOBOX        IDC_COMBO_SECTION1,266,188,66,54,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,190,28,8
+    CONTROL         "星期日",IDC_CHECK_WEEKDAY1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,190,44,10
+    COMBOBOX        IDC_COMBO_SECTION2,266,51,66,52,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,52,28,8
+    CONTROL         "星期一",IDC_CHECK_WEEKDAY2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,52,44,10
+    COMBOBOX        IDC_COMBO_SECTION3,266,73,66,47,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,75,28,8
+    CONTROL         "星期二",IDC_CHECK_WEEKDAY3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,75,44,10
+    COMBOBOX        IDC_COMBO_SECTION4,266,96,66,54,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,98,28,8
+    CONTROL         "星期三",IDC_CHECK_WEEKDAY4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,98,44,10
+    COMBOBOX        IDC_COMBO_SECTION5,266,119,66,55,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,121,28,8
+    CONTROL         "星期四",IDC_CHECK_WEEKDAY5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,121,44,10
+    COMBOBOX        IDC_COMBO_SECTION6,266,142,66,50,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,144,28,8
+    CONTROL         "星期五",IDC_CHECK_WEEKDAY6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,144,44,10
+    COMBOBOX        IDC_COMBO_SECTION7,266,165,66,57,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "节目档:",IDC_STATIC,226,167,28,8
+    CONTROL         "星期六",IDC_CHECK_WEEKDAY7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,167,44,10
+    GROUPBOX        "策略属性：",IDC_STATIC,159,7,197,215
+    CONTROL         "启用定时生成（以周为单位）",IDC_CHECK_TASKGENONTIME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,372,27,120,10
+    EDITTEXT        IDC_EDIT_DAYOFFSET,414,44,40,14,ES_AUTOHSCROLL
+    LTEXT           "提前天数:",IDC_STATIC,372,46,36,8
+    CONTROL         "",IDC_DATETIMEPICKER_GENTIME,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_UPDOWN | WS_TABSTOP | 0x8,414,65,85,15
+    LTEXT           "生成时间:",IDC_STATIC,372,67,36,8
+    CONTROL         "所有节目单必须是已提交状态",IDC_CHECK_NEEDSUBMITTED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,373,108,120,10
+    GROUPBOX        "自动定时属性：",IDC_STATIC,365,7,174,81
+    GROUPBOX        "其他属性：",IDC_STATIC,365,93,174,52
+    GROUPBOX        "描述：",IDC_STATIC,365,147,174,54
+    EDITTEXT        IDC_EDIT_DESC,372,159,156,36,ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL
+    GROUPBOX        "频道选择",IDC_STATIC,7,7,145,215
+    CONTROL         "",IDC_TREE1,"SysTreeView32",TVS_DISABLEDRAGDROP | TVS_SHOWSELALWAYS | TVS_CHECKBOXES | TVS_NOHSCROLL | WS_BORDER | WS_TABSTOP,14,18,133,196
+    CONTROL         "更改循环方式为：星期日 -> 星期六",IDC_CHECK_CHANGEWEEKLOOPMODE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,374,126,140,10
+END
+
+IDD_DIALOG1 DIALOGEX 0, 0, 273, 92
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "选择日期范围"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定",IDOK,79,71,50,14
+    PUSHBUTTON      "取消",IDCANCEL,157,71,50,14
+    CONTROL         "",IDC_DATETIMEPICKER1,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_LONGDATEFORMAT | WS_TABSTOP,32,22,93,15
+    CONTROL         "",IDC_DATETIMEPICKER2,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_LONGDATEFORMAT | WS_TABSTOP,159,23,100,15
+    LTEXT           "从:",IDC_STATIC,14,24,12,8
+    LTEXT           "至:",IDC_STATIC,139,25,12,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080403a8"
+        BEGIN
+            VALUE "CompanyName", "北京正奇联讯科技有限公司"
+            VALUE "FileDescription", "EPGCreater"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "EPGCreater.exe"
+            VALUE "LegalCopyright", "2014(C) <北京正奇联讯科技有限公司>。保留所有权利。"
+            VALUE "OriginalFilename", "EPGCreater.exe"
+            VALUE "ProductName", "EPGCreater"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 936
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_EPGCREATER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 428
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 284
+    END
+
+    IDD_DLG_TASKEDIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 544
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 222
+    END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 266
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 85
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ABOUTBOX            "关于 EPGCreater(&A)..."
+END
+
+#endif    // 中文(中华人民共和国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE 4, 2
+#pragma code_page(936)
+#include "res\EPGCreater.rc2"  // 非 Microsoft Visual C++ 编辑的资源
+#include "l.CHS\afxres.rc"      // 标准组件
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
