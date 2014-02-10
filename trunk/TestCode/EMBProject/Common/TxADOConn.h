@@ -27,7 +27,6 @@ class CTxADORecordSet
 public:
 	CTxADORecordSet(DWDBKEY dwKey = DBKEY_ANY);
 	~CTxADORecordSet(void);
-
 public:
 	
 	BOOL ExecuteSQL(CString& strSqlIn);
@@ -43,6 +42,8 @@ public:
 private:
 	_ConnectionPtr m_apConn;
 	_RecordsetPtr m_apRecordSet;
+	CAutoCritSec* m_pcsLock;
+
 };
 
 
@@ -53,6 +54,7 @@ class CTxADOCommand
 public:
 	CTxADOCommand(DWDBKEY dwKey = DBKEY_ANY);
 	~CTxADOCommand(void);
+
 
 	BOOL ExecuteSQL(CString& strSqlIn);
 
@@ -67,6 +69,7 @@ public:
 private:
 	_ConnectionPtr m_apConn;
 	_CommandPtr m_apCommand;
+	CAutoCritSec* m_pcsLock;
 };
 
 
@@ -75,11 +78,12 @@ struct ST_ADODBCONNINFO
 	DWDBKEY dwKey;
 	CString strConnStr;
 	_Connection* pConn;
-
+	CAutoCritSec* pcsLock;
 	ST_ADODBCONNINFO()
 	{
 		dwKey  = -1;
 		pConn = NULL;
+		pcsLock = NULL;
 	}
 };
 typedef map<DWORD, ST_ADODBCONNINFO> MAPADOCONNS;
@@ -100,7 +104,7 @@ public:
 	
 protected:
 	//the returned ptr must be released by caller
-	_Connection* GetADOConnection(const DWORD dwDBKey = DBKEY_ANY);
+	_Connection* GetADOConnection(const DWORD dwDBKey = DBKEY_ANY, CAutoCritSec** pCritSecOut = NULL);
 
 private:
 	void Clear();

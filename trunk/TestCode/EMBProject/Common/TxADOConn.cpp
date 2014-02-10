@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "TxADOConn.h"
 #include "FGlobal.h"
+#include "AutoCritSec.h"
 
 CTxADODBMgr* CTxADODBMgr::m_spDBMgr = NULL;
 
@@ -9,7 +10,7 @@ CTxADODBMgr* CTxADODBMgr::m_spDBMgr = NULL;
 CTxADORecordSet::CTxADORecordSet( DWDBKEY dwKey /*= DBKEY_ANY*/ )
 {
 	CoInitialize(NULL);
-	m_apConn = CTxADODBMgr::GetADODBMgr()->GetADOConnection(dwKey);
+	m_apConn = CTxADODBMgr::GetADODBMgr()->GetADOConnection(dwKey, &m_pcsLock);
 	if (!m_apConn || m_apConn->GetState() == adStateClosed)
 	{
 		ASSERT(FALSE);
@@ -32,6 +33,7 @@ CTxADORecordSet::~CTxADORecordSet(void)
 	{
 		m_apRecordSet->Close();
 	}
+	m_pcsLock = NULL;
 
 }
 
@@ -48,6 +50,7 @@ BOOL CTxADORecordSet::ExecuteSQL( CString& strSqlIn )
 		m_apRecordSet->Close();
 	}
 
+	CAutoLock lock(m_pcsLock);
 	try
 	{
 	 	HRESULT hr = m_apRecordSet->Open(_variant_t(strSqlIn),_variant_t((IDispatch *)m_apConn), adOpenKeyset,
@@ -263,6 +266,8 @@ BOOL CTxADOCommand::ExecuteSQL( CString& strSqlIn )
 	BSTR btr = strSqlIn.AllocSysString();
 	CComBSTR bstrSql(btr);
 	::SysFreeString(btr);
+
+	CAutoLock lock(m_pcsLock);
 	try
 	{
 
@@ -296,6 +301,7 @@ BOOL CTxADOCommand::ExecuteSQLs( VECSTRINGS& vSqlIn )
 
 
 	BOOL bRet = FALSE;
+	CAutoLock lock(m_pcsLock);
 	try
 	{
 		m_apConn->BeginTrans();
@@ -396,6 +402,7 @@ BOOL CTxADODBMgr::OpenDB( const DWORD dwDBKey, LPCTSTR szConnStr )
 		{
 			info.dwKey = dwDBKey;
 			info.strConnStr = szConnStr;
+			info.pcsLock = new CAutoCritSec();
 			m_mapAdoConns[dwDBKey] = info;
 		}
 		
@@ -418,6 +425,8 @@ BOOL CTxADODBMgr::CloseDB( const DWORD dwDBkey )
 	if (itf != m_mapAdoConns.end())
 	{
 		_Connection* pConn = itf->second.pConn;
+		CAutoCritSec* pLock = itf->second.pcsLock;
+
 		m_mapAdoConns.erase(itf);
 
 		if (pConn)
@@ -431,6 +440,11 @@ BOOL CTxADODBMgr::CloseDB( const DWORD dwDBkey )
 			{
 				ASSERT(FALSE);
 			}
+		}
+
+		if (pLock)
+		{
+			delete pLock;
 		}
 	}
 
@@ -447,7 +461,7 @@ void CTxADODBMgr::ReleaseDBMgr()
 	
 }
 
-_Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ )
+_Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ , CAutoCritSec** pCritSecOut /*= NULL*/)
 {
 	_Connection* pRet = NULL;
 	if (dwDBKey == DBKEY_ANY)
@@ -467,6 +481,10 @@ _Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ 
 				infoTmp.pConn= ConnectDB(infoTmp.strConnStr);	
 			}
 			pRet = infoTmp.pConn;
+			if (pCritSecOut)
+			{
+				*pCritSecOut = infoTmp.pcsLock;
+			}
 		}
 	}
 	else
@@ -485,6 +503,10 @@ _Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ 
 				}
 				infoTmp.pConn= ConnectDB(infoTmp.strConnStr);
 				pRet = infoTmp.pConn;
+				if (pCritSecOut)
+				{
+					*pCritSecOut = infoTmp.pcsLock;
+				}
 			}
 		}
 	}
@@ -564,4 +586,5 @@ _Connection* CTxADODBMgr::ConnectDB( LPCTSTR szConnStr )
 	return pRetConn;
 
 }
+
 
