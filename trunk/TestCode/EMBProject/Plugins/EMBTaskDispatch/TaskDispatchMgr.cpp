@@ -81,7 +81,6 @@ CTaskDispatchMgr::CTaskDispatchMgr(void)
 	nfgMaxActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskIOWeight +nfgNetIOWeight)*4/5;
 	nfgLowActorLoad = 100*(nfgCpuWeight + nfgMemWeight + nfgDiskIOWeight +nfgNetIOWeight)/5;
 
-	m_FreeActorIds.RemoveAll();
 }
 
 CTaskDispatchMgr::~CTaskDispatchMgr(void)
@@ -1423,7 +1422,7 @@ ACTORID EMB::CTaskDispatchMgr::GetFirstIdleActor( const ACTORID nDesiredActor, i
 * Return Param：返回ACTORID
 * History：
 */
-BOOL EMB::CTaskDispatchMgr::GetIdleActors( CString strActorTeam,int nPriority )
+BOOL EMB::CTaskDispatchMgr::GetIdleActors( CString strActorTeam,int nPriority, vector<ACTORID>& vActorOut )
 {
 	CAutoLock lock(&m_csActor);
 	//max figure is 80% all usage
@@ -1433,7 +1432,6 @@ BOOL EMB::CTaskDispatchMgr::GetIdleActors( CString strActorTeam,int nPriority )
 	ACTORID nActorRet = INVALID_ID;
 	int nMinValue = nfgMaxActorLoad;
 
-	m_FreeActorIds.RemoveAll();
 	//go normal process
 	MAPACTORSTATES::iterator itb = m_mapActors.begin();
 	MAPACTORSTATES::iterator ite = m_mapActors.end();
@@ -1456,21 +1454,13 @@ BOOL EMB::CTaskDispatchMgr::GetIdleActors( CString strActorTeam,int nPriority )
 					//判断是否获取组内执行端，如果没有设置则返回
 					if((strActorTeam.GetLength() > 0 && actInfoRef.strTeam == strActorTeam) || (strActorTeam.GetLength() == 0))
 					{
-						//add to free actor list
-						ST_ACTDISCONNINFO adtorInfo;
-						adtorInfo.actorid = nActorRet;
-						adtorInfo.tmReport = NULL;
-
-						m_FreeActorIds.Add(adtorInfo);
+						vActorOut.push_back(nActorRet);
 					}
-					continue;
 				}
 			}
 		}
 	}
-
-
-	return nActorRet != INVALID_ID;
+	return TRUE;
 }
 
 /*
@@ -1801,8 +1791,9 @@ BOOL EMB::CTaskDispatchMgr::TaskNeedSplit( CString strTaskIn )
 BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 {
 	BOOL bRet = FALSE;
-	GetIdleActors(taskIn.taskBasic.strTaskFrom,taskIn.taskBasic.nPriority);
-	int nSize = m_FreeActorIds.GetSize();
+	vector<ACTORID> vActorIDs;
+	GetIdleActors(taskIn.taskBasic.strTaskFrom,taskIn.taskBasic.nPriority, vActorIDs);
+	int nSize = vActorIDs.size();
 
 	if(nSize > 1)
 	{
@@ -1819,19 +1810,19 @@ BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 					break;
 				}
 
-				ST_ACTDISCONNINFO ActorInfo = m_FreeActorIds.GetAt(i);
+				ACTORID actorid =vActorIDs[i];
 
-				HRESULT hr = m_actHolder.SendToActor(ActorInfo.actorid, strXml);
+				HRESULT hr = m_actHolder.SendToActor(actorid, strXml);
 				if (hr == S_OK)
 				{
 					if (i == 0)
 					{
-						taskIn.taskRunState.actorId = ActorInfo.actorid;
+						taskIn.taskRunState.actorId = actorid;
 						taskIn.taskRunState.nState = embtaskstate_dispatching;
 					}
 					else  // add subtask
 					{
-						subTask.taskRunState.actorId = ActorInfo.actorid;
+						subTask.taskRunState.actorId = actorid;
 						subTask.taskRunState.nState = embtaskstate_dispatching;
 						TXGUID newGuid = String2Guid(subTask.taskBasic.strGuid);
 						if (m_mapTasks.find(newGuid) == m_mapTasks.end())
@@ -1841,7 +1832,7 @@ BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 						}
 					}
 
-					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), subTask.taskBasic.strGuid, ActorInfo.actorid);
+					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), subTask.taskBasic.strGuid, actorid);
 				}
 				else
 				{
@@ -2100,24 +2091,49 @@ BOOL EMB::CTaskDispatchMgr::OnExcCallback( ST_EXCCALLBACKINFO& infoIn )
 
 BOOL EMB::CTaskDispatchMgr::TrySplitFCVSSubTask( ST_EXCCALLBACKINFO& infoIn )
 {
-	BOOL bNeedSp = FALSE;
+	BOOL bCanSp = FALSE;
 	ST_FCVS fcvsInfo;
 	fcvsInfo.taskInfo.FromString(infoIn.strExtInfo);
 	fcvsInfo.configInfo.FromString(infoIn.strExtInfo);
-	if (m_config.nfgMaxFcvsSplit < 2 || !fcvsInfo.configInfo.bUseSection)
+	ST_FILETASKDATA taskData;
 	{
-		//do not split
+
+		CAutoLock lock(&m_csFTask);
+		TXGUID taskGuid = String2Guid(infoIn.taskId);
+		MAPFILETASKS::iterator itf = m_mapTasks.find(taskGuid);
+		if (itf == m_mapTasks.end())
+		{
+			//task not found
+			ASSERT(FALSE);
+			CFWriteLog(TEXT("TrySplitFCVSSubTask, task not found. id = %s"), infoIn.taskId);
+			return FALSE;
+		}
+		else
+		{
+			taskData = itf->second;
+		}
 	}
 
-	if (bNeedSp)
+	if (m_config.nfgMaxFcvsSplit >1 && fcvsInfo.configInfo.bUseSection)
+	{
+		vector<ACTORID> vActors;
+		GetIdleActors(taskData.taskBasic.strTaskFrom,taskData.taskBasic.nPriority, vActors);
+		if (vActors.size() > 0)
+		{
+			bCanSp = TRUE;
+		}
+	}
+
+	if (bCanSp)
 	{
 		//generate split task
+
 	}
 	else
 	{
+		//whatever generate replace task;
 
 	}
-	//whatever generate replace task;
 
 
 	return bNeedSp;

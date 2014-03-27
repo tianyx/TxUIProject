@@ -131,7 +131,8 @@ private:
 	BOOL UpdateActorState(ST_ACTORSTATE& stateIn);
 	BOOL IsLiveActor(const ACTORID nActorId);
 
-	BOOL GetIdleActors( CString strActorTeam,int nPriority );
+	BOOL GetIdleActors( CString strActorTeam,int nPriority, vector<ACTORID>& vActorOut);
+
 	CString CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize, ST_FILETASKDATA& subTask);
 	CString CreateCombinedTaskXml(CString strTaskIn,int nSize);
 	BOOL TaskNeedSplit(CString strTaskIn);
@@ -210,7 +211,6 @@ private:
 	int nfgMaxActorLoad;
 	int nfgLowActorLoad;
 
-	CArray<ST_ACTDISCONNINFO,ST_ACTDISCONNINFO&> m_FreeActorIds;    //free actor list
 };
 
 }
