@@ -305,24 +305,14 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 		if (nEndState == embtaskstate_finished)
 		{
 			// 将任务移植到日志表中
-			strSQL = "insert into t_EMBTaskLog(strTaskID,nState,Remark) values('";
-			strSQL += Guid2String(guid);
-			strSQL += "',";
-
-			char cNum[5];
-			ltoa(embtaskstate_finished,cNum,10);
-			strSQL += cNum;
-			strSQL += ",'";
-
-			strSQL += "成功";
-			strSQL += "')";
+			CTime tmNow(time(NULL));
+			strSQL.Format(TEXT("insert into T_EMBTaskLog (nSvrCode, strTaskID, nState, Remark, time) values (%d, '%s', %d, '%s', '%s')"), 0, Guid2String(guid), 3, TEXT("任务完成"), tmNow.Format(TEXT("%Y-%m-%d %H:%M:%S")));
 
 			if(!dbCtrl.ExecuteSQL(strSQL))
 			{
 				CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
 				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
 			}
-
 // 			// 从任务列表中删除
 // 
 // 			strSQL =  "delete from t_EMBTask where strTaskID='";
@@ -339,7 +329,7 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 
 			if(!dbCtrl.ExecuteSQL(strSQL))
 			{
-				CFWriteLog(LOGKEY_TASKSTORAGE,"删除数据库表信息失败， SQL语句失败!");
+				CFWriteLog(LOGKEY_TASKSTORAGE,"更新完成任务数据库表信息失败， SQL语句失败!");
 				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
 			}
 		}
@@ -361,33 +351,12 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 					{
 						nRetry--;
 						dbCtrl.SetSpecialValue("nRetry",nRetry);
-						//将任务状态重置为0
-						strSQL = "update t_EMBTask set nState=0 where strTaskID='";
-						strSQL += Guid2String(guid);
-						strSQL += "'";
+						//将任务状态重置为0, svr id 置为null, actor id 置为null
+						strSQL.Format(TEXT("update t_EMBTask set nState=0, nDispatchID = NULL, nActorID = NULL where strTaskID='%s'"),Guid2String(guid));
 
 					}
 					else
 					{
-						// 将任务移植到日志表中
-						strSQL = "insert into t_EMBTaskLog(strTaskID,nState,Remark) values('";
-						strSQL += Guid2String(guid);
-						strSQL += "',";
-
-						char cNum[5];
-						ltoa(embtaskstate_error,cNum,10);
-						strSQL += cNum;
-						strSQL += ",'";
-
-						strSQL += "失败";
-						strSQL += "')";
-
-						if(!dbCtrl.ExecuteSQL(strSQL))
-						{
-							CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
-							CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
-						}
-
 						strSQL = "update t_EMBTask set nState= ";
 						CTxStrConvert conval(embtaskstate_error);
 						strSQL +=conval.GetAsString();
@@ -405,6 +374,23 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 						{
 							CFWriteLog(LOGKEY_TASKSTORAGE,"处理失败任务失败， SQL语句失败!");
 							CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+						}
+						else
+						{
+							// 将任务状态写到日志表中
+							CTime tmNow(time(NULL));
+							CString strRemark = TEXT("任务最终失败");
+							if (nRetry >= 0)
+							{
+								strRemark.Format(TEXT("任务失败，开始重试，重试剩余 %d"), nRetry+1);
+							}
+							strSQL.Format(TEXT("insert into T_EMBTaskLog (nSvrCode, strTaskID, nState, Remark, time) values (%d, '%s', %d, '%s', '%s')"), 0, Guid2String(guid), embtaskstate_error, TEXT("任务失败"), tmNow.Format(TEXT("%Y-%m-%d %H:%M:%S")));
+
+							if(!dbCtrl.ExecuteSQL(strSQL))
+							{
+								CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
+								CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+							}
 						}
 					}
 				}
@@ -425,6 +411,20 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 			CFWriteLog(LOGKEY_TASKSTORAGE,"删除任务失败， SQL语句失败!");
 			CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
 		}
+		else
+		{
+			CTime tmNow(time(NULL));
+			strSQL.Format(TEXT("insert into T_EMBTaskLog (nSvrCode, strTaskID, nState, Remark, time) values (%d, '%s', %d, '%s', '%s')"), 0, Guid2String(guid), 0, TEXT("任务被删除"), tmNow.Format(TEXT("%Y-%m-%d %H:%M:%S")));
+
+			if(!dbCtrl.ExecuteSQL(strSQL))
+			{
+				CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
+				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+			}
+		}
+
+		
+
 	}
 	else if (updateInfo.nUpdateType == embtaskupdatetype_change)
 	{
@@ -457,6 +457,17 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 
 			dbCtrl.CloseDB();
 			return S_FALSE;
+		}
+		else
+		{
+// 			CTime tmNow(time(NULL));
+// 			strSQL.Format(TEXT("insert into T_EMBTaskLog (nSvrCode, strTaskID, nState, Remark, time) values (%d, '%s', %d, '%s', '%s')"), 0, Guid2String(guid), 0, TEXT("任务被更新"), tmNow.Format(TEXT("%Y-%m-%d %H:%M:%S")));
+// 
+// 			if(!dbCtrl.ExecuteSQL(strSQL))
+// 			{
+// 				CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
+// 				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+// 			}
 		}
 	}
 	else
@@ -656,7 +667,7 @@ HRESULT EMB::CEMBStorageDB::UpdateActorID( CTaskString& strTaskGuid, ACTORID act
 	dbCtrl.SetODBCDatabase(m_strDBCon);
 	if(!dbCtrl.OpenDB())
 	{
-		return FALSE;
+		return EMBERR_DBOPEN;
 	}
 
 	if (!dbCtrl.ExecuteSQL(sql))
@@ -666,4 +677,5 @@ HRESULT EMB::CEMBStorageDB::UpdateActorID( CTaskString& strTaskGuid, ACTORID act
 	}
 
 	dbCtrl.CloseDB();
+	return S_OK;
 }

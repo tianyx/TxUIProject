@@ -26,7 +26,7 @@ HRESULT CMBCHeartBeatObj::ProcessIncomingMsg(CMBCSocket* pMBCSock, int nMsgType,
 		{
 			m_nLiveReplyCount = msg.nMsgId;
 			//CFWriteLog("\n-receive heart = %s live pack reply counting = %d", this->m_strObjName, msg.nMsgId);
-			CAutoLock lock(&m_lockLastInfo);
+			EMB::CAutoLock lock(&m_lockLastInfo);
 			m_LastReceivedInfo = msg;
 		}
 		else
@@ -161,7 +161,7 @@ HRESULT CMBCHeartBeatObj::NetCall_Read( CMBCSocket* pMBCSock, WPARAM wParam, LPA
 
 HRESULT CMBCHeartBeatObj::GetStateInfo( ST_OBJSTATEINFO& infoOut )
 {
-	CAutoLock lock(&m_lockLastInfo);
+	EMB::CAutoLock lock(&m_lockLastInfo);
 	infoOut.nSelfState = m_nSelfState;
 	infoOut.nObjType = m_nObjType;
 	infoOut.remoteInfo = m_LastReceivedInfo;

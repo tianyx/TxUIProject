@@ -22,7 +22,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin\$(ConfigurationName)\plugin"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="2"
@@ -72,8 +72,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).epl"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib embdbconnlib.lib"
+				OutputFile="$(OutDir)\$(ProjectName).epl"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\EMBTaskStorage.def"
@@ -107,7 +107,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin\$(ConfigurationName)\plugin"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="2"
@@ -158,8 +158,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\plugin\$(ProjectName).epl"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib embdbconnlib.lib"
+				OutputFile="$(OutDir)\$(ProjectName).epl"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				ModuleDefinitionFile=".\EMBTaskStorage.def"

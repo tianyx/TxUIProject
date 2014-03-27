@@ -112,7 +112,7 @@ HRESULT CMasterHeartBeat::GetRemoteSvrState( ST_SVRLIVEINFO& infoOut )
 {
 	infoOut = m_RemoteInfo;
 	infoOut.nConnState = embConnState_error;
-	CAutoLock lock(&m_csSockIn);
+	EMB::CAutoLock lock(&m_csSockIn);
 	if (m_pLastSock && m_mapSockIns.find(m_pLastSock)!= m_mapSockIns.end())
 	{
 		infoOut.nConnState =(m_pLastSock->GetState() == MBCSOCKSTATE_OK)? embConnState_ok:embConnState_error;

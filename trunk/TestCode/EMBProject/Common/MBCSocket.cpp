@@ -4,38 +4,7 @@
 #include "EMBCommonFunc.h"
 //#include "MBCCommonDef.h"
 //////////////////////////////////////////////////////////////////////////
-LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL RegisterSockWnd();
-BOOL g_bRegisterSockWnd = RegisterSockWnd();
-static TCHAR g_szSockWndClsName[] = TEXT ("mbcnetreveiverWnd");
-
-BOOL RegisterSockWnd()
-{
-	HINSTANCE hInstance = GetSelfModuleHandle();
-
-	WNDCLASSEX   wndclassex = {0};
-	wndclassex.cbSize        = sizeof(WNDCLASSEX);
-	wndclassex.style         = CS_HREDRAW | CS_VREDRAW;
-	wndclassex.lpfnWndProc   = WndProc;
-	wndclassex.cbClsExtra    = 0;
-	wndclassex.cbWndExtra    = 0;
-	wndclassex.hInstance     = hInstance;
-	wndclassex.hIcon         = LoadIcon (NULL, IDI_APPLICATION);
-	wndclassex.hCursor       = LoadCursor (NULL, IDC_ARROW);
-	wndclassex.hbrBackground = (HBRUSH) GetStockObject (WHITE_BRUSH);
-	wndclassex.lpszMenuName  = NULL;
-	wndclassex.lpszClassName = g_szSockWndClsName;
-	wndclassex.hIconSm       = wndclassex.hIcon;
-
-	if ( 0== RegisterClassEx (&wndclassex))
-	{
-		HRESULT hr = GetLastError();
-		ASSERT(hr == 0x00000582);
-		
-	}
-
-	return TRUE;
-}
+LRESULT CALLBACK WndTxSockProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 //CreateThreadWindow
 DWORD __stdcall CreateSockWndThread( void* lparam )
@@ -46,10 +15,31 @@ DWORD __stdcall CreateSockWndThread( void* lparam )
 		ASSERT(FALSE);
 	}
 	HINSTANCE hInstance = GetSelfModuleHandle();
+	WNDCLASSEX   wndclassex = {0};
+	wndclassex.cbSize        = sizeof(WNDCLASSEX);
+	wndclassex.style         = CS_HREDRAW | CS_VREDRAW;
+	wndclassex.lpfnWndProc   = WndTxSockProc;
+	wndclassex.cbClsExtra    = 0;
+	wndclassex.cbWndExtra    = 0;
+	wndclassex.hInstance     = hInstance;
+	wndclassex.hIcon         = NULL;
+	wndclassex.hCursor       = NULL;
+	wndclassex.hbrBackground = NULL;
+	wndclassex.lpszMenuName  = NULL;
+	CString strClsName = Guid2String(TxGenGuid());
+	wndclassex.lpszClassName = strClsName;
+	wndclassex.hIconSm       = NULL;
+
+	if ( 0== RegisterClassEx (&wndclassex))
+	{
+		HRESULT hr = GetLastError();
+		ASSERT(FALSE);
+	}
+
 	HWND& hwnd = pSock->m_hSockWnd;
 	ASSERT(hwnd == NULL);
 	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
-		g_szSockWndClsName, 
+		wndclassex.lpszClassName, 
 		TEXT (""),
 		WS_OVERLAPPEDWINDOW,
 		-10, 
@@ -86,7 +76,7 @@ DWORD __stdcall CreateSockWndThread( void* lparam )
 	return 0;
 }
 
-LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndTxSockProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -228,7 +218,7 @@ CMBCSocket::~CMBCSocket(void)
 
 HRESULT CMBCSocket::PushMsg( const MBCSOCKMSG& msg )
 {
-	CAutoLock lock(&m_lockdeque);
+	EMB::CAutoLock lock(&m_lockdeque);
 	m_vecSockMsg.push_back(msg);
 	SetEvent(m_hEventSockMsgArrival);
 	return S_OK;
@@ -237,7 +227,7 @@ HRESULT CMBCSocket::PushMsg( const MBCSOCKMSG& msg )
 
 HRESULT CMBCSocket::CopyMsg( MBCSOCKMSG* pmsgOut, const int inBuffCount, int& nOut )
 {
-	CAutoLock lock(&m_lockdeque);
+	EMB::CAutoLock lock(&m_lockdeque);
 	nOut = m_vecSockMsg.size() > inBuffCount? inBuffCount:m_vecSockMsg.size();
 	for (size_t i = 0; i < nOut; ++i)
 	{
@@ -295,6 +285,7 @@ HRESULT CMBCSocket::Init()
 	}
 	if (m_hSock == INVALID_SOCKET)
 	{
+		CFWriteLog(0, "^^^socCreateFailed local= %s, hr =%x", Addr2String(m_addrs.addrLocal).c_str(), WSAGetLastError());
 		return E_HANDLE;
 	}
 
@@ -304,7 +295,11 @@ HRESULT CMBCSocket::Init()
 	{
 		//udb receiver can't bind
 		hr = bind(m_hSock, (sockaddr*)&m_addrs.addrLocal, sizeof(sockaddr));
+		if (hr == SOCKET_ERROR)
+		{
+			CFWriteLog(0, "^^^soc bind failed local= %s, hr =%x", Addr2String(m_addrs.addrLocal).c_str(), WSAGetLastError());
 
+		}
 		char szCSBuff[256];
 		CSADDR_INFO* pcsInfo = (CSADDR_INFO*)szCSBuff;
 		int noptLen = 256;
@@ -686,7 +681,7 @@ BOOL CMBCSocket::StopMsgLoopThd()
 	}
 	ResetEvent(m_hEventQuit);
 	//m_lockdeque.ResetLock();
-	CAutoLock lock(&m_lockdeque);
+	EMB::CAutoLock lock(&m_lockdeque);
 	m_vecSockMsg.clear();
 	return TRUE;
 }

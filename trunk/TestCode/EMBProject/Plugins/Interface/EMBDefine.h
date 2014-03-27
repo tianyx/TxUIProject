@@ -39,6 +39,13 @@
 #define EMBERR_NOTFOUND		0x800A0011
 
 
+#define EMBERR_INTERNET		0x800A0012
+#define EMBERR_INVALIDFTP	0x800A0013
+#define EMBERR_DIRACCESS	0x800A0014
+#define EMBERR_FILEDELETE	0x800A0015
+#define EMBERR_MD5NOTMATCH	0x800A0016
+#define EMBERR_FCVSERROR    0X800A0017
+
 
 //////////////////////////////////////////////////////////////////////////
 //TCP消息类型
@@ -67,11 +74,14 @@
 #define embxmltype_taskReport		6
 #define embxmltype_svrActive		7
 #define embxmltype_excOnIdle		8
+#define embxmltype_taskCancel       9 // 取消任务
 
 #define embxmltype_svrInfo		21
 #define embxmltype_actorList	22
 #define embxmltype_taskList		23
 #define embxmltype_taskRunState	24
+#define embxmltype_excCallback	25
+#define embxmltype_changeWork	26
 
 
 
@@ -87,6 +97,7 @@
 #define embtaskstate_dispatching	1
 #define embtaskstate_dispatched		2
 #define embtaskstate_finished		3
+#define embtaskstate_cancle			4  // 取消任务
 #define embtaskstate_error			99
 //////////////////////////////////////////////////////////////////////////
 //to specify the actor for the task, set the task priority more than actorlevel;
@@ -150,3 +161,8 @@ typedef int EXCUTORID;
 typedef int ACTORID;
 typedef int DISPATCHID;
 
+
+//////////////////////////////////////////////////////////////////////////
+//实时任务修改
+#define embrecalltype_none		0
+#define embrecalltype_spfcvs	1

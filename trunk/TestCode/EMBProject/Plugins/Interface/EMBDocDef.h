@@ -24,6 +24,8 @@
 #define EDOC_MAINHEADERFMT2 TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\" errcode=\"%d\"></edoc_main>")
 #define EDOC_TASKLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><taskList count =\"%d\" >%s</taskList></edoc_main>")
 #define EDOC_ACTORLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><actorList count =\"%d\" >%s</actorList></edoc_main>")
+#define EDOC_MERGETODBFMT TEXT("<merge2db dbtype=\"%d\" conn =\"%s\" path =\"%s\" taskid =\"%s\"></merge2db>")
+#define EDOC_EXCCALLBACKFMT TEXT("<edoc_main ver=\"1\" type=\"%d\"></edoc_main>")
 
 //ÏûÏ¢Í·×Ö·û´®
 #define EK_MAIN TEXT("edoc_main")
@@ -98,3 +100,10 @@
 #define EK_ACTORLIST	TEXT("actorList")
 /////////////////////////////////////////////////////////////////////////
 #define EK_FCVSRESULTTASK TEXT("FCVSResultTask")
+
+///mergetodb writer///////////////////////////////////////////////////////////////////////
+#define EK_MERGE2DB TEXT("merge2db")
+#define EA_MERGE2DBTYPE TEXT("dbtype")
+#define EA_MERGE2DBCONN TEXT("conn")
+#define EA_MERGE2DBTASKID TEXT("taskid")
+#define EA_MERGE2DBTASKPATH TEXT("path")

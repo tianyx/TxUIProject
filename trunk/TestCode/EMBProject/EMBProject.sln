@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBServer", "EMBServer\EMBServer.vcproj", "{9BB7CE29-FB44-46B2-831F-A135699D2971}"
 	ProjectSection(ProjectDependencies) = postProject
+		{4B692202-18EE-4F16-9C50-0004C1563F34} = {4B692202-18EE-4F16-9C50-0004C1563F34}
 		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
 	EndProjectSection
@@ -31,6 +32,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBClient", "EMBClient\EMBC
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBExternalExcutor", "EMBExternalExcutor\EMBExternalExcutor.vcproj", "{8D5811C4-8C6C-4813-BAED-39A02EB486B8}"
 	ProjectSection(ProjectDependencies) = postProject
+		{4B692202-18EE-4F16-9C50-0004C1563F34} = {4B692202-18EE-4F16-9C50-0004C1563F34}
 		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
 	EndProjectSection
@@ -41,7 +43,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EMBTest", "EMBTest", "{B069
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EmbTest", "EmbTest\EmbTest.vcproj", "{8FDBC5C7-676D-438E-919F-471D51BEFC9E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{4B692202-18EE-4F16-9C50-0004C1563F34} = {4B692202-18EE-4F16-9C50-0004C1563F34}
 		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
+		{45A21365-84F0-475C-8065-AF82A88ABC58} = {45A21365-84F0-475C-8065-AF82A88ABC58}
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
 	EndProjectSection
 EndProject
@@ -65,8 +69,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActor", "Plugins\EMBActo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBActorHost", "EMBActorHost\EMBActorHost.vcproj", "{451E0FB7-BE70-460F-83B8-0D5B28E2EC03}"
 	ProjectSection(ProjectDependencies) = postProject
+		{4B692202-18EE-4F16-9C50-0004C1563F34} = {4B692202-18EE-4F16-9C50-0004C1563F34}
 		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7} = {1C1E1CF9-CD17-4821-B3DC-02DD59C616D7}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBTaskStorage", "Plugins\EMBTaskStorage\EMBTaskStorage.vcproj", "{288D42E6-88C4-4D32-8B5A-88D8D67BF000}"
@@ -83,56 +89,86 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginSample", "Plugins
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginMediaCheck", "Plugins\WorkPluginMediaCheck\WorkPluginMediaCheck.vcproj", "{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0}"
-	ProjectSection(ProjectDependencies) = postProject
-		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
-		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginMD5", "Plugins\WorkPluginMD5\WorkPluginMD5.vcproj", "{886BD864-AE82-449F-9611-44566EBF6D45}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DCC7535A-832B-4EBB-BE6C-98ED6DF77757} = {DCC7535A-832B-4EBB-BE6C-98ED6DF77757}
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBDBConnLib", "EMBDBConnLib\EMBDBConnLib.vcproj", "{45A21365-84F0-475C-8065-AF82A88ABC58}"
+	ProjectSection(ProjectDependencies) = postProject
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBUISvr", "Plugins\EMBUISvr\EMBUISvr.vcproj", "{581F598F-A811-4C7F-98DF-6CAEC4C72608}"
+	ProjectSection(ProjectDependencies) = postProject
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginDBWriter", "Plugins\WorkPluginDBWriter\WorkPluginDBWriter.vcproj", "{7E7E85F7-BFD2-4F0D-A157-2ACCFFD82DA0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{45A21365-84F0-475C-8065-AF82A88ABC58} = {45A21365-84F0-475C-8065-AF82A88ABC58}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginMCResultMerge", "Plugins\WorkPluginMCResultMerge\WorkPluginMCResultMerge.vcproj", "{178913DA-7D62-420D-913F-E0BF76ACFB4E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EMBUILib", "EMBUILib\EMBUILib.vcproj", "{4B692202-18EE-4F16-9C50-0004C1563F34}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetMessageTranslate", "NetMessageTranslate\NetMessageTranslate.vcproj", "{3FBD0ED0-2F3F-440F-B1EA-3C4D376DE79B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginMergeDBWriter", "Plugins\WorkPluginMergeDBWriter\WorkPluginMergeDBWriter.vcproj", "{0C04BF38-D2F9-435C-B829-FAA28F5B250E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginTransFile", "Plugins\WorkPluginTransFile\WorkPluginTransFile.vcproj", "{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{45A21365-84F0-475C-8065-AF82A88ABC58} = {45A21365-84F0-475C-8065-AF82A88ABC58}
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkPluginSleeper", "Plugins\WorkPluginSleeper\WorkPluginSleeper.vcproj", "{FA4DB35A-CC25-4777-B415-38F6FF715E35}"
+	ProjectSection(ProjectDependencies) = postProject
+		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {140354A3-4FE4-4FE3-A7E5-E6641EE4A647}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 15
+		SccNumberOfProjects = 24
 		SccLocalPath0 = .
-		SccProjectUniqueName1 = Plugins\\EMBTaskRiser\\EMBTaskRiser.vcproj
+		SccProjectUniqueName1 = EMBCommonLib\\EMBCommonLib.vcproj
 		SccProjectTopLevelParentUniqueName1 = EMBProject.sln
-		SccLocalPath1 = Plugins\\EMBTaskRiser
-		SccProjectUniqueName2 = EMBServer\\EMBServer.vcproj
+		SccLocalPath1 = .
+		SccProjectFilePathRelativizedFromConnection1 = EMBCommonLib\\
+		SccProjectUniqueName2 = Plugins\\EMBPluginMgr\\EMBPluginMgr.vcproj
 		SccProjectTopLevelParentUniqueName2 = EMBProject.sln
-		SccLocalPath2 = EMBServer
-		SccProjectUniqueName3 = Plugins\\EMBTaskDispatch\\EMBTaskDispatch.vcproj
+		SccLocalPath2 = .
+		SccProjectFilePathRelativizedFromConnection2 = Plugins\\EMBPluginMgr\\
+		SccProjectUniqueName3 = Plugins\\EMBGuidLib\\EMBGuidLib.vcproj
 		SccProjectTopLevelParentUniqueName3 = EMBProject.sln
-		SccLocalPath3 = Plugins
-		SccProjectFilePathRelativizedFromConnection3 = EMBTaskDispatch\\
-		SccProjectUniqueName4 = EMBCommonLib\\EMBCommonLib.vcproj
+		SccLocalPath3 = .
+		SccProjectFilePathRelativizedFromConnection3 = Plugins\\EMBGuidLib\\
+		SccProjectUniqueName4 = EMBServer\\EMBServer.vcproj
 		SccProjectTopLevelParentUniqueName4 = EMBProject.sln
 		SccLocalPath4 = .
-		SccProjectFilePathRelativizedFromConnection4 = EMBCommonLib\\
-		SccProjectUniqueName5 = Plugins\\EMBPluginMgr\\EMBPluginMgr.vcproj
+		SccProjectFilePathRelativizedFromConnection4 = EMBServer\\
+		SccProjectUniqueName5 = EMBClient\\EMBClient.vcproj
 		SccProjectTopLevelParentUniqueName5 = EMBProject.sln
 		SccLocalPath5 = .
-		SccProjectFilePathRelativizedFromConnection5 = Plugins\\EMBPluginMgr\\
-		SccProjectUniqueName6 = EMBClient\\EMBClient.vcproj
+		SccProjectFilePathRelativizedFromConnection5 = EMBClient\\
+		SccProjectUniqueName6 = EMBExternalExcutor\\EMBExternalExcutor.vcproj
 		SccProjectTopLevelParentUniqueName6 = EMBProject.sln
 		SccLocalPath6 = .
-		SccProjectFilePathRelativizedFromConnection6 = EMBClient\\
-		SccProjectUniqueName7 = EMBExternalExcutor\\EMBExternalExcutor.vcproj
+		SccProjectFilePathRelativizedFromConnection6 = EMBExternalExcutor\\
+		SccProjectUniqueName7 = EmbTest\\EmbTest.vcproj
 		SccProjectTopLevelParentUniqueName7 = EMBProject.sln
 		SccLocalPath7 = .
-		SccProjectFilePathRelativizedFromConnection7 = EMBExternalExcutor\\
-		SccProjectUniqueName8 = Plugins\\EMBGuidLib\\EMBGuidLib.vcproj
+		SccProjectFilePathRelativizedFromConnection7 = EmbTest\\
+		SccProjectUniqueName8 = Plugins\\EMBTaskRiser\\EMBTaskRiser.vcproj
 		SccProjectTopLevelParentUniqueName8 = EMBProject.sln
 		SccLocalPath8 = .
-		SccProjectFilePathRelativizedFromConnection8 = Plugins\\EMBGuidLib\\
-		SccProjectUniqueName9 = EmbTest\\EmbTest.vcproj
+		SccProjectFilePathRelativizedFromConnection8 = Plugins\\EMBTaskRiser\\
+		SccProjectUniqueName9 = Plugins\\EMBTaskDispatch\\EMBTaskDispatch.vcproj
 		SccProjectTopLevelParentUniqueName9 = EMBProject.sln
 		SccLocalPath9 = .
-		SccProjectFilePathRelativizedFromConnection9 = EmbTest\\
+		SccProjectFilePathRelativizedFromConnection9 = Plugins\\EMBTaskDispatch\\
 		SccProjectUniqueName10 = Plugins\\EMBActor\\EMBActor.vcproj
 		SccProjectTopLevelParentUniqueName10 = EMBProject.sln
 		SccLocalPath10 = .
@@ -141,18 +177,53 @@ Global
 		SccProjectTopLevelParentUniqueName11 = EMBProject.sln
 		SccLocalPath11 = .
 		SccProjectFilePathRelativizedFromConnection11 = EMBActorHost\\
-		SccProjectUniqueName12 = Plugins\\WorkPluginSample\\WorkPluginSample.vcproj
+		SccProjectUniqueName12 = Plugins\\EMBTaskStorage\\EMBTaskStorage.vcproj
 		SccProjectTopLevelParentUniqueName12 = EMBProject.sln
 		SccLocalPath12 = .
-		SccProjectFilePathRelativizedFromConnection12 = Plugins\\WorkPluginSample\\
-		SccProjectUniqueName13 = Plugins\\WorkPluginMediaCheck\\WorkPluginMediaCheck.vcproj
+		SccProjectFilePathRelativizedFromConnection12 = Plugins\\EMBTaskStorage\\
+		SccProjectUniqueName13 = Plugins\\WorkPluginSample\\WorkPluginSample.vcproj
 		SccProjectTopLevelParentUniqueName13 = EMBProject.sln
 		SccLocalPath13 = .
-		SccProjectFilePathRelativizedFromConnection13 = Plugins\\WorkPluginMediaCheck\\
+		SccProjectFilePathRelativizedFromConnection13 = Plugins\\WorkPluginSample\\
 		SccProjectUniqueName14 = Plugins\\WorkPluginMD5\\WorkPluginMD5.vcproj
 		SccProjectTopLevelParentUniqueName14 = EMBProject.sln
 		SccLocalPath14 = .
 		SccProjectFilePathRelativizedFromConnection14 = Plugins\\WorkPluginMD5\\
+		SccProjectUniqueName15 = EMBDBConnLib\\EMBDBConnLib.vcproj
+		SccProjectTopLevelParentUniqueName15 = EMBProject.sln
+		SccLocalPath15 = .
+		SccProjectFilePathRelativizedFromConnection15 = EMBDBConnLib\\
+		SccProjectUniqueName16 = Plugins\\EMBUISvr\\EMBUISvr.vcproj
+		SccProjectTopLevelParentUniqueName16 = EMBProject.sln
+		SccLocalPath16 = .
+		SccProjectFilePathRelativizedFromConnection16 = Plugins\\EMBUISvr\\
+		SccProjectUniqueName17 = Plugins\\WorkPluginDBWriter\\WorkPluginDBWriter.vcproj
+		SccProjectTopLevelParentUniqueName17 = EMBProject.sln
+		SccLocalPath17 = .
+		SccProjectFilePathRelativizedFromConnection17 = Plugins\\WorkPluginDBWriter\\
+		SccProjectUniqueName18 = Plugins\\WorkPluginMCResultMerge\\WorkPluginMCResultMerge.vcproj
+		SccProjectTopLevelParentUniqueName18 = EMBProject.sln
+		SccLocalPath18 = .
+		SccProjectFilePathRelativizedFromConnection18 = Plugins\\WorkPluginMCResultMerge\\
+		SccProjectUniqueName19 = EMBUILib\\EMBUILib.vcproj
+		SccProjectTopLevelParentUniqueName19 = EMBProject.sln
+		SccLocalPath19 = .
+		SccProjectFilePathRelativizedFromConnection19 = EMBUILib\\
+		SccProjectUniqueName20 = NetMessageTranslate\\NetMessageTranslate.vcproj
+		SccLocalPath20 = .
+		SccProjectFilePathRelativizedFromConnection20 = NetMessageTranslate\\
+		SccProjectUniqueName21 = Plugins\\WorkPluginMergeDBWriter\\WorkPluginMergeDBWriter.vcproj
+		SccProjectTopLevelParentUniqueName21 = EMBProject.sln
+		SccLocalPath21 = .
+		SccProjectFilePathRelativizedFromConnection21 = Plugins\\WorkPluginMergeDBWriter\\
+		SccProjectUniqueName22 = Plugins\\WorkPluginTransFile\\WorkPluginTransFile.vcproj
+		SccProjectTopLevelParentUniqueName22 = EMBProject.sln
+		SccLocalPath22 = .
+		SccProjectFilePathRelativizedFromConnection22 = Plugins\\WorkPluginTransFile\\
+		SccProjectUniqueName23 = Plugins\\WorkPluginSleeper\\WorkPluginSleeper.vcproj
+		SccProjectTopLevelParentUniqueName23 = EMBProject.sln
+		SccLocalPath23 = .
+		SccProjectFilePathRelativizedFromConnection23 = Plugins\\WorkPluginSleeper\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -211,14 +282,46 @@ Global
 		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Debug|Win32.Build.0 = Debug|Win32
 		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Release|Win32.ActiveCfg = Release|Win32
 		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6}.Release|Win32.Build.0 = Release|Win32
-		{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0}.Debug|Win32.Build.0 = Debug|Win32
-		{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0}.Release|Win32.ActiveCfg = Release|Win32
-		{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0}.Release|Win32.Build.0 = Release|Win32
 		{886BD864-AE82-449F-9611-44566EBF6D45}.Debug|Win32.ActiveCfg = Debug|Win32
 		{886BD864-AE82-449F-9611-44566EBF6D45}.Debug|Win32.Build.0 = Debug|Win32
 		{886BD864-AE82-449F-9611-44566EBF6D45}.Release|Win32.ActiveCfg = Release|Win32
 		{886BD864-AE82-449F-9611-44566EBF6D45}.Release|Win32.Build.0 = Release|Win32
+		{45A21365-84F0-475C-8065-AF82A88ABC58}.Debug|Win32.ActiveCfg = Debug|Win32
+		{45A21365-84F0-475C-8065-AF82A88ABC58}.Debug|Win32.Build.0 = Debug|Win32
+		{45A21365-84F0-475C-8065-AF82A88ABC58}.Release|Win32.ActiveCfg = Release|Win32
+		{45A21365-84F0-475C-8065-AF82A88ABC58}.Release|Win32.Build.0 = Release|Win32
+		{581F598F-A811-4C7F-98DF-6CAEC4C72608}.Debug|Win32.ActiveCfg = Debug|Win32
+		{581F598F-A811-4C7F-98DF-6CAEC4C72608}.Debug|Win32.Build.0 = Debug|Win32
+		{581F598F-A811-4C7F-98DF-6CAEC4C72608}.Release|Win32.ActiveCfg = Release|Win32
+		{581F598F-A811-4C7F-98DF-6CAEC4C72608}.Release|Win32.Build.0 = Release|Win32
+		{7E7E85F7-BFD2-4F0D-A157-2ACCFFD82DA0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7E7E85F7-BFD2-4F0D-A157-2ACCFFD82DA0}.Debug|Win32.Build.0 = Debug|Win32
+		{7E7E85F7-BFD2-4F0D-A157-2ACCFFD82DA0}.Release|Win32.ActiveCfg = Release|Win32
+		{7E7E85F7-BFD2-4F0D-A157-2ACCFFD82DA0}.Release|Win32.Build.0 = Release|Win32
+		{178913DA-7D62-420D-913F-E0BF76ACFB4E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{178913DA-7D62-420D-913F-E0BF76ACFB4E}.Debug|Win32.Build.0 = Debug|Win32
+		{178913DA-7D62-420D-913F-E0BF76ACFB4E}.Release|Win32.ActiveCfg = Release|Win32
+		{178913DA-7D62-420D-913F-E0BF76ACFB4E}.Release|Win32.Build.0 = Release|Win32
+		{4B692202-18EE-4F16-9C50-0004C1563F34}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4B692202-18EE-4F16-9C50-0004C1563F34}.Debug|Win32.Build.0 = Debug|Win32
+		{4B692202-18EE-4F16-9C50-0004C1563F34}.Release|Win32.ActiveCfg = Release|Win32
+		{4B692202-18EE-4F16-9C50-0004C1563F34}.Release|Win32.Build.0 = Release|Win32
+		{3FBD0ED0-2F3F-440F-B1EA-3C4D376DE79B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3FBD0ED0-2F3F-440F-B1EA-3C4D376DE79B}.Debug|Win32.Build.0 = Debug|Win32
+		{3FBD0ED0-2F3F-440F-B1EA-3C4D376DE79B}.Release|Win32.ActiveCfg = Release|Win32
+		{3FBD0ED0-2F3F-440F-B1EA-3C4D376DE79B}.Release|Win32.Build.0 = Release|Win32
+		{0C04BF38-D2F9-435C-B829-FAA28F5B250E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0C04BF38-D2F9-435C-B829-FAA28F5B250E}.Debug|Win32.Build.0 = Debug|Win32
+		{0C04BF38-D2F9-435C-B829-FAA28F5B250E}.Release|Win32.ActiveCfg = Release|Win32
+		{0C04BF38-D2F9-435C-B829-FAA28F5B250E}.Release|Win32.Build.0 = Release|Win32
+		{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4}.Debug|Win32.Build.0 = Debug|Win32
+		{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4}.Release|Win32.ActiveCfg = Release|Win32
+		{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4}.Release|Win32.Build.0 = Release|Win32
+		{FA4DB35A-CC25-4777-B415-38F6FF715E35}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FA4DB35A-CC25-4777-B415-38F6FF715E35}.Debug|Win32.Build.0 = Debug|Win32
+		{FA4DB35A-CC25-4777-B415-38F6FF715E35}.Release|Win32.ActiveCfg = Release|Win32
+		{FA4DB35A-CC25-4777-B415-38F6FF715E35}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -226,6 +329,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{9BB7CE29-FB44-46B2-831F-A135699D2971} = {E8247CDC-1061-4E7A-BD9E-118CA228D650}
 		{140354A3-4FE4-4FE3-A7E5-E6641EE4A647} = {7C4288E1-4773-4290-9430-D23FBC240F66}
+		{45A21365-84F0-475C-8065-AF82A88ABC58} = {7C4288E1-4773-4290-9430-D23FBC240F66}
+		{4B692202-18EE-4F16-9C50-0004C1563F34} = {7C4288E1-4773-4290-9430-D23FBC240F66}
 		{775A4664-EEB7-4C3B-8B1F-1C6596669199} = {2FF42794-B420-4E85-997B-12C7E78BD3DE}
 		{8D5811C4-8C6C-4813-BAED-39A02EB486B8} = {2FF42794-B420-4E85-997B-12C7E78BD3DE}
 		{451E0FB7-BE70-460F-83B8-0D5B28E2EC03} = {2FF42794-B420-4E85-997B-12C7E78BD3DE}
@@ -235,9 +340,14 @@ Global
 		{C09F0BBD-BFA6-47BD-B051-11BEC2DE3A6B} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{1C1E1CF9-CD17-4821-B3DC-02DD59C616D7} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{288D42E6-88C4-4D32-8B5A-88D8D67BF000} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
+		{581F598F-A811-4C7F-98DF-6CAEC4C72608} = {290E8B99-F17F-47E8-BD16-FF2A6131275E}
 		{8FDBC5C7-676D-438E-919F-471D51BEFC9E} = {B0692929-1F47-4692-83C7-759809CCD4D5}
 		{A6BF7D1D-0F4F-4C5F-B60C-1B52F59642C6} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
-		{5F81B139-BDAF-4056-A0E8-F505EDDEE5A0} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
 		{886BD864-AE82-449F-9611-44566EBF6D45} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
+		{7E7E85F7-BFD2-4F0D-A157-2ACCFFD82DA0} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
+		{178913DA-7D62-420D-913F-E0BF76ACFB4E} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
+		{0C04BF38-D2F9-435C-B829-FAA28F5B250E} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
+		{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
+		{FA4DB35A-CC25-4777-B415-38F6FF715E35} = {ABB079B5-C076-4B39-BF5E-A703CD05DEB1}
 	EndGlobalSection
 EndGlobal

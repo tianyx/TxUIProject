@@ -26,6 +26,8 @@ LONG Wchar2Char(const wchar_t* pwszChar, char* pszChar, int nwSize); //nwSize = 
 
 wstring Ansi2W(const string& szIn);
 string W2Ansi(const wstring& wszIn);
+wstring UTF82W(const string& szIn);
+string  W2UTF8(const wstring& wszIn);
 
 #ifdef UNICODE
 CString ANSI2CStr(const string& szIn);

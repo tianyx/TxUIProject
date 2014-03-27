@@ -22,6 +22,10 @@ extern const GUID GuidEMBPlugin_PWorkerMD5;
 extern const GUID GuidEMBPlugin_PWorkerDBWriter;
 extern const GUID GuidEMBPlugin_PWorkerUIServer;
 extern const GUID GuidEMBPlugin_PWorkerMCResultMerge;
+extern const GUID GuidEMBPlugin_PWorkerTranscoding;    // ◊™¬Î
+extern const GUID GuidEMBPlugin_PWorkerMergeDBWriter; //ºº…Û–¥db
+extern const GUID GuidEMBPlugin_PWorkerTransFile; //ºº…Û–¥db
+extern const GUID GuidEMBPlugin_PWorkerSleeper; //sleep a while
 
 
 //define plugin interface

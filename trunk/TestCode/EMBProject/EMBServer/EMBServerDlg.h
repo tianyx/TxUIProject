@@ -12,6 +12,9 @@
 #include "GdiPlusNewHeader.h"
 #include "TxImgButton.h"
 #include "afxwin.h"
+#include "DlgDbgTest.h"
+
+
 // CEMBServerDlg 对话框
 class CEMBServerDlg : public CDialog,
 	public IParentBackDrawInterface
@@ -27,9 +30,6 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
 private:
-	void InitUI();
-	void RefreshActorList();
-
 	virtual void GetParentBack(CDC* pDc);
 public:
 
@@ -37,24 +37,23 @@ public:
 // 实现
 protected:
 	HICON m_hIcon;
+	CDlgDbgTest m_dlgtest;
 
 private:
 	Gdiplus::Bitmap* m_pbmpBack;
+	Gdiplus::Bitmap* m_pbmpLogo2;
+	Gdiplus::Bitmap* m_pbmpSublogo;
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedBtnStart();
 
-
-	afx_msg void OnBnClickedBtntest();
-	afx_msg void OnBnClickedButtonXml();
-	CListCtrl m_actorList;
 	afx_msg void OnClose();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	CTxImgButton m_btnStart;
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };

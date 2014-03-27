@@ -104,6 +104,12 @@ BOOL CEMBExternalExcutorDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+	EnableWindow(TRUE);
+	CRect rcThis;
+	GetWindowRect(rcThis);
+	rcThis.MoveToXY(0,0);
+	MoveWindow(rcThis);
+
 	SetWindowText(g_GlobalInfo.strGuid);
 	// CExcutorObj 初始化
 	m_pExcObj = CExcutorObj::GetExcutorObj(g_GlobalInfo.excInfo, this->GetSafeHwnd());

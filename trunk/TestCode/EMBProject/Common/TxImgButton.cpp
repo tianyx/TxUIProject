@@ -90,18 +90,24 @@ BOOL CTxImgButton::AddBitmap( LPCTSTR szFileIn )
 void CTxImgButton::PreSubclassWindow()
 {
 	// TODO: 在此添加专用代码和/或调用基类
-	SetButtonStyle(GetButtonStyle()|BS_OWNERDRAW, FALSE);
+	if (m_txInfo.m_vBmps.size() > 0)
+	{
+		SetButtonStyle(GetButtonStyle()|BS_OWNERDRAW, FALSE);
+	}
 
 	CButton::PreSubclassWindow();
-
-	CRect rcWindow;
-	GetWindowRect(&rcWindow);
-	if (m_txInfo.nStretchType == TXBMP_STRETCH_NONE)
+	if (m_txInfo.m_vBmps.size() > 0)
 	{
-		SetWindowPos(NULL, 0, 0, m_txInfo.nSubBmpWidth,
-			m_txInfo.nSubBmpWidth,
-			SWP_NOZORDER | SWP_NOMOVE);
+		CRect rcWindow;
+		GetWindowRect(&rcWindow);
+		if (m_txInfo.nStretchType == TXBMP_STRETCH_NONE)
+		{
+			SetWindowPos(NULL, 0, 0, m_txInfo.nSubBmpWidth,
+				m_txInfo.nSubBmpWidth,
+				SWP_NOZORDER | SWP_NOMOVE);
+		}
 	}
+	
 }
 
 void CTxImgButton::OnMouseMove(UINT nFlags, CPoint point)

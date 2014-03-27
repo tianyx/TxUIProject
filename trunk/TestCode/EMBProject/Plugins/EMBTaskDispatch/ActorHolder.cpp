@@ -52,7 +52,7 @@ HRESULT CActorHolder::Run()
 HRESULT CActorHolder::Stop()
 {
 	
-	CAutoLock lock(&m_csSockMap);
+	EMB::CAutoLock lock(&m_csSockMap);
 
 	MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
 	MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
@@ -136,7 +136,7 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 			{
 				BOOL bFind = TRUE;
 				{
-					CAutoLock lock(&m_csSockMap);
+					EMB::CAutoLock lock(&m_csSockMap);
 					MAPSOCKACTORS::iterator itf = m_mapSockIns.find(pMBCSock);
 					if (itf != m_mapSockIns.end())
 					{
@@ -254,7 +254,7 @@ BOOL CActorHolder::SetActorCallbackInterface( IEMBActorHolderCallBackInterface* 
 */
 void CActorHolder::RemoveSock( CMBCSocket* pSock )
 {
-	CAutoLock lock(&m_csSockMap);
+	EMB::CAutoLock lock(&m_csSockMap);
 	MAPSOCKACTORS::iterator itf = m_mapSockIns.find(pSock);
 	if (itf != m_mapSockIns.end())
 	{
@@ -280,7 +280,7 @@ void CActorHolder::RemoveSock( CMBCSocket* pSock )
 void CActorHolder::AddSock( CMBCSocket* pSock )
 {
 	{
-		CAutoLock lock(&m_csSockMap);
+		EMB::CAutoLock lock(&m_csSockMap);
 		ST_ACTORDATA actData;
 		actData.nActorConnState = embActorConnState_conn;
 		actData.pSock = pSock;
@@ -337,7 +337,7 @@ HRESULT CActorHolder::DoSockSend( CMBCSocket* pSock, const char* pbufferIn, cons
 */
 ACTORID CActorHolder::GetSockGuid( CMBCSocket* pSock )
 {
-	CAutoLock loc(&m_csSockMap);
+	EMB::CAutoLock loc(&m_csSockMap);
 	MAPSOCKACTORS::iterator itf = m_mapSockIns.find(pSock);
 	if (itf != m_mapSockIns.end())
 	{
@@ -366,7 +366,7 @@ HRESULT CActorHolder::SendToActor(const ACTORID actorId, CString& szMsg )
 	{//to auto release lock
 		//Õ®π˝ID—∞’“pSock÷∏’Î
 
-		CAutoLock loc(&m_csSockMap);
+		EMB::CAutoLock loc(&m_csSockMap);
 		MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
 		MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
 		for (; itb != ite; ++itb)
@@ -424,7 +424,7 @@ HRESULT CActorHolder::SendToActor(const ACTORID actorId, CString& szMsg )
 */
 BOOL CActorHolder::HasActor( const ACTORID actorId )
 {
-	CAutoLock lock(&m_csSockMap);
+	EMB::CAutoLock lock(&m_csSockMap);
 	MAPACTORSOCKS::iterator itf = m_mapActorMirrs.find(actorId);
 	return itf != m_mapActorMirrs.end();
 
@@ -463,7 +463,7 @@ HRESULT CActorHolder::BroadcastToActor( CString& szMsg )
 {
 	vector<ST_SOCKMBCSOCK> vSocks;
 	{
-		CAutoLock lock(&m_csSockMap);
+		EMB::CAutoLock lock(&m_csSockMap);
 		MAPSOCKACTORS::iterator itb = m_mapSockIns.begin();
 		MAPSOCKACTORS::iterator ite = m_mapSockIns.end();
 		for (; itb != ite; ++itb)

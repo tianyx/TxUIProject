@@ -50,7 +50,7 @@ BOOL CTxADORecordSet::ExecuteSQL( CString& strSqlIn )
 		m_apRecordSet->Close();
 	}
 
-	CAutoLock lock(m_pcsLock);
+	EMB::CAutoLock lock(m_pcsLock);
 	try
 	{
 	 	HRESULT hr = m_apRecordSet->Open(_variant_t(strSqlIn),_variant_t((IDispatch *)m_apConn), adOpenKeyset,
@@ -228,7 +228,7 @@ BOOL CTxADORecordSet::SetVal( LPCTSTR szColNameIn, CTxStrConvert valIn )
 CTxADOCommand::CTxADOCommand( DWDBKEY dwKey /*= DBKEY_ANY*/ )
 {
 	CoInitialize(NULL);
-	m_apConn = CTxADODBMgr::GetADODBMgr()->GetADOConnection(dwKey);
+	m_apConn = CTxADODBMgr::GetADODBMgr()->GetADOConnection(dwKey, &m_pcsLock);
 	if (!m_apConn || m_apConn->GetState() == adStateClosed)
 	{
 		ASSERT(FALSE);
@@ -267,7 +267,7 @@ BOOL CTxADOCommand::ExecuteSQL( CString& strSqlIn )
 	CComBSTR bstrSql(btr);
 	::SysFreeString(btr);
 
-	CAutoLock lock(m_pcsLock);
+	EMB::CAutoLock lock(m_pcsLock);
 	try
 	{
 
@@ -278,7 +278,7 @@ BOOL CTxADOCommand::ExecuteSQL( CString& strSqlIn )
 		paramSQl.bstrVal = bstrSql;
 		m_apCommand->CommandText = paramSQl.bstrVal;
 		m_apCommand->CommandType = adCmdText;
-		m_apCommand->Execute(&varRecordsAffected, NULL, adCmdText|adExecuteNoRecords);
+		m_apCommand->Execute(NULL, NULL, adCmdText|adExecuteNoRecords);
 		bRet = TRUE;
 	
 	}
@@ -301,12 +301,14 @@ BOOL CTxADOCommand::ExecuteSQLs( VECSTRINGS& vSqlIn )
 
 
 	BOOL bRet = FALSE;
-	CAutoLock lock(m_pcsLock);
+	EMB::CAutoLock lock(m_pcsLock);
+	CString strCurr;
 	try
 	{
 		m_apConn->BeginTrans();
 		for (size_t i = 0; i < vSqlIn.size(); ++i)
 		{
+			strCurr = vSqlIn[i];
 			BSTR btr = vSqlIn[i].AllocSysString();
 			CComBSTR bstrSql(btr);
 			::SysFreeString(btr);
@@ -314,7 +316,9 @@ BOOL CTxADOCommand::ExecuteSQLs( VECSTRINGS& vSqlIn )
 			VARIANT paramSQl;
 			paramSQl.vt = VT_BSTR;
 			paramSQl.bstrVal = bstrSql;
-			m_apCommand->Execute(&varRecordsAffected, & paramSQl, adCmdText|adExecuteNoRecords);
+			m_apCommand->CommandType = adCmdText;
+			m_apCommand->CommandText = paramSQl.bstrVal;
+			m_apCommand->Execute(NULL, NULL, adCmdText|adExecuteNoRecords);
 		}
 		
 		m_apConn->CommitTrans();
@@ -325,7 +329,7 @@ BOOL CTxADOCommand::ExecuteSQLs( VECSTRINGS& vSqlIn )
 	{
 		m_apConn->RollbackTrans();
 		CString strerr = (TCHAR*)e.Description();
-		CFWriteLog(0, TEXT("execute batch commandErr %s"), strerr);
+		CFWriteLog(0, TEXT("execute batch commandErr %s, sql = %s"), strerr, strCurr);
 	}
 
 	return bRet;
@@ -376,7 +380,7 @@ BOOL CTxADODBMgr::OpenDB( const DWORD dwDBKey, LPCTSTR szConnStr )
 		return FALSE;
 	}
 	BOOL bRet = TRUE;
-	CAutoLock lock(&m_csdbLock);
+	EMB::CAutoLock lock(&m_csdbLock);
 	MAPADOCONNS::iterator itf = m_mapAdoConns.find(dwDBKey);
 	if (itf != m_mapAdoConns.end())
 	{
@@ -420,7 +424,7 @@ BOOL CTxADODBMgr::OpenDB( const DWORD dwDBkey, LPCTSTR szSvrName, LPCTSTR szDBNa
 
 BOOL CTxADODBMgr::CloseDB( const DWORD dwDBkey )
 {
-	CAutoLock lock(&m_csdbLock);
+	EMB::CAutoLock lock(&m_csdbLock);
 	MAPADOCONNS::iterator itf = m_mapAdoConns.find(dwDBkey);
 	if (itf != m_mapAdoConns.end())
 	{
@@ -467,7 +471,7 @@ _Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ 
 	if (dwDBKey == DBKEY_ANY)
 	{
 		//return first db
-		CAutoLock lock(&m_csdbLock);
+		EMB::CAutoLock lock(&m_csdbLock);
 		if (m_mapAdoConns.begin() != m_mapAdoConns.end())
 		{
 			ST_ADODBCONNINFO& infoTmp = m_mapAdoConns.begin()->second;
@@ -489,7 +493,7 @@ _Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ 
 	}
 	else
 	{
-		CAutoLock lock(&m_csdbLock);
+		EMB::CAutoLock lock(&m_csdbLock);
 		MAPADOCONNS::iterator itf = m_mapAdoConns.find(dwDBKey);
 		if (itf != m_mapAdoConns.end())
 		{
@@ -508,6 +512,11 @@ _Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ 
 					*pCritSecOut = infoTmp.pcsLock;
 				}
 			}
+			pRet = infoTmp.pConn;
+			if (pCritSecOut)
+			{
+				*pCritSecOut = infoTmp.pcsLock;
+			}
 		}
 	}
 
@@ -525,7 +534,7 @@ _Connection* CTxADODBMgr::GetADOConnection( const DWORD dwDBKey /*= DBKEY_ANY*/ 
 
 void CTxADODBMgr::Clear()
 {
-	CAutoLock lock(&m_csdbLock);
+	EMB::CAutoLock lock(&m_csdbLock);
 	MAPADOCONNS::iterator itb = m_mapAdoConns.begin();
 	for (; itb != m_mapAdoConns.end(); ++itb)
 	{

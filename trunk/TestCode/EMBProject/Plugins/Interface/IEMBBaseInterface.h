@@ -46,6 +46,9 @@ enum ENUM_SUBTYPE
 	SubType_WorkSample	= 16,
 	SubType_DBWriter	= 32,
 	SubType_MCResultMerge	= 64,
+	SubType_MergeDBWriter	= 128,
+	SubType_Sleeper	= 256,
+
 
 };
 

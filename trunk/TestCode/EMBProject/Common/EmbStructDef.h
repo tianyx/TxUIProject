@@ -45,13 +45,17 @@ struct ST_EMBXMLMAININFO
 	int ver;
 	int nType;
 	CString guid;
+	CString mergeGuid; // 合并任务标识
 	int nErrcode;
+
 	ST_EMBXMLMAININFO()
 	{
 		ver = INVALID_VALUE;
 		nType = embxmltype_none;
 		nErrcode = S_OK;
+		mergeGuid = "";
 	}
+
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 	
@@ -363,8 +367,10 @@ struct ST_TASKDISPATCHCONFIG
 	CString strIpActorHolder;		//linsten addr for actor holder. actor will connect to this addr
 	CString strIpMaster;			//if nMaster == embSvrType_slave, fill the master ip to connect
 
+
 	//////////////////////////////////////////////////////////////////////////
 	//optional config
+	CString strDBLogConn;
 	int nfgTaskPoolSizeMax;
 	//
 	int nfgTaskReDispatchMaxCount;
@@ -382,6 +388,8 @@ struct ST_TASKDISPATCHCONFIG
 	int nfgMemWeight;
 	int nfgDiskIOWeight;
 	int nfgNetIOWeight;
+
+	int nfgMaxFcvsSplit;
 	//////////////////////////////////////////////////////////////////////////
 	BOOL ToString(CString& strOut);	
 	BOOL FromString(const CString& strIn);
@@ -483,6 +491,7 @@ struct ST_TASKREPORT
 	int nSubErrorCode;			//detail error code, see EMBERR_xxxx
 	int nPercent;				//sub task progress
 	int nStep;					//current running sub task NO.
+	int nExcType;
 	ST_TASKREPORT()
 	{
 		actorId = INVALID_ID;
@@ -491,6 +500,7 @@ struct ST_TASKREPORT
 		nPercent = 0;
 		nStep = INVALID_VALUE;
 		nSubErrorCode = 0;
+		nExcType = -1;
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
@@ -521,6 +531,21 @@ struct ST_MD5TASKINFO
 	CString strFileToCheck;
 	CString strFileToWriteResult;
 	CString strMD5Compare;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_MERGETODBWRITER
+{
+	ST_MERGETODBWRITER()
+	{
+		nDBType = INVALID_VALUE;
+	}
+	int nDBType;
+	CString strTaskPath;
+	CString strTaskId;
+	CString strDBConn;
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 
@@ -816,4 +841,130 @@ struct ST_FCVSRESULTTASK
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
+};
+
+
+struct ST_FTPSITEINFO
+{
+	CString	strFtpName; //storage name
+	CString strFtpIp;
+	int		nFtpPort;
+	CString strUser;
+	CString strPw;
+	int		nPassive;
+
+	//db info
+	CString strDBConn;
+	CString strStoreName;
+	int nLocation;
+
+};
+
+struct ST_DB_LOCATIONINFO
+{
+	CString strMediaType;
+	int		nBitRate;
+	CString strFileSize;
+	int nAfdType;
+};
+
+struct ST_DB_BVSIDINFO
+{
+	CString strClipName;
+	CString strTapeID;
+	int		nTapeType;
+	CString strSOM;
+	CString strEOM;
+	CString strDuration;
+	CString strLSOM;
+	CString strLEOM;
+	CString strLDuration;
+	CString strTypeSOM;
+	int		nClipType;
+	CString strChID;
+	CString tPlanAirTime;
+	CString tPlanLastAirTime;
+	int		nBitRate;
+};
+
+typedef vector<ST_FTPSITEINFO> VECSITINFO;
+struct ST_TRANSFILEINFO
+{	
+	//site desc
+	VECSITINFO vSitSrc;
+	VECSITINFO vSitDes;
+
+	//file desc
+	CString strSrcDir;
+	CString strSrcFileName;
+	CString strDesDir;
+	CString strDesFileName;
+
+	//options
+	BOOL bDownToLocal;
+	CString strLocalDownDir;
+	CString strLocalDownFileName;
+	BOOL bMD5Check;
+	CString strMD5Compare;
+	BOOL bWriteLocalResult;
+	BOOL bRegisterToDB;
+	int  nSpeedLimit; //kB/s
+	int  nCodePage;
+
+	//write db info
+	CString strClipLogicID;
+	CString strClipID;
+	ST_DB_BVSIDINFO dbBvsInfo;
+	ST_DB_LOCATIONINFO dbLocationInfo;
+	
+	
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_TRANSRESULT
+{
+	CString strClipID;
+	CString strClipLogicID;
+	CString strDestDBConn;
+	CString strDestDir;
+	CString strDestFileName;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+	
+};
+
+struct ST_SLEEPTASKINFO
+{
+	int nSleepSec;
+	long nRetOnFinish;
+	int nReCallType;
+	CString strExtInfo; //save real task tag
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_WORKERRET
+{
+	int nRetType;
+	CString strRetInfo;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_EXCCALLBACKINFO
+{
+	int nRetType;  //call svr to check
+	int nStep;
+	CString taskId;
+	int nExcId;
+	int nActorId;
+	CString strExtInfo;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
 };

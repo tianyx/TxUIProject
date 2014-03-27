@@ -22,7 +22,9 @@ BOOL CUISvrProber::SetMsgProcessor( IUISvrMsgCallbackInterface* pProcessor )
 
 HRESULT CUISvrProber::Run_Prober()
 {
-	return CMBCRemoteObj::Run();
+	HRESULT hr = CMBCRemoteObj::Run();
+	CFWriteLog(0, TEXT("uisvr Run_Prober return %x"), hr);
+	return hr;
 }
 
 HRESULT CUISvrProber::Stop_Prober()
@@ -38,7 +40,7 @@ HRESULT CUISvrProber::SendToUI( CString& taskIn )
 	int nRetUsed = 0;
 	PackMBCMsg(msgRet, buffer, buffer.GetSize(), nRetUsed);
 
-	CAutoLock lock(&m_csSockIn);
+	EMB::CAutoLock lock(&m_csSockIn);
 	MAPSOCKINS::iterator itb = m_mapSockIns.begin();
 	MAPSOCKINS::iterator ite = m_mapSockIns.end();
 	for (; itb != ite; ++itb)

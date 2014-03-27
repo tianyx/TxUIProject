@@ -6,6 +6,8 @@
 #include "TxAutoComPtr.h"
 #include "TxLogManager.h"
 #include "EmbStructDef.h"
+#include "TxDBLogManager.h"
+#include "DBLogFunc.h"
 using namespace EMB;
 #define MAXACTORPALOAD 0x00FFFFFF
 #define ACTORSTATETIMEOUT 10
@@ -57,7 +59,7 @@ CTaskDispatchMgr::CTaskDispatchMgr(void)
 	m_hThdFtask = NULL;
 	m_nMaster = embSvrType_master;
 	m_nSvrId = INVALID_ID;
-
+	m_bDBLogEnabled = FALSE;
 	//task check param
 	nfgTaskPoolSizeMax = 2000;
 	nfgTaskDispatchCD = 60;
@@ -174,6 +176,7 @@ void EMB::CTaskDispatchMgr::OnFinalRelease()
 {
 	g_pPluginInstane = NULL;
 	ReleaseTxLogMgr();
+	CTxADODBMgr::ReleaseDBMgr();
 	TRACE("\nCTaskDispatchMgr::OnFinalRelease() ");
 
 	delete this;
@@ -203,6 +206,29 @@ HRESULT EMB::CTaskDispatchMgr::OnFirstInit()
 HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 {
 	Stop_Plugin();
+
+	m_nSvrCode = (m_nSvrId*10)+m_nMaster;
+	if (!m_config.strDBLogConn.IsEmpty())
+	{
+		DWORD dwLogKey = CTxDBLogManager::GetTxDBLogMgr()->AddNewDBConn(DBLOGKEY_TASKDISPATCH, DBLOGDBKEY_TASKDISPATCH, m_config.strDBLogConn);
+		if (dwLogKey == 0)
+		{
+			CFWriteLog(0, TEXT("dblog init failed, conn = %s"), m_config.strDBLogConn);
+			CTxDBLogManager::ReleaseTxDBLogMgr();
+		}
+		else
+		{
+			m_bDBLogEnabled = TRUE;
+			CFWriteLog(0, TEXT("dblog inited"));
+
+		}
+	}
+	else
+	{
+		CFWriteLog(0, TEXT("dblog connection string is null, db log not enabled"));
+	}
+
+	WriteDBLog_EMB(embdblogtype_main, TEXT("server starting"));
 
 	SOCKADDR_IN addrHolder;
 	addrHolder = GetAddrFromStr(m_config.strIpActorHolder);
@@ -253,6 +279,8 @@ HRESULT EMB::CTaskDispatchMgr::Run_Plugin()
 
 	if (m_hThdCheck && m_hThdFtask)
 	{
+		WriteDBLog_EMB(embdblogtype_main, TEXT("server start successfully"));
+
 		return S_OK;
 	}
 	else
@@ -311,6 +339,11 @@ HRESULT EMB::CTaskDispatchMgr::Stop_Plugin()
 		m_pIbackSvr = NULL;
 	}
 	
+	if (m_bDBLogEnabled)
+	{
+		m_bDBLogEnabled = FALSE;
+		CTxDBLogManager::ReleaseTxDBLogMgr();
+	}
 	return S_OK;
 }
 
@@ -363,6 +396,7 @@ HRESULT EMB::CTaskDispatchMgr::SubmitTask( const CTaskString& szTaskIn, CTaskStr
 	}
 	else
 	{
+		CFWriteLog(0, TEXT("task already existed! %s"), ftask.taskBasic.strGuid);
 		ASSERT(FALSE);
 	}
 
@@ -544,6 +578,13 @@ HRESULT EMB::CTaskDispatchMgr::OnActorMessage( const ACTORID& nActorIdIn, CStrin
 			ASSERT(FALSE);
 		}
 	}
+	else if (nXmlType == embxmltype_excCallback)
+	{
+		ST_EXCCALLBACKINFO excCallInfo;
+		excCallInfo.FromString(szActorInfoIn);
+		OnExcCallback(excCallInfo);
+	}
+
 	else
 	{
 		//to be add...
@@ -623,6 +664,7 @@ BOOL EMB::CTaskDispatchMgr::LoopProcFileTask()
 		{
 			for (size_t i = 0; i < vIdToRemove.size(); ++i)
 			{
+				CFWriteLog(TEXT("task removed! %s"), Guid2String(vIdToRemove[i].guid));
 				m_mapTasks.erase(vIdToRemove[i]);
 			}
 		}
@@ -685,7 +727,23 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	if (taskIn.taskRunState.nState == embtaskstate_finished ||
 		taskIn.taskRunState.nState == embtaskstate_error)
 	{
-		CFWriteLog(0, TEXT("task %s finished,update to storage"), taskIn.taskBasic.strGuid);
+		CFWriteLog(0, TEXT("任务[%s]%s,更新到存储"), taskIn.taskRunState.nState == embtaskstate_finished? TEXT("完成"):TEXT("失败"), taskIn.taskBasic.strGuid);
+		CString strRemark = taskIn.taskRunState.nState == embtaskstate_error? TEXT("task failed"):TEXT("task finished");
+		// 切片任务失败时，发送消息：切片任务取消
+	    if (TaskNeedSplit(taskIn.strTask) && taskIn.taskRunState.nState == embtaskstate_error)
+	    {
+			CString strCancleMsg;
+			strCancleMsg.Format("<edoc_main ver=\"1.0\" type=\"%d\" guid=\"\" MergeGuid=\"%s\"></edoc_main>", 
+				embxmltype_taskCancel,
+				taskIn.taskBasic.strTaskID);
+
+			m_actHolder.BroadcastToActor(strCancleMsg);
+			// log
+			OutputDebugString("---切片任务取消");
+			OutputDebugString(strCancleMsg);
+			CFWriteLog(0, "---切片任务取消 %s", strCancleMsg);
+			strRemark.Format(TEXT("task[%s] 失败, 切片任务取消."),taskIn.taskBasic.strTaskID);
+	    }
 
 		//write task back to storage;
 		ST_TASKUPDATE upInfo;
@@ -698,13 +756,14 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 		CString strUpInfo;
 		upInfo.ToString(strUpInfo);
 		m_pIStorage->UpdateTaskToStorage(m_nSvrId, strUpInfo);
+		CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, taskIn.taskBasic.strGuid, taskIn.taskRunState.nState, strRemark);
 		bRet = TRUE;		
 	
 	}
 	else if (taskIn.taskRunState.nState == embtaskstate_zero)
 	{
 		//multe split task
-		if (TaskNeedSplit(taskIn.strTask))
+		if (taskIn.taskBasic.vSubTask.size() == 1 && TaskNeedSplit(taskIn.strTask))
 		{
 			//split mode
 			TryDispatchSplitTask(taskIn);
@@ -720,9 +779,14 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 					taskIn.taskRunState.actorId = actid;
 					taskIn.taskRunState.nState = embtaskstate_dispatching;
 					SetActorInCD(actid);
-					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, actid);
+					CFWriteLog(0, TEXT("分配任务 (%s) 到 actor %d"), taskIn.taskBasic.strGuid, actid);
 
 					m_pIStorage->UpdateActorID(taskIn.taskBasic.strGuid, actid);
+
+					CString strRemark;
+					strRemark.Format(TEXT("分配任务 (%s) 到 actor %d"), taskIn.taskBasic.strGuid, actid);
+					CFWriteLog(0,strRemark);
+					CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, taskIn.taskBasic.strGuid, embtaskstate_dispatched,  strRemark);
 				}
 				else
 				{
@@ -741,7 +805,7 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 	else if (taskIn.taskRunState.nState == embtaskstate_dispatching)
 	{
 		CTimeSpan tmSpan(tmNow - taskIn.taskRunState.tmLastCheck);
-		if (tmSpan.GetSeconds() > nfgTaskDispatchCD)
+		if (tmSpan.GetTotalSeconds() > nfgTaskDispatchCD)
 		{
 			if (taskIn.taskRunState.nRetry < nfgTaskReDispatchMaxCount)
 			{
@@ -755,6 +819,11 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 			{
 				//
 				taskIn.taskRunState.nState = embtaskstate_error;
+				CString strRemark;
+				strRemark.Format(TEXT("分配任务次数达到 %d, 任务分配失败"), nfgTaskReDispatchMaxCount);
+				CFWriteLog(0,strRemark);
+				CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, taskIn.taskBasic.strGuid, embtaskstate_error,  strRemark);
+
 				bRet = FALSE;
 			}
 		}
@@ -775,6 +844,11 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 			{
 				//task lost retset
 				taskIn.taskRunState.nState = embtaskstate_error;
+				CString strRemark;
+				strRemark.Format(TEXT("actor %s 长时间未响应, 任务标记为失败"),taskIn.taskBasic.strGuid);
+				CFWriteLog(0,strRemark);
+				CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, taskIn.taskBasic.strGuid, embtaskstate_error,  strRemark);
+
 			}
 			else
 			{
@@ -802,7 +876,11 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 								//task may not assigned
 								taskIn.taskRunState.nState = embtaskstate_zero;
 								taskIn.taskRunState.tmLastCheck = tmNow;
-								CFWriteLog(0, TEXT("actor id is invalid and no actor report, task %s reseted..."), taskIn.taskBasic.strGuid);
+								CString strRemark;
+								strRemark.Format(TEXT("actor id 无效 并且 任务[%s] 长时间没有actor汇报,任务被重置"), taskIn.taskBasic.strGuid);
+								CFWriteLog(0,strRemark);
+								CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, taskIn.taskBasic.strGuid, embtaskstate_error,  strRemark);
+
 							}
 							else
 							{
@@ -839,7 +917,7 @@ BOOL EMB::CTaskDispatchMgr::ExamTask( ST_FILETASKDATA& taskIn )
 * Return Param：返回XML
 * History：
 */
-CString EMB::CTaskDispatchMgr::CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize)
+CString EMB::CTaskDispatchMgr::CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize, ST_FILETASKDATA& subTask)
 {
 	CString strOut = "";
 	// check nStart
@@ -869,14 +947,43 @@ CString EMB::CTaskDispatchMgr::CreateSplitTaskXml(CString strTaskIn,int nStart,i
 
 	if (1 == nStart) // 第1个任务：负责合并
 	{
-		CreateCombinedTaskXml(strOut, nSize);
+		strOut = CreateCombinedTaskXml(strOut, nSize);
 	}
 	else
 	{
+		// 切片任务，信息中需要使用合并任务标识MergeGuid
+		CTxParamString txMergeParam(strOut);
+		txMergeParam.GoIntoKey(EK_MAIN);
+
+		CString strMergeGuid = txMergeParam.GetAttribVal(NULL, "guid").GetAsString();
+		// new guid
+		GUID   newGuid;
+		::CoCreateGuid(&newGuid);
+		// -------------------
+		strVal.SetVal(Guid2String(newGuid)); // 新的guid
+		txMergeParam.SetAttribVal(NULL, "guid", strVal);
+		strVal.SetVal(strMergeGuid);
+		txMergeParam.SetAttribVal(NULL, "MergeGuid", strVal);
+
+		// basic guid
+		txMergeParam.GoIntoKey(EK_TASKBASIC);
+		strVal.SetVal(Guid2String(newGuid));
+		txMergeParam.SetAttribVal(NULL, "guid", strVal);
+
+		// update xml
+		txMergeParam.UpdateData();
+
+		strOut = txMergeParam;
+
+		// log-----------------------------------------------
 		CString strLog;
 		strLog.Format("--切片%d %s", nStart, strOut);
 		OutputDebugString(strLog);
 		CFWriteLog(0, TEXT("%s"), strLog);
+
+		subTask.strTask = strOut;
+		subTask.taskBasic.strGuid = Guid2String(newGuid);
+		subTask.taskBasic.strTaskID = strMergeGuid;
 	}
 
 	return strOut;
@@ -1401,6 +1508,7 @@ BOOL EMB::CTaskDispatchMgr::CheckDisconnActorCacheList()
 				}
 			}
 		}
+		m_vCachedDisconnActor.clear();
 	}
 	return TRUE;
 }
@@ -1561,8 +1669,11 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 				taskRun.nPercent = reportIn.nPercent;
 				taskRun.nCurrStep = reportIn.nStep;
 				taskRun.tmLastReport = time(NULL);
-				CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task error (%s), nSubErrorCode:%X"), 
+				CString strRemark;
+				strRemark.Format(TEXT(" [actor %d,excid = %d] 报告任务[%s]出错, nSubErrorCode:%X"), 
 					reportIn.actorId, reportIn.excutorId, reportIn.strGuid, reportIn.nSubErrorCode);
+				CFWriteLog(0, strRemark);
+				CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, reportIn.strGuid, taskRun.nState, strRemark);
 			}	
 		}
 		else if (reportIn.nState == embtaskstate_dispatched)
@@ -1577,7 +1688,9 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 					taskRun.excId= reportIn.excutorId;
 					taskRun.nPercent = reportIn.nPercent;
 					taskRun.nCurrStep = reportIn.nStep;
+					taskRun.nExcType = reportIn.nExcType;
 					taskRun.tmLastReport = time(NULL);
+					taskRun.tmExcute = taskRun.tmLastReport;
 
 					ST_TASKUPDATE upInfo;
 					upInfo.nUpdateType = embtaskupdatetype_change;
@@ -1590,7 +1703,11 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 					CString strUpInfo = "";
 					upInfo.ToString(strUpInfo);
 					m_pIStorage->UpdateTaskToStorage(m_nSvrId,strUpInfo);
-					CFWriteLog(0, TEXT("task[%s] dispatched successfully to actor:%d, exc = %d"), reportIn.strGuid, reportIn.actorId, reportIn.excutorId);
+					CString strRemark;
+					strRemark.Format(TEXT("任务[%s] 分配到 actor:%d, exc = %d"), reportIn.strGuid, reportIn.actorId, reportIn.excutorId);
+					CFWriteLog(0, strRemark);
+					CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, reportIn.strGuid, taskRun.nState, strRemark);
+
 				}
 				
 			}
@@ -1600,6 +1717,11 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 				{
 					taskRun.actorId = reportIn.actorId;
 					taskRun.excId= reportIn.excutorId;
+					CString strRemark;
+					strRemark.Format(TEXT("任务[%s] 分配信息更新! actor:%d, exc = %d"), reportIn.strGuid, reportIn.actorId, reportIn.excutorId);
+					CFWriteLog(0, strRemark);
+					CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH, m_nSvrCode, reportIn.strGuid, taskRun.nState, strRemark);
+
 				}
 				else
 				{
@@ -1608,6 +1730,8 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 				}
 				taskRun.nPercent = reportIn.nPercent;
 				taskRun.nCurrStep = reportIn.nStep;
+				taskRun.nExcType = reportIn.nExcType;
+
 				taskRun.tmLastReport = time(NULL);
 				//CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task (%s),  step = %d, percent = %d%%"), reportIn.actorId,reportIn.excutorId, reportIn.strGuid,reportIn.nStep, reportIn.nPercent);
 
@@ -1622,6 +1746,7 @@ BOOL EMB::CTaskDispatchMgr::UpdateTaskRunState( ST_TASKREPORT& reportIn )
 			taskRun.nState = embtaskstate_finished;
 			taskRun.nPercent = reportIn.nPercent;
 			taskRun.nCurrStep = reportIn.nStep;
+			taskRun.nExcType = reportIn.nExcType;
 			taskRun.tmLastReport = time(NULL);
 			CFWriteLog(0, TEXT(" [actor %d,excid = %d] report task finished (%s),  step = %d, percent = %d%%"), reportIn.actorId,reportIn.excutorId, reportIn.strGuid,reportIn.nStep, reportIn.nPercent);
 		}
@@ -1686,7 +1811,8 @@ BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 			//拆分任务
 			for(int i = 0 ; i < nSize ; i++)
 			{
-				CString strXml = CreateSplitTaskXml(taskIn.strTask,i + 1,nSize); // nStart 从1开始计数
+				ST_FILETASKDATA subTask = taskIn; // 切片任务
+				CString strXml = CreateSplitTaskXml(taskIn.strTask,i + 1,nSize, subTask); // nStart 从1开始计数
 
 				if(strXml.GetLength() == 0)
 				{
@@ -1698,9 +1824,24 @@ BOOL EMB::CTaskDispatchMgr::TryDispatchSplitTask( ST_FILETASKDATA& taskIn )
 				HRESULT hr = m_actHolder.SendToActor(ActorInfo.actorid, strXml);
 				if (hr == S_OK)
 				{
-					taskIn.taskRunState.actorId = ActorInfo.actorid;
-					taskIn.taskRunState.nState = embtaskstate_dispatching;
-					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), taskIn.taskBasic.strGuid, ActorInfo.actorid);
+					if (i == 0)
+					{
+						taskIn.taskRunState.actorId = ActorInfo.actorid;
+						taskIn.taskRunState.nState = embtaskstate_dispatching;
+					}
+					else  // add subtask
+					{
+						subTask.taskRunState.actorId = ActorInfo.actorid;
+						subTask.taskRunState.nState = embtaskstate_dispatching;
+						TXGUID newGuid = String2Guid(subTask.taskBasic.strGuid);
+						if (m_mapTasks.find(newGuid) == m_mapTasks.end())
+						{
+							m_mapTasks[newGuid] = subTask;
+							CFWriteLog(0, TEXT("add 切片任务 %s"), subTask.taskBasic.strGuid);
+						}
+					}
+
+					CFWriteLog(0, TEXT("assign task (%s) to actor %d"), subTask.taskBasic.strGuid, ActorInfo.actorid);
 				}
 				else
 				{
@@ -1924,6 +2065,62 @@ BOOL EMB::CTaskDispatchMgr::BroadcastToNotifier( CString& strInfo )
 	}
 
 	return TRUE;
+}
+
+void EMB::CTaskDispatchMgr::WriteDBLog_Task(LPCTSTR szTaskID, int nState, LPCTSTR szRemark )
+{
+	if (m_bDBLogEnabled)
+	{
+		CFWriteLog(0, TEXT("dblog_Task: task =%s state= %d, remark=%s"), szTaskID, nState, szRemark);
+
+		CFWriteDBLog_Task(DBLOGKEY_TASKDISPATCH,m_nSvrCode, szTaskID, nState, szRemark);
+	}
+}
+
+void EMB::CTaskDispatchMgr::WriteDBLog_EMB(int nType, LPCTSTR szRemark )
+{
+	if (m_bDBLogEnabled)
+	{
+		CFWriteLog(0, TEXT("dblog_Emb: type= %d, remark=%s"),  nType, szRemark);
+		CFWriteDBLog_EMB(DBLOGKEY_TASKDISPATCH, m_nSvrCode, nType, szRemark);
+	}
+}
+
+BOOL EMB::CTaskDispatchMgr::OnExcCallback( ST_EXCCALLBACKINFO& infoIn )
+{
+	//process
+	BOOL bRet = FALSE;
+	if (infoIn.nRetType == embrecalltype_spfcvs)
+	{
+		//try split fcvs task
+		bRet = TrySplitFCVSSubTask(infoIn);
+	}
+	return bRet;
+}
+
+BOOL EMB::CTaskDispatchMgr::TrySplitFCVSSubTask( ST_EXCCALLBACKINFO& infoIn )
+{
+	BOOL bNeedSp = FALSE;
+	ST_FCVS fcvsInfo;
+	fcvsInfo.taskInfo.FromString(infoIn.strExtInfo);
+	fcvsInfo.configInfo.FromString(infoIn.strExtInfo);
+	if (m_config.nfgMaxFcvsSplit < 2 || !fcvsInfo.configInfo.bUseSection)
+	{
+		//do not split
+	}
+
+	if (bNeedSp)
+	{
+		//generate split task
+	}
+	else
+	{
+
+	}
+	//whatever generate replace task;
+
+
+	return bNeedSp;
 }
 
 HRESULT CTaskDispatchMgr::GetActors( vector<CString>& vActor )

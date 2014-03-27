@@ -240,11 +240,21 @@ BOOL GetEmbXmlMainInfo( const CString& strTaskIn, ST_EMBXMLMAININFO& infoOut )
 		int nPosR = strTaskIn.Find('>', nPos);
 		if (nPosR != -1)
 		{
-			CString strSub = strTaskIn.Mid(nPos -1, nPosR -nPos+2);
-			strSub += TEXT("</");
-			strSub +=EK_MAIN;
-			strSub += TEXT(">");
+
+			CString	strSub =strTaskIn.Mid(nPos -1, nPosR -nPos+2);
+
+			if (strTaskIn.GetAt(nPosR -1) == '/')
+			{
+			}
+			else
+			{
+				strSub = strTaskIn.Mid(nPos -1, nPosR -nPos+2);
+				strSub += TEXT("</");
+				strSub +=EK_MAIN;
+				strSub += TEXT(">");
+			}
 			infoOut.FromString(strSub);
+
 			return TRUE;
 		}
 	}

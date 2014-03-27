@@ -22,7 +22,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -73,8 +73,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\$(ProjectName).exe"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib  embuilib.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				GenerateDebugInformation="true"
@@ -106,7 +106,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -159,8 +159,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\$(ProjectName).exe"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib  embuilib.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				GenerateDebugInformation="true"
@@ -202,6 +202,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\DlgDbgTest.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\EMBActorHost.cpp"
 				>
 			</File>
@@ -239,6 +243,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\DlgDbgTest.h"
+				>
+			</File>
 			<File
 				RelativePath=".\EMBActorHost.h"
 				>

@@ -20,7 +20,9 @@ using namespace std;
 struct ST_TASKINACTOR
 {
 	TXGUID taskGuid;
+	TXGUID mergeGuid; // 合并任务标识
 	int nCurrStep;
+	int nExcType;
 	int nState;
 	EXCUTORID excId;
 	int nRetry;
@@ -33,7 +35,9 @@ struct ST_TASKINACTOR
 	ST_TASKINACTOR()
 	{
 		taskGuid = GUID_NULL;
+		mergeGuid = GUID_NULL;
 		nCurrStep = INVALID_VALUE;
+		nExcType = INVALID_VALUE;
 		nState = embtaskstate_none;
 		tmLastReport = 0;
 		nRetry = 0;
@@ -134,6 +138,9 @@ private:
 	bool TaskResultSaveXmlFile(ST_TASKREPORT& tskReport);
 	bool QueryXmlFile(const CString& strTaskGuid, ST_TASKREPORT& tskInfor);
 	bool FindTask(const EXCUTORID& strExecutorId, ST_TASKINACTOR& tsk);
+
+	//
+	BOOL FindExcByTaskId(const CString& strTaskGuid, ST_TASKINACTOR& taskOut);
 	// 添加任务到 m_mapTaskinActor
 	bool AddTask(TXGUID& tskGuid, const ST_TASKINACTOR& tsk);
 

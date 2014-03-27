@@ -5,6 +5,9 @@
 	Name="EMBDBConnLib"
 	ProjectGUID="{45A21365-84F0-475C-8065-AF82A88ABC58}"
 	RootNamespace="EMBDBConnLib"
+	SccProjectName="Perforce Project"
+	SccLocalPath=".."
+	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -18,7 +21,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)lib\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="4"
 			UseOfMFC="2"
@@ -64,7 +67,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalDependencies="embcommonlib.lib"
-				OutputFile="$(SolutionDir)lib\$(ConfigurationName)\$(ProjectName).lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 			/>
 			<Tool
@@ -85,7 +88,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)lib\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="4"
 			UseOfMFC="2"
@@ -132,7 +135,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalDependencies="embcommonlib.lib"
-				OutputFile="$(SolutionDir)lib\$(ConfigurationName)\$(ProjectName).lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 			/>
 			<Tool
@@ -184,6 +187,10 @@
 				RelativePath="..\Common\TxADOConn.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\Common\TxDBLogManager.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -200,6 +207,10 @@
 			</File>
 			<File
 				RelativePath="..\Common\TxADOConn.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Common\TxDBLogManager.h"
 				>
 			</File>
 		</Filter>

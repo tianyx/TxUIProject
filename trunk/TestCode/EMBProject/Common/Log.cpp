@@ -168,9 +168,10 @@ void Log::SetFile(LPCTSTR filenameIn, bool append)
 	if (hlogfile)
 	{
 		//print log header
-		this->ReallyPrintLine(TEXT("\r\n-------------------------------------------------------------------------------------------------------\r\n"));
-		this->ReallyPrintLine(TEXT("--------------------------------!!!<<new log started>>!!!----------------------------------------------\r\n"));
-		this->ReallyPrintLine(TEXT("-------------------------------------------------------------------------------------------------------\r\n"));
+		CTime tm(time(NULL));
+		CString strTime;
+		strTime.Format(TEXT("\r\n--------------------------------<<new log started %s>>----------------------------------------------\r\n"),tm.Format(TEXT("%Y-%m-%d-%H:%M:%S")));
+		this->ReallyPrintLine(strTime);
 	}
 }
 

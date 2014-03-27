@@ -99,7 +99,6 @@ public:
 	// Server UI
 	virtual HRESULT GetActors(vector<CString>& vActor);
 
-
 public:
 	virtual HRESULT GetSelfState(ST_SVRLIVEINFO& infoOut);
 public:
@@ -133,10 +132,16 @@ private:
 	BOOL IsLiveActor(const ACTORID nActorId);
 
 	BOOL GetIdleActors( CString strActorTeam,int nPriority );
-	CString CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize);
+	CString CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize, ST_FILETASKDATA& subTask);
 	CString CreateCombinedTaskXml(CString strTaskIn,int nSize);
 	BOOL TaskNeedSplit(CString strTaskIn);
 	BOOL TryDispatchSplitTask(ST_FILETASKDATA& taskIn);
+
+	//for executor callback info
+	BOOL OnExcCallback(ST_EXCCALLBACKINFO& infoIn);
+
+	//
+	BOOL TrySplitFCVSSubTask(ST_EXCCALLBACKINFO& infoIn);
 
 	BOOL BroadcastToNotifier(CString& strInfo);
 private:
@@ -176,6 +181,11 @@ private:
 	int m_nMaster;
 	int m_nSvrId;
 
+	//for dblog
+	BOOL m_bDBLogEnabled;
+	int m_nSvrCode;
+	void WriteDBLog_Task(LPCTSTR szTaskID, int nState, LPCTSTR szRemark);
+	void WriteDBLog_EMB(int nType, LPCTSTR szRemark);
 	//for config
 	// 任务分配配置文件
 	ST_TASKDISPATCHCONFIG m_config;

@@ -8,6 +8,7 @@
 #include "MainDef.h"
 #include "FGlobal.h"
 #include "GdiPlusNewHeader.h"
+#include "TxImageLoader.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -15,6 +16,8 @@
 using namespace Gdiplus;
 
 // CEMBServerApp
+GdiplusStartupInput gdiplusStartupInput;
+ULONG_PTR gdiplusToken;
 
 BEGIN_MESSAGE_MAP(CEMBServerApp, CWinAppEx)
 	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
@@ -42,6 +45,7 @@ BOOL CEMBServerApp::InitInstance()
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
 	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
 	//则需要 InitCommonControlsEx()。否则，将无法创建窗口。
+	SetErrorMode(SEM_NOGPFAULTERRORBOX);
 	INITCOMMONCONTROLSEX InitCtrls;
 	InitCtrls.dwSize = sizeof(InitCtrls);
 	// 将它设置为包括所有要在应用程序中使用的
@@ -61,11 +65,10 @@ BOOL CEMBServerApp::InitInstance()
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
-	
 	MACRO_CREATEOUTPUTCONSOLE
-
-	GdiplusStartupInput gdiplusStartupInput;
-	ULONG_PTR gdiplusToken;
+#ifndef _DEBUG
+		MACRO_SHOWCONSOLEWINDOW(FALSE)
+#endif // _DEBUG
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 
@@ -107,7 +110,6 @@ BOOL CEMBServerApp::InitInstance()
 
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
-	GdiplusShutdown(gdiplusToken);
 
 	return FALSE;
 }
@@ -118,6 +120,8 @@ int CEMBServerApp::ExitInstance()
 	UnInitServer();
  	UnLoadPluginManager();
 	ReleaseTxLogMgr();
-	MACRO_CREATEOUTPUTCONSOLE
+	CTxImageLoader::Release();
+	GdiplusShutdown(gdiplusToken);
+	MACRO_FREEOUTPUTCONSOLE
 	return CWinAppEx::ExitInstance();
 }

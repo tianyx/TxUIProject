@@ -1,0 +1,9 @@
+
+The main license text has moved to the file "COPYING"
+
+Note that each source file may be copyrighted by a subset of the full copyright holders.
+
+If you wish to claim copyright on any substantial changes you submit to the source then 
+please indicate so in the new or changed files and add your name to the end of the list
+in "COPYING".  This will cause your changes to be covered by the same license.
+

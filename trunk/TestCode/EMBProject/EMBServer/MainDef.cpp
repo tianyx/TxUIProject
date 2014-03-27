@@ -323,6 +323,7 @@ BOOL RunServer( BOOL bRun )
 			HRESULT hr = bRun? apCtrl->Run_Plugin():apCtrl->Stop_Plugin();
 			if (FAILED(hr))
 			{
+				CFWriteLog(0, TEXT("plugin %s run error %x"),tmpPlug.strParam, hr);
 				ASSERT(FALSE);
 				return FALSE;
 			}

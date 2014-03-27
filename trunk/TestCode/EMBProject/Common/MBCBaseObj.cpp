@@ -107,7 +107,7 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 				if (nMsgType != msgtype_NONE)
 				{
 					ProcessIncomingMsg(pMBCSock, nMsgType, pRealUsedBuffer, nMsgLen);
-					//CFWriteLog2Wnd(m_hLogWnd, "msg ReadData, sock = %d, len = %d", (int)wParam, nMsgRead+5);
+					//CFWriteLog( "msg ReadData, sock = %d, len = %d", (int)wParam, nMsgRead+5);
 				}
 			}
 			else
@@ -145,7 +145,7 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 		{
 			nRead = recv(socRecv, szbuff, MAXRECVBUFF, 0);
 		}
-		//CFWriteLog2Wnd(m_hLogWnd, "msg ReadData error, data in sock buffer will clear!!! sock = %d", (int)wParam);
+		CFWriteLog(0, "msg ReadData error, data in sock buffer will clear!!! sock = %d", (int)wParam);
 		return E_FAIL;
 	}
 	

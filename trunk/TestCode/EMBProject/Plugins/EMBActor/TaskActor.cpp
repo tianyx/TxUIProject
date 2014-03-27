@@ -157,6 +157,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			//save task to it
 			ST_TASKINACTOR task;
 			task.taskGuid = guid;
+			task.mergeGuid = String2Guid(mainInfo.mergeGuid); // 合并任务标识
 			task.strTask = strInfo;
 			task.nCurrStep = 0;
 			task.nState = embtaskstate_dispatching;
@@ -317,6 +318,56 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 
 		actorInfo.ToString(strRet);
 	}
+	else if (embxmltype_taskCancel == mainInfo.nType) // 任务取消
+	{
+		OutputDebugString("---接受:切片任务取消");
+		CFWriteLog(0, "---接受:切片任务取消");
+
+		if (!mainInfo.mergeGuid.IsEmpty())
+		{
+			TXGUID mergeGuid = String2Guid(mainInfo.mergeGuid);
+
+			if (GUID_NULL != mergeGuid)
+			{
+				ST_TASKINACTOR taskInfoRef;
+				{
+					//for release lock
+					CAutoLock lock(&m_csmapLock);
+					//
+					for (MAPTASKINACTOR::iterator itor = m_mapTaskinActor.begin();
+						itor != m_mapTaskinActor.end(); itor++)
+					{
+						if (itor->second.mergeGuid == mergeGuid || itor->second.taskGuid == mergeGuid)
+						{
+							taskInfoRef = itor->second;
+							break;
+						}
+					}
+				}
+
+				// find task, then cancel task
+				if (GUID_NULL != taskInfoRef.taskGuid && taskInfoRef.excId > INVALID_ID)
+				{
+					m_pExcutorMgr->SendToExcutor(taskInfoRef.excId, strInfo);
+					//
+					CString strLog;
+					strLog.Format("---取消切片任务SendToExcutor(%d, %s)", taskInfoRef.excId, strInfo);
+					OutputDebugString(strLog);
+					CFWriteLog(0, strLog);
+				}
+			}
+		}
+	}
+	else if (embxmltype_changeWork == mainInfo.nType)
+	{
+		//find task executor and send to it
+		ST_TASKINACTOR taskInfo;
+		if (FindExcByTaskId(mainInfo.guid, taskInfo))
+		{
+			m_pExcutorMgr->SendToExcutor(taskInfo.excId, strInfo);
+		}
+	}
+
 	else
 	{
 		ASSERT(FALSE);
@@ -425,6 +476,7 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 				taskRef.nState = report.nState;
 				taskRef.nPercent = report.nPercent;
 				taskRef.nSubErrorCode = report.nSubErrorCode; // 具体错误
+				taskRef.nExcType = report.nExcType;
 
 				tmpReport = taskRef;
 				bReport = TRUE;
@@ -465,6 +517,15 @@ HRESULT EMB::CTaskActor::OnExcutorMessage( const EXCUTORID excutorId, CString& s
 		{
 			// 更新任务状态
 			ReportTaskState(tmpReport);
+		}
+	}
+	else if (mainInfo.nType == embxmltype_excCallback)
+	{
+		//send to dispatcher
+		CActorConnector* pActor = GetActiveActorConnector();
+		if (pActor)
+		{
+			pActor->SendtoDispatcher(szInfoIn);
 		}
 	}
 	else 
@@ -555,7 +616,7 @@ BOOL EMB::CTaskActor::ReportTaskState( ST_TASKINACTOR& infoIn )
 	report.strGuid = infoIn.taskGuid;
 	report.strGuid = Guid2String(infoIn.taskGuid);
 	report.nSubErrorCode = infoIn.nSubErrorCode;   // 具体错误
-
+	report.nExcType = infoIn.nExcType;
 	CString strRet;
 	report.ToString(strRet);
 	CActorConnector* pActor = GetActiveActorConnector();
@@ -749,5 +810,26 @@ bool EMB::CTaskActor::AddTask( TXGUID& tskGuid, const ST_TASKINACTOR& tsk )
 	
 	return true;
 }
+
+BOOL EMB::CTaskActor::FindExcByTaskId( const CString& strTaskGuid, ST_TASKINACTOR& taskOut )
+{
+	//for release lock
+	BOOL bFind = FALSE;
+	CAutoLock lock(&m_csmapLock);
+	//
+	for (MAPTASKINACTOR::iterator itor = m_mapTaskinActor.begin();
+		itor != m_mapTaskinActor.end(); itor++)
+	{
+		if (itor->second.taskGuid == strTaskGuid)
+		{
+			taskOut = itor->second;
+			bFind = TRUE;
+			break;
+		}
+	}
+	
+	return bFind;
+}
+
 
 

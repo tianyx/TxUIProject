@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{140354A3-4FE4-4FE3-A7E5-E6641EE4A647}</ProjectGuid>
+    <RootNamespace>EMBCommonLib</RootNamespace>
+    <SccProjectName>Perforce Project</SccProjectName>
+    <SccLocalPath>..</SccLocalPath>
+    <SccProvider>MSSCCI:Perforce SCM</SccProvider>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Output\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)Output\middle\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Output\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)Output\middle\$(ProjectName)\$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BuildLog>
+      <Path>$(SolutionDir)Output\$(ProjectName)\$(Configuration)\BuildLog.htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\common;..\plugins\interface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(SolutionDir)lib\$(Configuration)\$(ProjectName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <BuildLog>
+      <Path>$(SolutionDir)Output\$(ProjectName)\$(Configuration)\BuildLog.htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\common;..\plugins\interface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(SolutionDir)lib\$(Configuration)\$(ProjectName).lib</OutputFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\ADOCtrl.cpp" />
+    <ClCompile Include="..\Common\AutoCritSec.cpp" />
+    <ClCompile Include="..\Common\EMBCommonFunc.cpp" />
+    <ClCompile Include="..\Common\EmbStructDef.cpp" />
+    <ClCompile Include="..\Common\EMBTask.cpp" />
+    <ClCompile Include="..\Common\EMBWorkString.cpp" />
+    <ClCompile Include="..\Common\FGlobal.cpp" />
+    <ClCompile Include="..\Common\Log.cpp" />
+    <ClCompile Include="..\Common\Markup.cpp" />
+    <ClCompile Include="..\Common\MBCBaseObj.cpp" />
+    <ClCompile Include="..\Common\MBCCommonDef.cpp" />
+    <ClCompile Include="..\Common\MBCHeartBeatObj.cpp" />
+    <ClCompile Include="..\Common\MBCRemoteObj.cpp" />
+    <ClCompile Include="..\Common\MBCSocket.cpp" />
+    <ClCompile Include="..\Common\MBCTransMsg.cpp" />
+    <ClCompile Include="..\Common\MiniDump.cpp" />
+    <ClCompile Include="..\Common\NetCommon.cpp" />
+    <ClCompile Include="..\Common\StrConvert.cpp" />
+    <ClCompile Include="..\Common\SystemResourceInfo.cpp" />
+    <ClCompile Include="..\Common\TxLogManager.cpp" />
+    <ClCompile Include="..\Common\TxParamString.cpp" />
+    <ClCompile Include="..\Common\TxPerformMon.cpp" />
+    <ClCompile Include="..\Common\TxSerialize.cpp" />
+    <ClCompile Include="..\Common\TxTimer.cpp" />
+    <ClCompile Include="..\Common\Util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="..\Common\ADOCtrl.h" />
+    <ClInclude Include="..\Common\AutoCritSec.h" />
+    <ClInclude Include="..\Common\EMBCommonFunc.h" />
+    <ClInclude Include="..\Common\EMBMessageDef.h" />
+    <ClInclude Include="..\Common\EmbStructDef.h" />
+    <ClInclude Include="..\Common\EMBTask.h" />
+    <ClInclude Include="..\Common\EMBWorkString.h" />
+    <ClInclude Include="..\Common\FGlobal.h" />
+    <ClInclude Include="..\Common\Log.h" />
+    <ClInclude Include="..\Common\Markup.h" />
+    <ClInclude Include="..\Common\MBCBaseObj.h" />
+    <ClInclude Include="..\Common\MBCCommonDef.h" />
+    <ClInclude Include="..\Common\MBCHeartBeatObj.h" />
+    <ClInclude Include="..\Common\MBCRemoteObj.h" />
+    <ClInclude Include="..\Common\MBCSocket.h" />
+    <ClInclude Include="..\Common\MBCTransMsg.h" />
+    <ClInclude Include="..\Common\MiniDump.h" />
+    <ClInclude Include="..\Common\NetCommon.h" />
+    <ClInclude Include="..\Common\StrConvert.h" />
+    <ClInclude Include="..\Common\SystemResourceInfo.h" />
+    <ClInclude Include="..\Common\TxLogManager.h" />
+    <ClInclude Include="..\Common\TxParamString.h" />
+    <ClInclude Include="..\Common\TxPerformMon.h" />
+    <ClInclude Include="..\Common\TxSerialize.h" />
+    <ClInclude Include="..\Common\TxTimer.h" />
+    <ClInclude Include="..\Common\Util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

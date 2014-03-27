@@ -407,6 +407,7 @@ BOOL ST_TASKDISPATCHCONFIG::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("IpActorHolder"), txVal);
 	txVal.SetVal(strIpMaster);
 	txParam.SetAttribVal(NULL, TEXT("IpMaster"), txVal);
+	txParam.SetAttribVal(NULL, TEXT("nfgMaxFcvsSplit"), nfgMaxFcvsSplit);
 
 
 	txParam.UpdateData();
@@ -422,25 +423,27 @@ BOOL ST_TASKDISPATCHCONFIG::FromString( const CString& strIn )
 	nMaster = txParam.GetAttribVal(NULL, TEXT("nMaster")).GetAsInt(INVALID_ID);
 	strIpActorHolder = txParam.GetAttribVal(NULL, TEXT("IpActorHolder")).GetAsString();
 	strIpMaster = txParam.GetAttribVal(NULL, TEXT("IpMaster")).GetAsString();
-
+	strDBLogConn = txParam.GetAttribVal(NULL, TEXT("DBLogConn")).GetAsString();
 	//////////////////////////////////////////////////////////////////////////
 	nfgTaskPoolSizeMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskPoolSizeMax")).GetAsInt(-1);
 	//
-	nfgTaskReDispatchMaxCount = txParam.GetAttribVal(NULL, TEXT("nfgTaskReDispatchMaxCount")).GetAsInt(-1);;
-	nfgTaskDispatchCD = txParam.GetAttribVal(NULL, TEXT("nfgTaskDispatchCD")).GetAsInt(-1);;
-	nfgTaskReportIntervalMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskReportIntervalMax")).GetAsInt(-1);;
-	nfgTaskCheckProgressIntervalMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskCheckProgressIntervalMax")).GetAsInt(-1);;
-	nfgTaskLostTimeOutMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskLostTimeOutMax")).GetAsInt(-1);;
+	nfgTaskReDispatchMaxCount = txParam.GetAttribVal(NULL, TEXT("nfgTaskReDispatchMaxCount")).GetAsInt(-1);
+	nfgTaskDispatchCD = txParam.GetAttribVal(NULL, TEXT("nfgTaskDispatchCD")).GetAsInt(-1);
+	nfgTaskReportIntervalMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskReportIntervalMax")).GetAsInt(-1);
+	nfgTaskCheckProgressIntervalMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskCheckProgressIntervalMax")).GetAsInt(-1);
+	nfgTaskLostTimeOutMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskLostTimeOutMax")).GetAsInt(-1);
 
-	nfgActorLostTimeOutMax = txParam.GetAttribVal(NULL, TEXT("nfgActorLostTimeOutMax")).GetAsInt(-1);;
-	nfgActorCheckInterval = txParam.GetAttribVal(NULL, TEXT("nfgActorCheckInterval")).GetAsInt(-1);;
-	nfgActorStateOutdate = txParam.GetAttribVal(NULL, TEXT("nfgActorStateOutdate")).GetAsInt(-1);;
-	nfgActorAssignTaskCD = txParam.GetAttribVal(NULL, TEXT("nfgActorAssignTaskCD")).GetAsInt(-1);;
+	nfgActorLostTimeOutMax = txParam.GetAttribVal(NULL, TEXT("nfgActorLostTimeOutMax")).GetAsInt(-1);
+	nfgActorCheckInterval = txParam.GetAttribVal(NULL, TEXT("nfgActorCheckInterval")).GetAsInt(-1);
+	nfgActorStateOutdate = txParam.GetAttribVal(NULL, TEXT("nfgActorStateOutdate")).GetAsInt(-1);
+	nfgActorAssignTaskCD = txParam.GetAttribVal(NULL, TEXT("nfgActorAssignTaskCD")).GetAsInt(-1);
 	//
-	nfgCpuWeight = txParam.GetAttribVal(NULL, TEXT("nfgCpuWeight")).GetAsInt(-1);;
-	nfgMemWeight = txParam.GetAttribVal(NULL, TEXT("nfgMemWeight")).GetAsInt(-1);;
-	nfgDiskIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgDiskIOWeight")).GetAsInt(-1);;
-	nfgNetIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgNetIOWeight")).GetAsInt(-1);;
+	nfgCpuWeight = txParam.GetAttribVal(NULL, TEXT("nfgCpuWeight")).GetAsInt(-1);
+	nfgMemWeight = txParam.GetAttribVal(NULL, TEXT("nfgMemWeight")).GetAsInt(-1);
+	nfgDiskIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgDiskIOWeight")).GetAsInt(-1);
+	nfgNetIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgNetIOWeight")).GetAsInt(-1);
+
+	nfgMaxFcvsSplit = txParam.GetAttribVal(NULL, TEXT("nfgMaxFcvsSplit")).GetAsInt(3);
 	//////////////////////////////////////////////////////////////////////////
 	return TRUE;
 }
@@ -552,7 +555,7 @@ BOOL ST_TASKREPORT::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("nSubErrorCode"), val);
 	val.SetValX(nSubErrorCode);
 	txParam.SetAttribVal(NULL, TEXT("nSubErrorCodeX"), val); // 十六进制错误码
-
+	txParam.SetAttribVal(NULL, TEXT("nExcType"), nExcType);
 	txParam.UpdateData();
 	strOut = txParam;
 
@@ -578,7 +581,7 @@ BOOL ST_TASKREPORT::FromString( const CString& strIn )
 	nPercent = txParam.GetAttribVal(NULL, TEXT("nPercent")).GetAsInt(0);
 	nStep = txParam.GetAttribVal(NULL, TEXT("nStep")).GetAsInt(-1);
 	nSubErrorCode = txParam.GetAttribVal(NULL, TEXT("nSubErrorCode")).GetAsInt(0);
-
+	nExcType = txParam.GetAttribVal(NULL, TEXT("nExcType")).GetAsInt(-1);
 	return TRUE;
 }
 
@@ -659,6 +662,7 @@ BOOL ST_ACTORSTATE::FromString( const CString& strIn )
 
 }
 
+// Date: 2014-01-03 增加属性MergeGuid(合并任务标识)
 BOOL ST_EMBXMLMAININFO::ToString( CString& strOut )
 {
 	if (nErrcode != S_OK)
@@ -669,6 +673,23 @@ BOOL ST_EMBXMLMAININFO::ToString( CString& strOut )
 	{
 		strOut.Format(EDOC_MAINHEADERFMT, ver, nType, guid);
 	}
+
+	//
+	if (!mergeGuid.IsEmpty())
+	{
+		CTxParamString txParam(strOut);
+		txParam.GoIntoKey(EK_MAIN);
+
+		CTxStrConvert val;
+
+		val.SetVal(mergeGuid);
+		txParam.SetAttribVal(NULL, TEXT("MergeGuid"), val); // 合并任务标识
+
+		txParam.UpdateData();
+		strOut = txParam;
+	}
+	
+	// -----------------------------
 
 	return TRUE;
 }
@@ -682,6 +703,8 @@ BOOL ST_EMBXMLMAININFO::FromString( const CString& strIn )
 	ver = txParam.GetAttribVal(NULL, TEXT("ver")).GetAsInt(INVALID_ID);
 	guid = txParam.GetAttribVal(NULL, TEXT("guid")).GetAsString();
 	nErrcode = txParam.GetAttribVal(NULL, TEXT("errcode")).GetAsInt(S_OK);
+	mergeGuid = txParam.GetAttribVal(NULL, TEXT("MergeGuid")).GetAsString();
+
 	return TRUE;
 }
 
@@ -1322,5 +1345,361 @@ BOOL ST_FCVSRESULTTASK::FromString(const CString& strIn)
 	txParam.GoIntoKey(EK_FCVSRESULTTASK);
 	filePath = txParam.GetAttribVal(NULL,TEXT("FilePath")).GetAsString("");
 	nTotalSectionCount = txParam.GetAttribVal(NULL,TEXT("NTotalSectionCount")).GetAsInt(0);
+	return TRUE;
+}
+
+BOOL ST_MERGETODBWRITER::ToString( CString& strOut )
+{
+	strOut.Format(EDOC_MERGETODBFMT, nDBType, strDBConn, strTaskPath, strTaskId);
+	return TRUE;
+
+}
+
+BOOL ST_MERGETODBWRITER::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	nDBType = txParam.GetAttribVal(EK_MERGE2DB, EA_MERGE2DBTYPE).GetAsInt();
+	strDBConn = txParam.GetAttribVal(EK_MERGE2DB, EA_MERGE2DBCONN).GetAsString();
+	strTaskId = txParam.GetAttribVal(EK_MERGE2DB, EA_MERGE2DBTASKID).GetAsString();
+	strTaskPath = txParam.GetAttribVal(EK_MERGE2DB, EA_MERGE2DBTASKPATH).GetAsString();
+	return TRUE;
+}
+
+BOOL ST_TRANSFILEINFO::ToString( CString& strOut )
+{
+	CTxParamString txParam(TEXT(""));
+	txParam.SetElemVal(TEXT("TranFileInfo"), TEXT(""));
+	txParam.GoIntoKey(TEXT("TranFileInfo"));
+	txParam.SetElemVal(TEXT("srcFtpList"), TEXT(""));
+	txParam.GoIntoKey(TEXT("srcFtpList"));
+	txParam.SetAttribVal(NULL, TEXT("count"), vSitSrc.size());
+
+	for (size_t i = 0; i < vSitSrc.size(); ++i)
+	{
+		ST_FTPSITEINFO& sitRef = vSitSrc[i];
+		CString strNum;
+		strNum.Format(TEXT("site%d"), i);
+		txParam.SetElemVal(strNum, TEXT(""));
+		txParam.SetAttribVal(strNum, TEXT("ftpName"), sitRef.strFtpName);
+		txParam.SetAttribVal(strNum, TEXT("strFtpIp"), sitRef.strFtpIp);
+		txParam.SetAttribVal(strNum, TEXT("nFtpPort"), sitRef.nFtpPort);
+		txParam.SetAttribVal(strNum, TEXT("strUser"), sitRef.strUser);
+		txParam.SetAttribVal(strNum, TEXT("strPw"), sitRef.strPw);
+		txParam.SetAttribVal(strNum, TEXT("nPassive"), sitRef.nPassive);
+		txParam.SetAttribVal(strNum, TEXT("strDBConn"), sitRef.strDBConn);
+		txParam.SetAttribVal(strNum, TEXT("nLocation"), sitRef.nLocation);
+		txParam.SetAttribVal(strNum, TEXT("strStoreName"), sitRef.strStoreName);
+
+	}
+
+	txParam.OutofKey();
+
+	txParam.SetElemVal(TEXT("desFtpList"), TEXT(""));
+	txParam.GoIntoKey(TEXT("desFtpList"));
+	txParam.SetAttribVal(NULL, TEXT("count"), vSitDes.size());
+
+	for (size_t i = 0; i < vSitDes.size(); ++i)
+	{
+		ST_FTPSITEINFO& sitRef = vSitDes[i];
+		CString strNum;
+		strNum.Format(TEXT("site%d"), i);
+		txParam.SetElemVal(strNum, TEXT(""));
+		txParam.SetAttribVal(strNum, TEXT("ftpName"), sitRef.strFtpName);
+		txParam.SetAttribVal(strNum, TEXT("strFtpIp"), sitRef.strFtpIp);
+		txParam.SetAttribVal(strNum, TEXT("nFtpPort"), sitRef.nFtpPort);
+		txParam.SetAttribVal(strNum, TEXT("strUser"), sitRef.strUser);
+		txParam.SetAttribVal(strNum, TEXT("strPw"), sitRef.strPw);
+		txParam.SetAttribVal(strNum, TEXT("nPassive"), sitRef.nPassive);
+		txParam.SetAttribVal(strNum, TEXT("strDBConn"), sitRef.strDBConn);
+		txParam.SetAttribVal(strNum, TEXT("nLocation"), sitRef.nLocation);
+		txParam.SetAttribVal(strNum, TEXT("strStoreName"), sitRef.strStoreName);
+
+	}
+
+	txParam.OutofKey();
+
+	//file location
+	txParam.SetElemVal(TEXT("fileLoc"), TEXT(""));
+	txParam.GoIntoKey(TEXT("fileLoc"));
+	txParam.SetAttribVal(NULL, TEXT("strSrcDir"), strSrcDir);
+	txParam.SetAttribVal(NULL, TEXT("strSrcFileName"), strSrcFileName);
+	txParam.SetAttribVal(NULL, TEXT("strDesDir"), strDesDir);
+	txParam.SetAttribVal(NULL, TEXT("strDesFileName"), strDesFileName);
+	txParam.OutofKey();
+	
+	//options
+	txParam.SetElemVal(TEXT("options"), TEXT(""));
+	txParam.GoIntoKey(TEXT("options"));
+	txParam.SetAttribVal(NULL, TEXT("bDownToLocal"), bDownToLocal);
+	txParam.SetAttribVal(NULL, TEXT("strLocalDownDir"), strLocalDownDir);
+	txParam.SetAttribVal(NULL, TEXT("strLocalDownFileName"), strLocalDownFileName);
+	txParam.SetAttribVal(NULL, TEXT("bMD5Check"), bMD5Check);
+	txParam.SetAttribVal(NULL, TEXT("strMD5Compare"), strMD5Compare);
+	txParam.SetAttribVal(NULL, TEXT("bWriteLocalResult"), bWriteLocalResult);
+	txParam.SetAttribVal(NULL, TEXT("bRegisterToDB"), bRegisterToDB);
+	txParam.SetAttribVal(NULL, TEXT("nSpeedLimit"), nSpeedLimit);
+	txParam.SetAttribVal(NULL, TEXT("nCodePage"), nCodePage);
+	txParam.OutofKey();
+	//
+
+	//dbinfo
+	txParam.SetElemVal(TEXT("dbinfo"), TEXT(""));
+	txParam.GoIntoKey(TEXT("dbinfo"));
+	txParam.SetAttribVal(NULL, TEXT("strClipLogicID"), strClipLogicID);
+	txParam.SetAttribVal(NULL, TEXT("strClipID"), strClipID);
+
+	//t_location info
+	txParam.SetElemVal(TEXT("tloc"), TEXT(""));
+	txParam.GoIntoKey(TEXT("tloc"));
+	txParam.SetAttribVal(NULL, TEXT("strMediaType"), dbLocationInfo.strMediaType);
+	txParam.SetAttribVal(NULL, TEXT("nBitReate"), dbLocationInfo.nBitRate);
+	txParam.SetAttribVal(NULL, TEXT("strFileSize"), dbLocationInfo.strFileSize);
+	txParam.SetAttribVal(NULL, TEXT("nAfdType"), dbLocationInfo.nAfdType);
+	txParam.OutofKey();
+
+	//t_bvsid info
+	txParam.SetElemVal(TEXT("tbvsid"), TEXT(""));
+	txParam.GoIntoKey(TEXT("tbvsid"));
+	txParam.SetAttribVal(NULL, TEXT("strClipName"), dbBvsInfo.strClipName);
+	txParam.SetAttribVal(NULL, TEXT("strTapeID"), dbBvsInfo.strTapeID);
+	txParam.SetAttribVal(NULL, TEXT("nTapeType"), dbBvsInfo.nTapeType);
+	txParam.SetAttribVal(NULL, TEXT("strSOM"), dbBvsInfo.strSOM);
+	txParam.SetAttribVal(NULL, TEXT("strEOM"), dbBvsInfo.strEOM);
+	txParam.SetAttribVal(NULL, TEXT("strDuration"), dbBvsInfo.strDuration);
+	txParam.SetAttribVal(NULL, TEXT("strLSOM"), dbBvsInfo.strLSOM);
+	txParam.SetAttribVal(NULL, TEXT("strLEOM"), dbBvsInfo.strLEOM);
+	txParam.SetAttribVal(NULL, TEXT("strLDuration"), dbBvsInfo.strLDuration);
+	txParam.SetAttribVal(NULL, TEXT("strTypeSOM"), dbBvsInfo.strTypeSOM);
+	txParam.SetAttribVal(NULL, TEXT("nClipType"), dbBvsInfo.nClipType);
+	txParam.SetAttribVal(NULL, TEXT("strChID"), dbBvsInfo.strChID);
+	txParam.SetAttribVal(NULL, TEXT("tPlanAirTime"), dbBvsInfo.tPlanAirTime);
+	txParam.SetAttribVal(NULL, TEXT("tPlanLastAirTime"), dbBvsInfo.tPlanLastAirTime);
+	txParam.SetAttribVal(NULL, TEXT("nBitRate"), dbBvsInfo.nBitRate);
+	txParam.OutofKey();
+
+	//out dbinfo
+	txParam.OutofKey();
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+
+}
+
+BOOL ST_TRANSFILEINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("TranFileInfo"));
+	txParam.GoIntoKey(TEXT("srcFtpList"));
+	int nFtpSrcCount = txParam.GetAttribVal(NULL, TEXT("count")).GetAsInt();
+	vSitSrc.clear();
+	for (int i = 0; i < nFtpSrcCount; ++i)
+	{
+		ST_FTPSITEINFO sitTmp;
+		CString strNum;
+		strNum.Format(TEXT("site%d"), i);
+		sitTmp.strFtpName =txParam.GetAttribVal(strNum, TEXT("strFtpName")).GetAsString();
+		sitTmp.strFtpIp = txParam.GetAttribVal(strNum, TEXT("strFtpIp")).GetAsString();
+		sitTmp.nFtpPort = txParam.GetAttribVal(strNum, TEXT("nFtpPort")).GetAsInt();
+		sitTmp.strUser = txParam.GetAttribVal(strNum, TEXT("strUser")).GetAsString();
+		sitTmp.strPw = txParam.GetAttribVal(strNum, TEXT("strPw")).GetAsString();
+		sitTmp.nPassive = txParam.GetAttribVal(strNum, TEXT("nPassive")).GetAsInt();
+		sitTmp.strDBConn = txParam.GetAttribVal(strNum, TEXT("strDBConn")).GetAsString();
+		sitTmp.strStoreName = txParam.GetAttribVal(strNum, TEXT("strStoreName")).GetAsString();
+		sitTmp.nLocation = txParam.GetAttribVal(strNum, TEXT("nLocation")).GetAsInt();
+		vSitSrc.push_back(sitTmp);
+
+	}
+	txParam.OutofKey();
+
+	
+	txParam.GoIntoKey(TEXT("desFtpList"));
+	int nFtpDesCount = txParam.GetAttribVal(NULL, TEXT("count")).GetAsInt();
+	vSitDes.clear();
+	for (int i = 0; i < nFtpDesCount; ++i)
+	{
+		ST_FTPSITEINFO sitTmp;
+		CString strNum;
+		strNum.Format(TEXT("site%d"), i);
+		sitTmp.strFtpName =txParam.GetAttribVal(strNum, TEXT("strFtpName")).GetAsString();
+		sitTmp.strFtpIp = txParam.GetAttribVal(strNum, TEXT("strFtpIp")).GetAsString();
+		sitTmp.nFtpPort = txParam.GetAttribVal(strNum, TEXT("nFtpPort")).GetAsInt();
+		sitTmp.strUser = txParam.GetAttribVal(strNum, TEXT("strUser")).GetAsString();
+		sitTmp.strPw = txParam.GetAttribVal(strNum, TEXT("strPw")).GetAsString();
+		sitTmp.nPassive = txParam.GetAttribVal(strNum, TEXT("nPassive")).GetAsInt();
+		sitTmp.strDBConn = txParam.GetAttribVal(strNum, TEXT("strDBConn")).GetAsString();
+		sitTmp.strStoreName = txParam.GetAttribVal(strNum, TEXT("strStoreName")).GetAsString();
+		sitTmp.nLocation = txParam.GetAttribVal(strNum, TEXT("nLocation")).GetAsInt();
+		vSitDes.push_back(sitTmp);
+	}
+	txParam.OutofKey();
+
+	txParam.GoIntoKey(TEXT("fileLoc"));
+	strSrcDir = txParam.GetAttribVal(NULL, TEXT("strSrcDir")).GetAsString();
+	strSrcFileName = txParam.GetAttribVal(NULL, TEXT("strSrcFileName")).GetAsString();
+	strDesDir = txParam.GetAttribVal(NULL, TEXT("strDesDir")).GetAsString();
+	strDesFileName = txParam.GetAttribVal(NULL, TEXT("strDesFileName")).GetAsString();
+	txParam.OutofKey();
+
+	txParam.GoIntoKey(TEXT("options"));
+	bDownToLocal = txParam.GetAttribVal(NULL, TEXT("bDownToLocal")).GetAsBOOL();
+	strLocalDownDir = txParam.GetAttribVal(NULL, TEXT("strLocalDownDir")).GetAsString();
+	strLocalDownFileName = txParam.GetAttribVal(NULL, TEXT("strLocalDownFileName")).GetAsString();
+	bMD5Check = txParam.GetAttribVal(NULL, TEXT("bMD5Check")).GetAsBOOL();
+	strMD5Compare = txParam.GetAttribVal(NULL, TEXT("strMD5Compare")).GetAsString();
+	bWriteLocalResult = txParam.GetAttribVal(NULL, TEXT("bWriteLocalResult")).GetAsBOOL();
+	bRegisterToDB = txParam.GetAttribVal(NULL, TEXT("bRegisterToDB")).GetAsBOOL(TRUE);
+	nSpeedLimit = txParam.GetAttribVal(NULL, TEXT("nSpeedLimit")).GetAsInt(); 
+	nCodePage = txParam.GetAttribVal(NULL, TEXT("nCodePage")).GetAsInt(0);
+	txParam.OutofKey();
+
+	txParam.GoIntoKey(TEXT("dbinfo"));
+	strClipLogicID = txParam.GetAttribVal(NULL, TEXT("strClipLogicID")).GetAsString();
+	strClipID = txParam.GetAttribVal(NULL, TEXT("strClipID")).GetAsString();
+
+
+	txParam.GoIntoKey(TEXT("tloc"));
+	dbLocationInfo.strMediaType = txParam.GetAttribVal(NULL, TEXT("strMediaType")).GetAsString();
+	dbLocationInfo.nBitRate = txParam.GetAttribVal(NULL, TEXT("nBitReate")).GetAsInt();
+	dbLocationInfo.strFileSize = txParam.GetAttribVal(NULL, TEXT("strFileSize")).GetAsString();
+	dbLocationInfo.nAfdType = txParam.GetAttribVal(NULL, TEXT("nAfdType")).GetAsInt();
+	txParam.OutofKey(); //out tloc
+
+	txParam.GoIntoKey(TEXT("tbvsid"));
+	dbBvsInfo.strClipName = txParam.GetAttribVal(NULL, TEXT("strClipName")).GetAsString();
+	dbBvsInfo.strTapeID = txParam.GetAttribVal(NULL, TEXT("strTapeID")).GetAsString();
+	dbBvsInfo.nTapeType = txParam.GetAttribVal(NULL, TEXT("nTapeType")).GetAsInt();
+	dbBvsInfo.strSOM = txParam.GetAttribVal(NULL, TEXT("strSOM")).GetAsString();
+	dbBvsInfo.strEOM = txParam.GetAttribVal(NULL, TEXT("strEOM")).GetAsString();
+	dbBvsInfo.strDuration = txParam.GetAttribVal(NULL, TEXT("strDuration")).GetAsString();
+	dbBvsInfo.strLSOM = txParam.GetAttribVal(NULL, TEXT("strLSOM")).GetAsString();
+	dbBvsInfo.strLEOM = txParam.GetAttribVal(NULL, TEXT("strLEOM")).GetAsString();
+	dbBvsInfo.strLDuration = txParam.GetAttribVal(NULL, TEXT("strLDuration")).GetAsString();
+	dbBvsInfo.strTypeSOM = txParam.GetAttribVal(NULL, TEXT("strTypeSOM")).GetAsString();
+	dbBvsInfo.nClipType = txParam.GetAttribVal(NULL, TEXT("nClipType")).GetAsInt();
+	dbBvsInfo.strChID = txParam.GetAttribVal(NULL, TEXT("strChID")).GetAsString();
+	dbBvsInfo.tPlanAirTime = txParam.GetAttribVal(NULL, TEXT("tPlanAirTime")).GetAsString();
+	dbBvsInfo.tPlanLastAirTime = txParam.GetAttribVal(NULL, TEXT("tPlanLastAirTime")).GetAsString();
+	dbBvsInfo.nBitRate = txParam.GetAttribVal(NULL, TEXT("nBitRate")).GetAsInt();
+	txParam.OutofKey(); //out tbvsid
+
+	txParam.OutofKey(); //out dbinfo
+
+	return TRUE;
+}
+
+BOOL ST_TRANSRESULT::ToString( CString& strOut )
+{
+	CTxParamString txParam(TEXT(""));
+	txParam.SetElemVal(TEXT("TransResult"), TEXT(""));
+	txParam.GoIntoKey(TEXT("TransResult"));
+	txParam.SetAttribVal(NULL, TEXT("strClipID"), strClipID);
+	txParam.SetAttribVal(NULL, TEXT("strClipLogicID"), strClipLogicID);
+	txParam.SetAttribVal(NULL, TEXT("strDestDBConn"), strDestDBConn);
+	txParam.SetAttribVal(NULL, TEXT("strDestDir"), strDestDir);
+	txParam.SetAttribVal(NULL, TEXT("strDestFileName"), strDestFileName);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_TRANSRESULT::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("TransResult"));
+	strClipID = txParam.GetAttribVal(NULL,TEXT("strClipID")).GetAsString("");
+	strClipLogicID = txParam.GetAttribVal(NULL,TEXT("strClipLogicID")).GetAsString("");
+	strDestDBConn = txParam.GetAttribVal(NULL,TEXT("strDestDBConn")).GetAsString("");
+	strDestDir = txParam.GetAttribVal(NULL,TEXT("strDestDir")).GetAsString("");
+	strDestFileName = txParam.GetAttribVal(NULL,TEXT("strDestFileName")).GetAsString("");
+
+	return TRUE;
+
+}
+
+BOOL ST_SLEEPTASKINFO::ToString( CString& strOut )
+{
+	CTxParamString txParam(TEXT(""));
+	txParam.SetElemVal(TEXT("WorkSleep"), TEXT(""));
+	txParam.GoIntoKey(TEXT("WorkSleep"));
+	txParam.SetAttribVal(NULL, TEXT("nSleepSec"), nSleepSec);
+	txParam.SetAttribVal(NULL, TEXT("nReCallType"), nReCallType);
+	txParam.SetAttribVal(NULL, TEXT("nRetOnFinish"), nRetOnFinish);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_SLEEPTASKINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("WorkSleep"));
+	nSleepSec = txParam.GetAttribVal(NULL,TEXT("nSleepSec")).GetAsInt(0);
+	nReCallType = txParam.GetAttribVal(NULL,TEXT("nReCallType")).GetAsInt(0);
+	nRetOnFinish = txParam.GetAttribVal(NULL,TEXT("nRetOnFinish")).GetAsInt(0);
+	strExtInfo = txParam.GetAttribVal(NULL,TEXT("strExtendTag")).GetAsString("");
+	return TRUE;
+
+}
+
+BOOL ST_WORKERRET::ToString( CString& strOut )
+{
+	CTxParamString txParam(TEXT(""));
+	txParam.SetElemVal(TEXT("WorkerRet"), TEXT(""));
+	txParam.GoIntoKey(TEXT("WorkerRet"));
+	txParam.SetAttribVal(NULL, TEXT("nRetType"), nRetType);
+	txParam.SetAttribVal(NULL, TEXT("strRetInfo"), strRetInfo);
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_WORKERRET::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("WorkerRet"));
+	nRetType = txParam.GetAttribVal(NULL,TEXT("nRetType")).GetAsInt(0);
+	strRetInfo = txParam.GetAttribVal(NULL,TEXT("strRetInfo")).GetAsString("");
+	return TRUE;
+
+}
+
+BOOL ST_EXCCALLBACKINFO::ToString( CString& strOut )
+{
+	CString strFmt;
+	strFmt.Format(EDOC_EXCCALLBACKFMT, embxmltype_excCallback);
+	CTxParamString txParam(strFmt);
+	txParam.SetElemVal(TEXT("ST_EXCCALLBACKINFO"), TEXT(""));
+	txParam.GoIntoKey(TEXT("ST_EXCCALLBACKINFO"));
+	txParam.SetAttribVal(NULL, TEXT("nRetType"), nRetType);
+	txParam.SetAttribVal(NULL, TEXT("nStep"), nStep);
+	txParam.SetAttribVal(NULL, TEXT("taskId"), taskId);
+	txParam.SetAttribVal(NULL, TEXT("nExcId"), nExcId);
+	txParam.SetAttribVal(NULL, TEXT("nActorId"), nActorId);
+	txParam.SetElemVal(TEXT("strExtInfo"), strExtInfo);
+
+	return TRUE;
+}
+
+BOOL ST_EXCCALLBACKINFO::FromString( const CString& strIn )
+{
+
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("edoc_main"));
+	int ntype = txParam.GetAttribVal(NULL, TEXT("type")).GetAsInt();
+	if (ntype != embxmltype_excCallback)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	txParam.GoIntoKey(TEXT("ST_EXCCALLBACKINFO"));
+	nRetType = txParam.GetAttribVal(NULL, TEXT("nRetType")).GetAsInt();
+	nStep = txParam.GetAttribVal(NULL, TEXT("nStep")).GetAsInt();
+	taskId =txParam.GetAttribVal(NULL, TEXT("taskId")).GetAsString();
+	nExcId= txParam.GetAttribVal(NULL, TEXT("nExcId")).GetAsInt();
+	nActorId= txParam.GetAttribVal(NULL, TEXT("nActorId")).GetAsInt();
+	strExtInfo=txParam.GetElemVal( TEXT("strExtInfo")).GetAsString();
 	return TRUE;
 }

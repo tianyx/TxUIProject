@@ -123,7 +123,7 @@ DWORD CTxLogManager::AddNewLogFile( DWORD dwLogKey, CString strFileIn , BOOL bAd
 {
 	
 	DWORD dwKey = 0;
-	m_fLock.Lock();
+	EMB::CAutoLock lock(&m_fLock);
 	MAPFILELOGS::iterator itf = m_mapFileLogs.find(dwLogKey);
 	if (itf != m_mapFileLogs.end())
 	{
@@ -154,7 +154,6 @@ DWORD CTxLogManager::AddNewLogFile( DWORD dwLogKey, CString strFileIn , BOOL bAd
 		m_mapFileLogs[dwLogKey] = data;
 	}
 
-	m_fLock.Unlock();
 	return dwKey;
 
 }

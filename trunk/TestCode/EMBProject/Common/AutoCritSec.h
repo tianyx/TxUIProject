@@ -56,6 +56,8 @@ public:
 #endif
 };
 
+namespace EMB
+{
 
 class CAutoLock {
 
@@ -78,3 +80,5 @@ public:
 		m_pLock->Unlock();
 	};
 };
+
+}

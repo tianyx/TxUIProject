@@ -6,12 +6,16 @@
 #include "EMBActorHost.h"
 #include "EMBActorHostDlg.h"
 #include "MainDef.h"
+#include "GdiPlusNewHeader.h"
+#include "TxImageLoader.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 
+GdiplusStartupInput gdiplusStartupInput;
+ULONG_PTR gdiplusToken;
 // CEMBActorHostApp
 
 BEGIN_MESSAGE_MAP(CEMBActorHostApp, CWinAppEx)
@@ -40,6 +44,7 @@ BOOL CEMBActorHostApp::InitInstance()
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
 	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
 	//则需要 InitCommonControlsEx()。否则，将无法创建窗口。
+	SetErrorMode(SEM_NOGPFAULTERRORBOX);
 	INITCOMMONCONTROLSEX InitCtrls;
 	InitCtrls.dwSize = sizeof(InitCtrls);
 	// 将它设置为包括所有要在应用程序中使用的
@@ -60,6 +65,10 @@ BOOL CEMBActorHostApp::InitInstance()
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 	MACRO_CREATEOUTPUTCONSOLE
+#ifndef _DEBUG
+		MACRO_SHOWCONSOLEWINDOW(FALSE)
+#endif // _DEBUG
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 	// 加载EMBActor.dll
 	if (!InitGlobalConfig())
@@ -91,5 +100,9 @@ int CEMBActorHostApp::ExitInstance()
 	// TODO: 在此添加专用代码和/或调用基类
 	UnloadActorHost();
 	MACRO_FREEOUTPUTCONSOLE
+
+	CTxImageLoader::Release();
+	GdiplusShutdown(gdiplusToken);
+
 	return CWinAppEx::ExitInstance();
 }

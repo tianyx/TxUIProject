@@ -68,7 +68,6 @@ CEMBServerDlg::CEMBServerDlg(CWnd* pParent /*=NULL*/)
 void CEMBServerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST_Actor, m_actorList);
 	DDX_Control(pDX, IDC_BTN_START, m_btnStart);
 }
 
@@ -76,11 +75,9 @@ BEGIN_MESSAGE_MAP(CEMBServerDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_WM_TIMER()
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_START, &CEMBServerDlg::OnBnClickedBtnStart)
-	ON_BN_CLICKED(IDC_BTNTEST, &CEMBServerDlg::OnBnClickedBtntest)
-	ON_BN_CLICKED(IDC_BUTTON_XML, &CEMBServerDlg::OnBnClickedButtonXml)
+
 	ON_WM_CLOSE()
 	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
@@ -90,9 +87,12 @@ END_MESSAGE_MAP()
 
 BOOL CEMBServerDlg::OnInitDialog()
 {
-	m_btnStart.LoadBitmap(TEXT("btnstart.png"), TXBMP_STRETCH_NONE);
+	m_btnStart.LoadBitmap(TEXT("btnstop.png"), TXBMP_STRETCH_NONE);
+	m_btnStart.AddBitmap(TEXT("btnstart.png"));
 	m_btnStart.SetForceRedrawParentBk(TRUE, this);
 	m_pbmpBack = CTxImageLoader::GetTxImageLoader().LoadBitmap(TEXT("back.bmp"));
+	m_pbmpLogo2 = CTxImageLoader::GetTxImageLoader().LoadBitmap(TEXT("logo2.png"));
+	m_pbmpSublogo = CTxImageLoader::GetTxImageLoader().LoadBitmap(TEXT("sublogosvr.png"));
 	CDialog::OnInitDialog();
 
 	// 将“关于...”菜单项添加到系统菜单中。
@@ -121,10 +121,9 @@ BOOL CEMBServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	InitUI();
 
 	AfxOleInit();       //为调用ADO数据库
-
+	m_dlgtest.Create(IDD_DLG_TEST, this);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -202,133 +201,8 @@ void CEMBServerDlg::OnBnClickedBtnStart()
 	{
 		m_bRunning = RunServer(TRUE);
 	}
+	m_btnStart.SetCurrImgIdx(m_bRunning? 1:0);
 	GetDlgItem(IDC_BTN_START)->SetWindowText(m_bRunning? TEXT("Stop"):TEXT("Start"));
-}
-
-/*
-*Description：手动测试添加一条任务
-*Input Param：
-*Return Param：返回成功或失败
-*History：
-*/
-void CEMBServerDlg::OnBnClickedBtntest()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	CString strfile;
-	UpdateData();
-	GetDlgItemText(IDC_EDIT_TESTXML, strfile);
-
-	if (strfile.IsEmpty())
-	{
-		MessageBox("请选择测试xml文件");
-		return;
-	}
-	
-	CFile file;
-	BOOL bOPen =file.Open(strfile, CFile::modeRead, NULL);
-	CString strTask;
-	if (bOPen)
-	{
-		int nLen = file.GetLength()+1;
-		char* pBuff = new char[nLen];
-		ZeroMemory(pBuff, nLen);
-		file.Read(pBuff, file.GetLength());
-		file.Close();
-		strTask = pBuff;
-		delete[] pBuff;
-		EMB::IPluginTaskCommit* pIcall = dynamic_cast<EMB::IPluginTaskCommit* >(g_GlobalInfo.vPlugins[2].pIface);
-		if (pIcall)
-		{
-			CString strRet;
-			pIcall->SubmitTask(strTask, strRet);
-		}
-	}
-
-
-}
-
-void CEMBServerDlg::InitUI()
-{
-	CString strfile =GetAppPath().c_str();
-	strfile += TEXT("\\testTask.xml");
-
-	SetDlgItemText(IDC_EDIT_TESTXML, strfile);
-	UpdateData(FALSE);
-
-	// 初始化actor列表
-	m_actorList.InsertColumn(0, "Actor标识", LVCFMT_LEFT, 100);
-	m_actorList.InsertColumn(1, "状态", LVCFMT_LEFT, 100);
-	m_actorList.InsertColumn(2, "计算机名", LVCFMT_LEFT, 100);
-
-	// 启动timer
-	this->SetTimer(1001, 3000, NULL); // 间隔3秒
-}
-
-void CEMBServerDlg::OnBnClickedButtonXml()
-{
-	// 选择 XML File
-	CFileDialog xmlFileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("Xml File (*.xml)|*.xml"), (CWnd *)this, 0);
-
-	if (IDOK == xmlFileDlg.DoModal() )
-	{
-		CString xmlFile = xmlFileDlg.GetPathName();
-		SetDlgItemText(IDC_EDIT_TESTXML, xmlFile);
-		UpdateData(FALSE);
-	}
-}
-
-// 刷新Actor列表
-void CEMBServerDlg::RefreshActorList()
-{
-	m_actorList.DeleteAllItems();
-
-	if (!m_bRunning) // 未运行时
-	{
-		return;
-	}
-
-	if (NULL == g_pTaskDispatchMgr)
-	{
-		return;
-	}
-
-	CTxAutoComPtr<IServerUI> ptrServerUI;
-
-	if (S_OK == g_pTaskDispatchMgr->QueryInterface(GuidEMBServer_IUI, (LPVOID&)(*&ptrServerUI)))
-	{
-		vector<CString> vInfor;
-		ptrServerUI->GetActors(vInfor);
-
-		CString strTem;
-
-		for (int i = 0; i < vInfor.size(); ++i)
-		{
-			ST_ACTORSTATE st;
-			st.FromString(vInfor[i]);
-
-			strTem.Format("%d", i);
-			m_actorList.InsertItem(i, strTem);
-
-			// actorid
-			strTem.Format("%d", st.actorId);
-			m_actorList.SetItemText(i, 0, strTem);
-			// 连接状态
-			m_actorList.SetItemText(i, 1, "运行");
-			// 计算机名
-			m_actorList.SetItemText(i, 2, st.strPcName);
-		}
-	}
-	
-}
-
-void CEMBServerDlg::OnTimer( UINT_PTR nIDEvent )
-{
-	if (1001 == nIDEvent)
-	{
-		RefreshActorList();
-	}
-
-	CDialog::OnTimer(nIDEvent);
 }
 
 void CEMBServerDlg::OnClose()
@@ -347,17 +221,57 @@ BOOL CEMBServerDlg::OnEraseBkgnd(CDC* pDC)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (m_pbmpBack)
 	{
-		TRACE(TEXT("\n dlg back redraw"));
+		//TRACE(TEXT("\n dlg back redraw"));
 		CRect rcThis;
 		GetClientRect(rcThis);
 		CRect rcEdge(5,5,5,5);
 		GPDrawStretchImage(pDC->GetSafeHdc(), m_pbmpBack, rcThis, NULL, TXBMP_STRETCH_MID_LRTB, NULL, NULL);
+		CRect rclogo2(0,0, m_pbmpLogo2->GetWidth(), m_pbmpLogo2->GetHeight());
+		rclogo2.MoveToXY(0, (rcThis.Height() - rclogo2.Height())/2);
+		GPDrawStretchImage(pDC->GetSafeHdc(), m_pbmpLogo2, rclogo2, NULL, TXBMP_STRETCH_NONE, NULL, NULL);
+		CRect rcsublogo(0,0,100,40);
+		rcsublogo.MoveToXY(rclogo2.left +rclogo2.Width() - 100, rclogo2.bottom - 25);
+		GPDrawStretchImage(pDC->GetSafeHdc(), m_pbmpSublogo, rcsublogo, NULL, TXBMP_STRETCH_NONE, NULL, NULL);
+		return TRUE;
 	}
-	return TRUE;
+	else
+	{
+		return CDialog::OnEraseBkgnd(pDC);
+	}
 	//return CDialog::OnEraseBkgnd(pDC);
 }
 
 void CEMBServerDlg::GetParentBack( CDC* pDc )
 {
 	OnEraseBkgnd(pDc);
+}
+
+BOOL CEMBServerDlg::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if (pMsg->wParam == VK_ESCAPE ||  pMsg->wParam == VK_F1
+			||pMsg ->wParam == VK_RETURN)
+		{
+			return TRUE;
+		}
+
+		if (pMsg->wParam == VK_F11 && ((GetKeyState(VK_CONTROL) & 0x8000) != 0)
+			&& ((GetKeyState(VK_LSHIFT) & 0x8000) != 0))
+		{
+			static BOOL  bShowDbg = TRUE;
+			bShowDbg = !bShowDbg;
+			//show debug
+			HWND hwndCnol =GetConsoleWindow();
+			if (hwndCnol)
+			{
+				::ShowWindow(hwndCnol, bShowDbg? SW_SHOW:SW_HIDE);
+
+			}
+			m_dlgtest.ShowWindow(bShowDbg? SW_SHOW:SW_HIDE);
+
+		}
+	}
+	return __super::PreTranslateMessage(pMsg);
 }

@@ -32,12 +32,6 @@ BOOL TxLoadPluginVC6(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInt
 BOOL TxUnloadPlugin(HMODULE hModuleIn);
 
 
-//*Description: like WaitForMultipleObjects
-//*Input Param: hWait: wait object,  hQuit: quit object
-//*Return Param: 
-//*History: 
-DWORD TxWaitObjWithQuit(HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut = INFINITE);
-
 
 //*Description: plugin manager utility
 //*Input Param: nType: see ENUM_PLUGINTYPE

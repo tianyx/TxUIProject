@@ -30,7 +30,7 @@ HRESULT CSlaveHeartBeat::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType,
 			OnLiveMsgIn(msg);
 			m_nLiveReplyCount = msg.nMsgId;
 			//CFWriteLog("\n-receive heart = %s live pack reply counting = %d", this->m_strObjName, msg.nMsgId);
-			CAutoLock lock(&m_lockLastInfo);
+			EMB::CAutoLock lock(&m_lockLastInfo);
 			m_LastReceivedInfo = msg;
 		}
 		else

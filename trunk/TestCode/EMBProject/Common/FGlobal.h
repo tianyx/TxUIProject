@@ -69,28 +69,33 @@ GUID TxGenGuid();
 
 int GenRand();
 
+
+//*Description: like WaitForMultipleObjects
+//*Input Param: hWait: wait object,  hQuit: quit object
+//*Return Param: 
+//*History: 
+DWORD TxWaitObjWithQuit(HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut = INFINITE);
+
 #define MUSTBESOK(hr) if(hr != S_OK){ASSERT(FALSE);return hr;}
 #define MUSTNOTNULL(ptr) if(ptr == NULL){ASSERT(FALSE);return E_FAIL;}
 
 //----------
-#ifdef _DEBUG
 
 #define MACRO_CREATEOUTPUTCONSOLE \
+	AllocConsole();\
 	g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);\
-	if (g_hconsoleHandle == NULL)\
-	{\
-		AllocConsole();\
-		g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);\
-	}\
+
 
 #define MACRO_FREEOUTPUTCONSOLE FreeConsole();
 
-#else
+#define MACRO_SHOWCONSOLEWINDOW(bShow) \
+HWND hConsolWnd = GetConsoleWindow();\
+if (hConsolWnd)\
+{\
+	::ShowWindow(hConsolWnd, bShow? SW_SHOW:SW_HIDE);\
+}\
 
-#define MACRO_CREATEOUTPUTCONSOLE
-#define MACRO_FREEOUTPUTCONSOLE
 
-#endif
 
 // ---------------
 

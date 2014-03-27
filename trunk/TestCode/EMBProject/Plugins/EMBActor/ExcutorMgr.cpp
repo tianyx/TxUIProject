@@ -9,35 +9,11 @@
 #include "EMBMessageDef.h"
 
 LRESULT CALLBACK ExcMgrWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL RegisterExcMgrWnd();
-BOOL g_bRegisterExcMgrWnd = RegisterExcMgrWnd();
-static TCHAR g_szSockWndClsName[] = TEXT ("ExcMgrMsgWnd");
 CExcutorMgr* g_pExcMgr = NULL;
 
 BOOL RegisterExcMgrWnd()
 {
-	HINSTANCE hInstance = GetSelfModuleHandle();
-
-	WNDCLASSEX   wndclassex = {0};
-	wndclassex.cbSize        = sizeof(WNDCLASSEX);
-	wndclassex.style         = CS_HREDRAW | CS_VREDRAW;
-	wndclassex.lpfnWndProc   = ExcMgrWndProc;
-	wndclassex.cbClsExtra    = 0;
-	wndclassex.cbWndExtra    = 0;
-	wndclassex.hInstance     = hInstance;
-	wndclassex.hIcon         = LoadIcon (NULL, IDI_APPLICATION);
-	wndclassex.hCursor       = LoadCursor (NULL, IDC_ARROW);
-	wndclassex.hbrBackground = (HBRUSH) GetStockObject (WHITE_BRUSH);
-	wndclassex.lpszMenuName  = NULL;
-	wndclassex.lpszClassName = g_szSockWndClsName;
-	wndclassex.hIconSm       = wndclassex.hIcon;
-
-	if ( 0== RegisterClassEx (&wndclassex))
-	{
-		HRESULT hr = GetLastError();
-		ASSERT(hr == 0x00000582);
-
-	}
+	
 
 	return TRUE;
 }
@@ -47,10 +23,31 @@ DWORD __stdcall ExcMgrMsgLoopThread( void* lparam )
 {
 	CExcutorMgr* pMgr = (CExcutorMgr*)lparam;
 	HINSTANCE hInstance = GetSelfModuleHandle();
+	WNDCLASSEX   wndclassex = {0};
+	wndclassex.cbSize        = sizeof(WNDCLASSEX);
+	wndclassex.style         = CS_HREDRAW | CS_VREDRAW;
+	wndclassex.lpfnWndProc   = ExcMgrWndProc;
+	wndclassex.cbClsExtra    = 0;
+	wndclassex.cbWndExtra    = 0;
+	wndclassex.hInstance     = hInstance;
+	wndclassex.hIcon         = NULL;
+	wndclassex.hCursor       = NULL;
+	wndclassex.hbrBackground = NULL;
+	wndclassex.lpszMenuName  = NULL;
+	CString strClsName = Guid2String(TxGenGuid());
+	wndclassex.lpszClassName = strClsName;
+	wndclassex.hIconSm       = wndclassex.hIcon;
+
+	if ( 0== RegisterClassEx (&wndclassex))
+	{
+		HRESULT hr = GetLastError();
+		ASSERT(FALSE);
+
+	}
 	HWND& hwnd = pMgr->m_hMessageWnd;
 	ASSERT(hwnd == NULL);
 	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
-		g_szSockWndClsName, 
+		wndclassex.lpszClassName, 
 		TEXT (""),
 		WS_OVERLAPPEDWINDOW,
 		-10, 
@@ -201,7 +198,7 @@ HRESULT CExcutorMgr::OnExcutorMessage( ST_EMBWNDMSG& msgIn)
 		}
 
 		//remove from map
-		CAutoLock lock(&m_csExcutors);
+		EMB::CAutoLock lock(&m_csExcutors);
 		MAPEXCUTORS::iterator itf = m_mapExcutors.find(excId);
 		if (itf != m_mapExcutors.end())
 		{
@@ -377,7 +374,7 @@ EXCUTORID CExcutorMgr::GetFirstNotUsedExcutorId()
 
 EXCUTORID CExcutorMgr::CreateNewExcutor()
 {
-	CAutoLock lock(&m_csExcutors);
+	EMB::CAutoLock lock(&m_csExcutors);
 
 	EXCUTORID excId = GetFirstNotUsedExcutorId();
 	//
@@ -416,7 +413,7 @@ HRESULT CExcutorMgr::CheckExcutor()
 {
 	vector<EXCUTORID> vToRemove;
 	{//for release the lock;
-		CAutoLock lock(&m_csExcutors);
+		EMB::CAutoLock lock(&m_csExcutors);
 		MAPEXCUTORS::iterator itb = m_mapExcutors.begin();
 		MAPEXCUTORS::iterator ite = m_mapExcutors.end();
 		for (; itb != ite; ++itb)
@@ -472,7 +469,7 @@ HRESULT CExcutorMgr::CheckExcutor()
 			if (m_pIExcCallBack)
 			{
 				m_pIExcCallBack->OnExcutorExit(vToRemove[i]);
-				CAutoLock lock(&m_csExcutors);
+				EMB::CAutoLock lock(&m_csExcutors);
 				CFWriteLog(0, TEXT("executor%d lost!"), vToRemove[i]);
 				m_mapExcutors.erase(vToRemove[i]);
 			}
@@ -629,7 +626,7 @@ HRESULT CExcutorMgr::SendToExcutor( const EXCUTORID excutorId,CString& szInfo )
 	int nUsed  = 0;
 	PackMBCMsg(msg, buff, buff.GetSize(), nUsed);
 	ASSERT(nUsed > 0);
-	CAutoLock lock(&m_csExcutors);
+	EMB::CAutoLock lock(&m_csExcutors);
 	MAPEXCUTORS::iterator itf = m_mapExcutors.find(excutorId);
 	if (itf != m_mapExcutors.end())
 	{
@@ -664,7 +661,7 @@ HRESULT CExcutorMgr::WndMsgPoolCheckLoop()
 			VECWNDMSG vMsgs;
 			//check pool
 			{
-				CAutoLock lock(&m_csMsgPool);
+				EMB::CAutoLock lock(&m_csMsgPool);
 				vMsgs = m_vMsgPool;
 				m_vMsgPool.clear();
 				ResetEvent(m_hEventPoolMsgArrival);
@@ -721,7 +718,7 @@ HRESULT CExcutorMgr::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 			msg.nBuffLen = nLen;
 			memcpy(msg.pStr, pmemBuff, nLen);
 			UnmapViewOfFile(pmemBuff);
-			CAutoLock lock(&m_csMsgPool);
+			EMB::CAutoLock lock(&m_csMsgPool);
 			m_vMsgPool.push_back(msg);
 			SetEvent(m_hEventPoolMsgArrival);
 		}
@@ -742,7 +739,7 @@ HRESULT CExcutorMgr::SaveMessageToPool( HWND hwnd, UINT message, WPARAM wparam, 
 		msg.message =message;
 		msg.hwnd = hwnd;
 		msg.pStr= NULL;
-		CAutoLock lock(&m_csMsgPool);
+		EMB::CAutoLock lock(&m_csMsgPool);
 		m_vMsgPool.push_back(msg);
 		SetEvent(m_hEventPoolMsgArrival);
 	}
@@ -776,7 +773,7 @@ HRESULT CExcutorMgr::OnExcutorReg( HWND hwnd, UINT message, WPARAM wparam, LPARA
 	else
 	{
 		CFWriteLog(0, TEXT("excutor %d registed"), excID);
-		CAutoLock lock(&m_csExcutors);
+		EMB::CAutoLock lock(&m_csExcutors);
 		MAPEXCUTORS::iterator itf = m_mapExcutors.find(excID);
 		if (itf != m_mapExcutors.end())
 		{
@@ -793,7 +790,7 @@ HRESULT CExcutorMgr::OnExcutorReg( HWND hwnd, UINT message, WPARAM wparam, LPARA
 
 void CExcutorMgr::ClearMsgPool()
 {
-	CAutoLock lock(&m_csMsgPool);
+	EMB::CAutoLock lock(&m_csMsgPool);
 	for (size_t i = 0 ;i < m_vMsgPool.size(); ++i)
 	{
 		char* pBuff = m_vMsgPool[i].pStr;
@@ -810,7 +807,7 @@ HRESULT CExcutorMgr::GetExecutors( vector<ST_EXCUTORINFO>& vExecutor )
 	// clear up
 	vExecutor.clear();
 
-	CAutoLock lock(&m_csExcutors);
+	EMB::CAutoLock lock(&m_csExcutors);
 
 	// ¸´ÖÆµ½vExecutor
 	for(MAPEXCUTORS::iterator itor = m_mapExcutors.begin(); itor != m_mapExcutors.end(); ++itor)
@@ -823,7 +820,7 @@ HRESULT CExcutorMgr::GetExecutors( vector<ST_EXCUTORINFO>& vExecutor )
 
 HRESULT CExcutorMgr::SetExecutorState( EXCUTORID id, EXE_STATE eState )
 {
-	CAutoLock lock(&m_csExcutors);
+	EMB::CAutoLock lock(&m_csExcutors);
 
 	MAPEXCUTORS::iterator itor = m_mapExcutors.find(id);
 
@@ -837,7 +834,7 @@ HRESULT CExcutorMgr::SetExecutorState( EXCUTORID id, EXE_STATE eState )
 
 bool CExcutorMgr::QueryExecutor( const EXCUTORID& id, ST_EXCUTORINFO& infor )
 {
-	CAutoLock lock(&m_csExcutors);
+	EMB::CAutoLock lock(&m_csExcutors);
 
 	MAPEXCUTORS::iterator itor = m_mapExcutors.find(id);
 	bool ok = false;
@@ -853,6 +850,6 @@ bool CExcutorMgr::QueryExecutor( const EXCUTORID& id, ST_EXCUTORINFO& infor )
 
 int CExcutorMgr::GetExcResUsage()
 {
-	CAutoLock lock(&m_csExcutors);
+	EMB::CAutoLock lock(&m_csExcutors);
 	return ((int)m_mapExcutors.size()*100/(m_nMaxExcutorId - m_nMinExcutorId+1));
 }

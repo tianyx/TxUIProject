@@ -359,3 +359,47 @@ double CTxStrConvert::GetAsDouble(double nDefault /* = 0.0 */)
 	double nSuc = sscanf_s(m_szParam, TEXT("%lf"), &nRet);
 	return nSuc> 0.0? nRet:nDefault;
 }
+
+
+wstring UTF82W( const string& szIn )
+{
+	wstring wRet;
+	if(szIn.length() <= 0)
+	{
+		return wRet;
+	}
+
+	LPCSTR pszSrc = szIn.c_str();
+	int nSize = MultiByteToWideChar(CP_UTF8, 0, pszSrc, -1, 0, 0);
+
+	WCHAR *pwszDst = new WCHAR[nSize+1];
+	ASSERT(pwszDst != NULL);
+	//ZeroMemory(pwszDst, 2*(nSize+1));
+	MultiByteToWideChar(CP_UTF8, 0,(LPCSTR)pszSrc, -1, pwszDst, nSize);
+	pwszDst[nSize] = L'\0';
+	wRet = pwszDst;
+	delete pwszDst;
+	return wRet;
+}
+
+std::string W2UTF8( const wstring& wszIn)
+{
+	string szRet;
+	if (wszIn.length() <= 0) 
+	{
+		return szRet;
+	}
+	LPCWSTR pwszSrc = wszIn.c_str();
+	int nWLen = wszIn.length();
+	int nLen = WideCharToMultiByte(CP_UTF8, 0, pwszSrc, -1, NULL, 0, NULL, NULL);
+
+	char* pszDst = new char[nLen+1];
+	ASSERT(NULL != pszDst);
+	WideCharToMultiByte(CP_UTF8, 0, pwszSrc, -1, pszDst, nLen, NULL, NULL);
+	pszDst[nLen] = '\0';
+	szRet =pszDst;
+	delete [] pszDst;
+	return szRet;
+}
+
+

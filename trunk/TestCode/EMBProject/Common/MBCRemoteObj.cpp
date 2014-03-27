@@ -36,7 +36,7 @@ HRESULT CMBCRemoteObj::Run()
 HRESULT CMBCRemoteObj::Stop()
 {
 	{//for release lock
-		CAutoLock lock(&m_csSockIn);
+		EMB::CAutoLock lock(&m_csSockIn);
 		MAPSOCKINS::iterator itb = m_mapSockIns.begin();
 		MAPSOCKINS::iterator ite = m_mapSockIns.end();
 		for (; itb != ite; ++itb)
@@ -127,7 +127,7 @@ void CMBCRemoteObj::RemoveSock( CMBCSocket* pSock )
 {
 	CMBCSocket* pSockFound = NULL;
 	{
-		CAutoLock lock(&m_csSockIn);
+		EMB::CAutoLock lock(&m_csSockIn);
 		MAPSOCKINS::iterator itf = m_mapSockIns.find(pSock);
 		if (itf != m_mapSockIns.end())
 		{
@@ -147,7 +147,7 @@ void CMBCRemoteObj::RemoveSock( CMBCSocket* pSock )
 void CMBCRemoteObj::AddSock( CMBCSocket* pSock )
 {
 	{//for lock
-		CAutoLock lock(&m_csSockIn);
+		EMB::CAutoLock lock(&m_csSockIn);
 		m_mapSockIns[pSock] = pSock;
 	}
 

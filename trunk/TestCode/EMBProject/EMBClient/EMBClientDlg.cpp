@@ -218,12 +218,12 @@ HRESULT CEMBClientDlg::OnConnStateChange( int nMaster, int nStateIn )
 {
 	if (nMaster == embSvrType_master)
 	{
-		CAutoLock lcok(&m_csLive);
+		EMB::CAutoLock lcok(&m_csLive);
 		m_svrInfoMaster.nConnState = nStateIn;
 	}
 	else if (nMaster == embSvrType_slave)
 	{
-		CAutoLock lock(&m_csLive);
+		EMB::CAutoLock lock(&m_csLive);
 		m_svrInfoSlave.nConnState = nStateIn;
 	}
 	//refresh state ui

@@ -73,24 +73,26 @@ public:
 	DWORD AddNewLogFile(DWORD dwLogKey, CString strFile, BOOL bAddDateToName = TRUE);
 
 	//write log, recommend to use CFWriteLog macro
-	DWORD WriteLog(DWORD dwLogKey, CString strDataIn); 
+	virtual DWORD WriteLog(DWORD dwLogKey, CString strDataIn); 
 
 	void Start();
 	void Stop();
 
-private:
+protected:
 
 	CAutoCritSec m_qlock;
 	CAutoCritSec m_fLock;
 
-	MAPFILELOGS m_mapFileLogs;
 	VECLOGDATA m_vLogData;
 
 	HANDLE m_hLoopThread;
 	HANDLE m_hEventDataInQueue;
 	HANDLE m_hQuitEvent;
 	
-	void CheckLog();
+private:
+	MAPFILELOGS m_mapFileLogs;
+
+	virtual void CheckLog();
 
 };
 

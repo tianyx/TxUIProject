@@ -215,7 +215,7 @@ BOOL CTxPerformMon::PerfRunLoop()
 		DWORD crType = 0;
 		PDH_FMT_COUNTERVALUE   fmtValue;
 
-		CAutoLock lock(&m_csRes);
+		EMB::CAutoLock lock(&m_csRes);
 		//processor
 		status = PdhGetFormattedCounterValue(hctProcess, PDH_FMT_LONG, &crType, &fmtValue);
 		if (status == ERROR_SUCCESS)
@@ -337,7 +337,7 @@ BOOL CTxPerformMon::PerfRunLoop()
 
 BOOL CTxPerformMon::GetUsage( ENUMRESMONTYPE typeIn )
 {
-	CAutoLock lock(&m_csRes);
+	EMB::CAutoLock lock(&m_csRes);
 	if (typeIn == restype_Processor)
 	{
 		return m_nProcessorUsage;

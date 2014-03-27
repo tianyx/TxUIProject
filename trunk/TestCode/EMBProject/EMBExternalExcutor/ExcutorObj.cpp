@@ -10,13 +10,14 @@
 #include "Util.h"
 
 LRESULT CALLBACK ExcObjectWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-BOOL		 RegisterExcObjectWnd();
-BOOL		 g_bRegisterExcMgrWnd = RegisterExcObjectWnd();
-static TCHAR g_szSockWndClsName[] = TEXT ("ExcObjectMsgWnd");
 CExcutorObj* g_pExcObject = NULL;
 
-BOOL RegisterExcObjectWnd()
+
+
+//CreateThreadWindow
+DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 {
+	CExcutorObj* pExcObj = (CExcutorObj*)lparam;
 	HINSTANCE hInstance = GetSelfModuleHandle();
 
 	WNDCLASSEX   wndclassex = {0};
@@ -26,31 +27,24 @@ BOOL RegisterExcObjectWnd()
 	wndclassex.cbClsExtra    = 0;
 	wndclassex.cbWndExtra    = 0;
 	wndclassex.hInstance     = hInstance;
-	wndclassex.hIcon         = LoadIcon (NULL, IDI_APPLICATION);
-	wndclassex.hCursor       = LoadCursor (NULL, IDC_ARROW);
-	wndclassex.hbrBackground = (HBRUSH) GetStockObject (WHITE_BRUSH);
+	wndclassex.hIcon         = NULL;
+	wndclassex.hCursor       = NULL;
+	wndclassex.hbrBackground = NULL;
 	wndclassex.lpszMenuName  = NULL;
-	wndclassex.lpszClassName = g_szSockWndClsName;
+	CString strClsName = Guid2String(TxGenGuid());
+	wndclassex.lpszClassName = strClsName;
 	wndclassex.hIconSm       = wndclassex.hIcon;
 
 	if ( 0 == RegisterClassEx (&wndclassex))
 	{
 		HRESULT hr = GetLastError();
-		ASSERT(hr == 0x00000582);
+		ASSERT(FALSE);
 	}
 
-	return TRUE;
-}
-
-//CreateThreadWindow
-DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
-{
-	CExcutorObj* pExcObj = (CExcutorObj*)lparam;
-	HINSTANCE hInstance = GetSelfModuleHandle();
 	HWND& hwnd = pExcObj->m_hwndExcMsg;
 	ASSERT(hwnd == NULL);
 	hwnd = CreateWindowEx (WS_EX_OVERLAPPEDWINDOW, 
-		g_szSockWndClsName, 
+		wndclassex.lpszClassName, 
 		TEXT (""),
 		WS_OVERLAPPEDWINDOW,
 		-10, 
@@ -513,9 +507,15 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 			{
 				report.nStep = m_runState.nCurrStep;
 				report.nPercent = m_runState.nPercent;
+				report.nExcType = m_runState.nExcType;
 			}
 		}
 		report.ToString(strRet);
+	}
+	else if (embxmltype_taskCancel == mainInfo.nType) // 取消任务
+	{
+		m_runState.nState = embtaskstate_cancle;
+		CFWriteLog(0, TEXT("Excutor receive cancle task %s"), strInfo);
 	}
 
 	return S_OK;
@@ -560,6 +560,11 @@ HRESULT CExcutorObj::TaskCheckLoop()
 							OutputDebugString("---next step");
 							//start next step
 							m_runState.nCurrStep++;  // 当前处理步骤
+							if (m_runState.nCurrStep>= 0 && m_runState.nCurrStep < m_vSubTasks.size())
+							{
+								m_runState.nExcType = m_vSubTasks[m_runState.nCurrStep].nType;
+							}
+							
 							m_runState.nPercent = 0;
 							//change dll, and send sub task info
 							HRESULT hr = LaunchTask();
@@ -578,6 +583,13 @@ HRESULT CExcutorObj::TaskCheckLoop()
 						m_strTask.Empty();
 						m_vSubTasks.clear();
 						m_runState.nState = embtaskstate_none;
+						continue;
+					}
+					else if (m_runState.nState == embtaskstate_cancle)
+					{
+						m_pTaskDllInterface->CancelTask();
+						m_runState.nState = embtaskstate_error;
+						
 						continue;
 					}
 					
@@ -781,6 +793,7 @@ HRESULT CExcutorObj::InitTask()
 		m_runState.excId = m_executorReg.guid;
 		m_runState.nCurrStep = basicInfo.nStartStep;
 		m_runState.nPercent = 0;
+		m_runState.nExcType = m_vSubTasks[m_runState.nCurrStep].nType;
 
 		// 启动媒体处理分步任务
 		hr = LaunchTask();
@@ -796,7 +809,7 @@ HRESULT CExcutorObj::InitTask()
 		report.nSubErrorCode = hr;	// 具体错误信息
 		CString strRet;
 		report.ToString(strRet);
-		CFWriteLog(0, TEXT("task %s init failed, report to actor "), report.strGuid);
+		CFWriteLog(0, TEXT("task %s init failed, code = %x,report to actor "), report.strGuid, hr);
 		SendToActor(strRet);
 	}
 	return hr;	
@@ -854,6 +867,7 @@ void CExcutorObj::OnTaskProgress( int nPercent, HRESULT codeIn )
 	report.nState = m_runState.nState;
 	report.nStep = m_runState.nCurrStep;
 	report.nPercent = m_runState.nPercent;
+	report.nExcType = m_runState.nExcType;
 	CString strRet;
 	report.ToString(strRet);
 	SendToActor(strRet); // 向Actor.exe 反馈任务状态信息
@@ -931,6 +945,27 @@ HRESULT CExcutorObj::LaunchTask()
 		{
 			hr = EMBERR_TASKSUBMIT; // 提交失败
 			//ASSERT(FALSE);
+		}
+		else
+		{
+			//time to check if need change task or other action
+			CString strRetInfo = szWorkRet;
+			if (!strRetInfo.IsEmpty())
+			{
+				ST_WORKERRET workRet;
+				CString strTmp = szWorkRet;
+				workRet.FromString(strTmp);
+				ST_EXCCALLBACKINFO callInfo;
+				callInfo.nActorId = m_executorReg.actorId;
+				callInfo.nExcId = m_executorReg.guid;
+				callInfo.nRetType = workRet.nRetType;
+				callInfo.strExtInfo = workRet.strRetInfo;
+				callInfo.nStep = m_runState.nCurrStep;
+				CString strCallRet;
+				callInfo.ToString(strCallRet);
+				SendToActor(strCallRet);
+			}
+			
 		}
 		CFWriteLog(0, TEXT("end launch workdll"));
 	}

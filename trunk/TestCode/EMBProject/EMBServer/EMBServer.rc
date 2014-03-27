@@ -88,17 +88,25 @@ BEGIN
     DEFPUSHBUTTON   "确定",IDOK,113,41,50,14,WS_GROUP
 END
 
-IDD_EMBSERVER_DIALOG DIALOGEX 0, 0, 418, 215
+IDD_EMBSERVER_DIALOG DIALOGEX 0, 0, 367, 184
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_APPWINDOW
 CAPTION "EMBServer"
 FONT 9, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    PUSHBUTTON      "Start",IDC_BTN_START,357,95,54,32
-    PUSHBUTTON      "Test",IDC_BTNTEST,247,163,50,14,NOT WS_VISIBLE
-    EDITTEXT        IDC_EDIT_TESTXML,60,163,183,14,ES_AUTOHSCROLL | NOT WS_VISIBLE
-    PUSHBUTTON      "Xml File...",IDC_BUTTON_XML,7,163,50,14,NOT WS_VISIBLE
-    CONTROL         "",IDC_LIST_Actor,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | NOT WS_VISIBLE | WS_BORDER | WS_TABSTOP,2,3,255,154
+    PUSHBUTTON      "Start",IDC_BTN_START,306,70,54,32
+END
+
+IDD_DLG_TEST DIALOGEX 0, 0, 355, 217
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定",IDOK,298,196,50,14
+    PUSHBUTTON      "Test",IDC_BTNTEST,282,167,59,15
+    EDITTEXT        IDC_EDIT_TESTXML,70,168,205,15,ES_AUTOHSCROLL
+    PUSHBUTTON      "Xml File...",IDC_BUTTON_XML,7,168,59,15
+    CONTROL         "",IDC_LIST_Actor,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,7,341,159
 END
 
 
@@ -124,13 +132,13 @@ BEGIN
     BEGIN
         BLOCK "080403a8"
         BEGIN
-            VALUE "CompanyName", "TODO: <公司名>"
-            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "CompanyName", "北京正奇联讯科技有限公司"
+            VALUE "FileDescription", "mediacenter"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "EMBServer.exe"
-            VALUE "LegalCopyright", "TODO: (C) <公司名>。保留所有权利。"
+            VALUE "LegalCopyright", "Copyright (C) 2012-2014 北京正奇联讯科技有限公司, 保留所有权利。"
             VALUE "OriginalFilename", "EMBServer.exe"
-            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "ProductName", "mediacenter"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
@@ -160,9 +168,17 @@ BEGIN
     IDD_EMBSERVER_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 411
+        RIGHTMARGIN, 360
         TOPMARGIN, 7
-        BOTTOMMARGIN, 208
+        BOTTOMMARGIN, 177
+    END
+
+    IDD_DLG_TEST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 348
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 210
     END
 END
 #endif    // APSTUDIO_INVOKED

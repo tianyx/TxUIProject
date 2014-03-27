@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "AutoCritSec.h"
 
+using namespace EMB;
 
 #define DbgLog(_x_) 0
 #ifdef _DEBUG
