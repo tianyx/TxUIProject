@@ -18,6 +18,13 @@ EMB::IPluginBaseInterface* g_pIPluginMgr = NULL;
 
 ITxUnkown* g_pTaskDispatchMgr = NULL;
 
+
+int pluginSerialID_TaskRiser	= 0;
+int pluginSerialID_TaskStorage	= 1;
+int pluginSerialID_TaskDispatch	= 2;
+int pluginSerialID_UIServer		= 3;
+int pluginSerialID_InfoPublish	= 4;
+
 /*
 *Description：初始化配置文件
 *Input Param：
@@ -159,6 +166,10 @@ BOOL InitServer()
 	txParam.GetSubNodeString(strKeyPath, strTaskDispatchConfig);
 	ASSERT(!strTaskDispatchConfig.IsEmpty());
 
+	ST_TASKDISPATCHCONFIG dispCfg;
+	dispCfg.FromString(strTaskDispatchConfig);
+	g_GlobalInfo.strTitle.Format(TEXT("Svr[%d],Master[%d]"), dispCfg.nSvrID, dispCfg.nMaster);
+
 	strKeyPath = EPATH_MAIN;
 	strKeyPath += TEXT("\\");
 	strKeyPath +=EK_UISVRCONFIG;
@@ -206,15 +217,27 @@ BOOL InitServer()
 
 	if (LoadPluginByPluginMgr(PluginType_UIServer, SubType_None, g_pIPluginMgr, tmpPlugin))
 	{
-		CFWriteLog(LOGKEY_EMBSERVER, TEXT("ui server plugin founded."));
+		CFWriteLog(LOGKEY_EMBSERVER, TEXT("ui server plugin loaded."));
 		tmpPlugin.strParam = strUISvrConfig;
 		g_GlobalInfo.vPlugins.push_back(tmpPlugin);
+		pluginSerialID_UIServer = g_GlobalInfo.vPlugins.size() -1;
 	}
-
-	if (g_GlobalInfo.vPlugins.size() < 4)
+	else
 	{
 		ASSERT(FALSE);
-		//no uiserver, but not quit
+	}
+
+	if (LoadPluginByPluginMgr(PluginType_InfoPublish, SubType_None, g_pIPluginMgr, tmpPlugin))
+	{
+		CFWriteLog(LOGKEY_EMBSERVER, TEXT("publish plugin loaded."));
+		tmpPlugin.strParam = strUISvrConfig;
+		g_GlobalInfo.vPlugins.push_back(tmpPlugin);
+		pluginSerialID_InfoPublish = g_GlobalInfo.vPlugins.size() -1;
+
+	}
+	else
+	{
+		ASSERT(FALSE);
 	}
 	//set param;
 	for (size_t i = 0; i < g_GlobalInfo.vPlugins.size(); ++i)
@@ -232,7 +255,7 @@ BOOL InitServer()
 		}
 	}
 
-	if (g_GlobalInfo.vPlugins.size() >3)
+	if (g_GlobalInfo.vPlugins.size() > pluginSerialID_UIServer)
 	{
 		//connect uiserver -->dispatch
 		HRESULT hr = ConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_UIServer].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskDispatch].pIface);
@@ -249,6 +272,16 @@ BOOL InitServer()
 		}
 	}
 	
+	if (g_GlobalInfo.vPlugins.size() > pluginSerialID_InfoPublish)
+	{
+		//connect uiserver-->storage 
+		HRESULT hr = ConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_InfoPublish].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskStorage].pIface);
+		if (FAILED(hr))
+		{
+			ASSERT(FALSE);
+			return FALSE;
+		}
+	}
 
 	return TRUE;
 }
@@ -291,6 +324,14 @@ BOOL UnInitServer()
 		{
 			return FALSE;
 		}
+
+		hr = DisConnectPlugins(g_GlobalInfo.vPlugins[pluginSerialID_InfoPublish].pIface, g_GlobalInfo.vPlugins[pluginSerialID_TaskStorage].pIface);
+		if (FAILED(hr))
+		{
+			return FALSE;
+		}
+
+
 	}
 	
 

@@ -290,7 +290,7 @@ CUIClientConnector* CEMBClientDlg::GetActiveConn()
 HRESULT CEMBClientDlg::SendToUISvr( CString& strMsg, BOOL bSendAll /*= FALSE*/ )
 {
 	CFWriteLog(strMsg);
-	HRESULT hr = S_FALSE;
+	HRESULT hr = E_FAIL;
 	if (bSendAll)
 	{
 		HRESULT hr1 =m_connMaster.SendtoUISvr(strMsg);

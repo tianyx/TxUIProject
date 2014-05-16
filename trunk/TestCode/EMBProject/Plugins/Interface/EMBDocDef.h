@@ -25,7 +25,7 @@
 #define EDOC_TASKLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><taskList count =\"%d\" >%s</taskList></edoc_main>")
 #define EDOC_ACTORLISTFMT TEXT("<edoc_main ver=\"%d\" type=\"%d\" guid=\"%s\"><actorList count =\"%d\" >%s</actorList></edoc_main>")
 #define EDOC_MERGETODBFMT TEXT("<merge2db dbtype=\"%d\" conn =\"%s\" path =\"%s\" taskid =\"%s\"></merge2db>")
-#define EDOC_EXCCALLBACKFMT TEXT("<edoc_main ver=\"1\" type=\"%d\"></edoc_main>")
+#define EDOC_EXCCALLBACKFMT TEXT("<edoc_main ver=\"1\" type=\"%d\" guid=\"%s\"></edoc_main>")
 
 //ÏûÏ¢Í·×Ö·û´®
 #define EK_MAIN TEXT("edoc_main")
@@ -44,7 +44,8 @@
 #define EV_TBSTARTSTEP TEXT("startStep")
 #define EV_TBTASKFROM TEXT("taskFrom")
 #define EV_TBTASKSPLIT TEXT("taskSplit")
-#define EV_TBTASKID TEXT("taskID")
+#define EV_TBTASKID TEXT("guidBase")
+#define EV_TBTASKSEQUENCE TEXT("taskSequence")
 
 //
 #define EK_RET TEXT("ret")

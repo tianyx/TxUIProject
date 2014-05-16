@@ -34,6 +34,7 @@ DWORD __stdcall CreateSockWndThread( void* lparam )
 	{
 		HRESULT hr = GetLastError();
 		ASSERT(FALSE);
+		return 0;
 	}
 
 	HWND& hwnd = pSock->m_hSockWnd;
@@ -69,6 +70,12 @@ DWORD __stdcall CreateSockWndThread( void* lparam )
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	if(IsWindow(hwnd))
+	{
+		DestroyWindow(hwnd);
+	}
+	UnregisterClass(strClsName, hInstance);
 
 	delete pSock;
 	pSock = NULL;

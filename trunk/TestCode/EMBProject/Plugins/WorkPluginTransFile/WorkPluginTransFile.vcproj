@@ -5,10 +5,9 @@
 	Name="WorkPluginTransFile"
 	ProjectGUID="{E9C2AC73-3C33-4E14-A991-3A1ED90DC9D4}"
 	RootNamespace="WorkPluginTransFile"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
+	SccProjectName="Perforce Project"
+	SccLocalPath="..\.."
+	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>

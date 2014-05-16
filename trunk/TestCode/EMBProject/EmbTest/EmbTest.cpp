@@ -6,6 +6,10 @@
 #include "stdafx.h"
 #include "EmbTest.h"
 #include "EmbTestDlg.h"
+#include "TxLogManager.h"
+#include "FGlobal.h"
+#include "DlgTestTask.h"
+#include "MainDef.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -48,7 +52,7 @@ BOOL CEmbTestApp::InitInstance()
 	InitCommonControlsEx(&InitCtrls);
 
 	CWinAppEx::InitInstance();
-
+	MACRO_CREATEOUTPUTCONSOLE
 	AfxEnableControlContainer();
 
 	// 标准初始化
@@ -59,8 +63,12 @@ BOOL CEmbTestApp::InitInstance()
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+	AllocConsole();
+	g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetTxLogMgr()->AddNewLogFile(1, TEXT("tesetlog"));
 
-	CEmbTestDlg dlg;
+	InitGlobalConfig();
+	CDlgTestTask dlg;
 	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
@@ -74,7 +82,16 @@ BOOL CEmbTestApp::InitInstance()
 		//  “取消”来关闭对话框的代码
 	}
 
+
+
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
 	return FALSE;
+}
+
+int CEmbTestApp::ExitInstance()
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	ReleaseTxLogMgr();
+	return CWinAppEx::ExitInstance();
 }

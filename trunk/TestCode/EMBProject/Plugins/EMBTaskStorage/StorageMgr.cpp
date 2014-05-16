@@ -106,6 +106,13 @@ HRESULT CStorageMgr::QueryInterface( const GUID& guidIn, LPVOID& pInterfaceOut )
 		return S_OK;
 
 	}
+	else if (guidIn == GuidEMBPublishRegister)
+	{
+		pInterfaceOut = dynamic_cast<IEMBInfoPublishRegisterInterface*>(this);
+		AddRef();
+		return S_OK;
+
+	}
 	else
 	{
 		return __super::QueryInterface(guidIn, pInterfaceOut);
@@ -130,7 +137,7 @@ HRESULT CStorageMgr::Connect( ITxUnkown* pInterfaceIn )
 	}
 	else
 	{
-		return S_FALSE;
+		return E_FAIL;
 	}
 
 }
@@ -209,6 +216,32 @@ HRESULT EMB::CStorageMgr::GetDispatchedTaskFromStorage( const DISPATCHID nDispat
 	if (m_pIStorage)
 	{
 		return m_pIStorage->GetDispatchedTaskFromStorage(nDispatchID, vTasks);
+	}
+	return E_NOTIMPL;
+}
+
+HRESULT EMB::CStorageMgr::RegisterPublisher( IEMBPublishCallbackInterface* pPublisher, const int nPubType )
+{
+	if (m_pIStorage)
+	{
+		IEMBInfoPublishRegisterInterface* pConn = dynamic_cast<IEMBInfoPublishRegisterInterface*>(m_pIStorage);
+		if (pConn != NULL)
+		{
+			return pConn->RegisterPublisher(pPublisher, nPubType);
+		}
+	}
+	return E_NOTIMPL;
+}
+
+HRESULT EMB::CStorageMgr::UnRegisterPublisher( IEMBPublishCallbackInterface* pPublisher, const int nPubType )
+{
+	if (m_pIStorage)
+	{		
+		IEMBInfoPublishRegisterInterface* pConn = dynamic_cast<IEMBInfoPublishRegisterInterface*>(m_pIStorage);
+		if (pConn != NULL)
+		{
+			return pConn->UnRegisterPublisher(pPublisher, nPubType);
+		}
 	}
 	return E_NOTIMPL;
 }

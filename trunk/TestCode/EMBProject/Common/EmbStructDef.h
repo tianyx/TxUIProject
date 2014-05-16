@@ -117,6 +117,9 @@ struct ST_ACTORCONFIG
 	CString strExcPath;			//executor path to call excutor.exe, if not full path, will check executor at default folder
 	int nMaxDiskIO;			//max disk io KB
 	int nMaxNetIO;
+
+	int nActorType;		//actortype_union = default, actortype_single= do non-split task only
+
 	ST_ACTORCONFIG()
 	{
 		actorId = -1;
@@ -181,14 +184,15 @@ typedef vector<CString> VECSUBTASKS;
 struct ST_TASKBASIC
 {
 	CString strGuid;		//task guid
-	CString strTaskID;      //task ID
+	CString strGuidBase;      //task ID base, such merge guid..
 	int nPriority;			//task priority
 	time_t tmSubmit;		//time of task submited
 	int nStartStep;			//first step to process
 	ACTORID nFixActor;		//specify a actor to executor
 	CString strTaskFrom;    //task From which System
-	int nTaskSplit;         //task can be split
+	int nTaskSplitFlag;         //task can be split
 	VECSUBTASKS vSubTask;	//sub task name list
+	CString strTaskSequence;
 	ST_TASKBASIC()
 	{
 		nStartStep = 0;
@@ -219,6 +223,7 @@ struct ST_TASKRUNSTATE
 	INT64 tmExcute;		//time of executing
 	INT64 tmLastReport;	//time of last reporting by executor
 	INT64 tmLastCheck;	//time of last checking
+	int nSplited;		//is task has been split in runtime
 	ST_TASKRUNSTATE()
 	{
 		guid = GUID_NULL;
@@ -229,6 +234,7 @@ struct ST_TASKRUNSTATE
 		nCurrStep = -1;
 		nPercent = 0;
 		nRetry = 0;
+		nSplited = 0;
 
 		tmCommit = 0;
 		tmExcute = 0;
@@ -371,7 +377,7 @@ struct ST_TASKDISPATCHCONFIG
 	//////////////////////////////////////////////////////////////////////////
 	//optional config
 	CString strDBLogConn;
-	int nfgTaskPoolSizeMax;
+	int nfgSplitTaskParallelRunMax; 
 	//
 	int nfgTaskReDispatchMaxCount;
 	int nfgTaskDispatchCD;
@@ -389,7 +395,19 @@ struct ST_TASKDISPATCHCONFIG
 	int nfgDiskIOWeight;
 	int nfgNetIOWeight;
 
-	int nfgMaxFcvsSplit;
+	int nfgMaxFcvsSplitCount;
+	int nfgMinTaskSplitActorCount;
+	int nfgMinFcvsSplitFileSizeMB;
+	int nfgTaskPoolSizeMax;
+
+	int nfgLogTaskExcDetail;
+	ST_TASKDISPATCHCONFIG()
+	{
+		nfgMaxFcvsSplitCount = 100;
+		nfgMinFcvsSplitFileSizeMB = 50;
+		nfgLogTaskExcDetail =1;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	BOOL ToString(CString& strOut);	
 	BOOL FromString(const CString& strIn);
@@ -729,6 +747,8 @@ struct ST_FCVSCONFIGINFO
 //技审任务信息
 struct ST_FCVSTASKINFO
 {
+	BOOL bRuntimeUpdate; //update info at runtime
+
 	CString clipType;    
 	CString fileMediaType;    
 	int checkItem ;  //技审项详见宏定义
@@ -749,6 +769,7 @@ struct ST_FCVSTASKINFO
 	CString fileAdrPort;
 	ST_FCVSTASKINFO()
 	{
+		bRuntimeUpdate = FALSE;
 		clipType = TEXT("电影");
 		fileMediaType = "";
 		checkItem = 0x00111111L;
@@ -834,10 +855,19 @@ struct ST_FCVSRESULTTASK
 {
 	CString filePath;
 	int nTotalSectionCount;
+	CString strGuidBase;
+	vector<CString> vSubIds;
+	BOOL bRegisterToDB;
+	CString strDBConn;
+	BOOL bRuntimeUpdate;
+	BOOL bWirteResultXml;
 	ST_FCVSRESULTTASK()
 	{
 		filePath = "";
 		nTotalSectionCount = 0;
+		bRuntimeUpdate = FALSE;
+		bWirteResultXml = TRUE;
+		
 	}
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
@@ -852,6 +882,9 @@ struct ST_FTPSITEINFO
 	CString strUser;
 	CString strPw;
 	int		nPassive;
+
+	//unc dir
+	CString strUncDir;
 
 	//db info
 	CString strDBConn;
@@ -894,6 +927,10 @@ struct ST_TRANSFILEINFO
 	VECSITINFO vSitSrc;
 	VECSITINFO vSitDes;
 
+	int nSrcSiteTryStart; //start try connect with vSiteSrc[nSrcSiteTryStart]
+	int nDesSiteTryStart; 
+
+
 	//file desc
 	CString strSrcDir;
 	CString strSrcFileName;
@@ -928,18 +965,33 @@ struct ST_TRANSRESULT
 	CString strClipID;
 	CString strClipLogicID;
 	CString strDestDBConn;
-	CString strDestDir;
 	CString strDestFileName;
+	CString strDestUncDir;
+	CString strDestFtpIp;
+	CString strDestFtpUser;
+	CString strDestFtpPw;
+	CString strDestFtpDir;
+	int		nDestFtpPassive;
+	CString strLocalTmpFileDir;
+	int nPathType;	//embpathtype_local
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 
 	
 };
 
+struct ST_RUNTIMEMEDIAINFO
+{
+	CString strFileName;
+	INT64 nFileLength;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+};
+
 struct ST_SLEEPTASKINFO
 {
 	int nSleepSec;
-	long nRetOnFinish;
+	UINT nRetOnFinish;
 	int nReCallType;
 	CString strExtInfo; //save real task tag
 	BOOL ToString(CString& strOut);
@@ -947,10 +999,11 @@ struct ST_SLEEPTASKINFO
 
 };
 
-struct ST_WORKERRET
+struct ST_WORKERRECALL
 {
-	int nRetType;
-	CString strRetInfo;
+	int nReCallType;
+	int nRuntimeType;
+	CString strRuntimeInfo;
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 
@@ -958,12 +1011,56 @@ struct ST_WORKERRET
 
 struct ST_EXCCALLBACKINFO
 {
+	ST_EXCCALLBACKINFO()
+	{
+		nExcId = INVALID_ID;
+		nActorId = INVALID_ID;
+		nStep= -1;
+		nRetType = -1;
+		nWorkType = -1;
+	}
 	int nRetType;  //call svr to check
 	int nStep;
+	int nWorkType; //worker type
 	CString taskId;
 	int nExcId;
 	int nActorId;
-	CString strExtInfo;
+	CString strExtInfo;	
+	std::map<int, CString> mapExchInfo; //save runtime exchange info
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_FCVSRUNTIMEMERGEINFO
+{
+	CString strClipId;
+	CString strPath;
+	CString strFileName;
+	int nTotalSplit;
+	std::vector<CString> vSubIds; //sub split task ids;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+struct ST_PUBLISHCONFIG
+{
+	vector<int> vRegTypes;
+	vector<CString> vPublishDlls;
+	BOOL ToString(CString& strOut);
+	BOOL FromString(const CString& strIn);
+
+};
+
+
+struct ST_TASKPUBLISHINFO
+{
+	CString strTaskId;
+	CString strClipPgmId;
+	int nState;
+	long nErrcode;
+	INT64 tReportTime;
 	BOOL ToString(CString& strOut);
 	BOOL FromString(const CString& strIn);
 

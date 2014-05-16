@@ -30,7 +30,7 @@ extern int g_nScreenCY = GetSystemMetrics(SM_CYSCREEN);
 extern int g_nScrollBarWidth = GetSystemMetrics(SM_CXHSCROLL);
 
 
-#define LINE_BUFFER_SIZE 4096
+#define LINE_BUFFER_SIZE 8096
 void CFWriteLog( LPCTSTR format,... )
 {
 	va_list ap;
@@ -386,4 +386,94 @@ HINSTANCE GetSelfModuleHandle()
 		? (HMODULE) mbi.AllocationBase : NULL);
 }
 
+INT64 Str2Time( LPCTSTR szTime )
+{
+	if (szTime == NULL || strlen(szTime) != 19)
+	{
+		return 0;
+	}
+	int nYear = 0;
+	int nMon = 0;
+	int nDay = 0;
+	int nHour = 0;
+	int nMin = 0;
+	int nSec = 0;
+	sscanf(szTime, TEXT("%d-%d-%d %d:%d:%d"), &nYear, &nMon, &nDay, &nHour, &nMin, &nSec);
+	CTime tmRet(nYear, nMon, nDay, nHour, nMin, nSec);
+	return tmRet.GetTime();
+}
 
+
+CTimeSpan TimeCodeToSpan( INT64 nTimeCodeIn )
+{
+	ASSERT(nTimeCodeIn >= 0);
+	INT64 F = nTimeCodeIn;
+	int ff = (F % 25);	F /=25;
+	int ss = (F % 60);	F /=60;
+	int mm = (F % 60);	F /=60;
+	int hh = F%24; F/=24;
+	INT dd = F;
+	CTimeSpan spRet(dd, hh, mm,ss);
+	return spRet;
+}
+
+
+CString TimeCodeToString( INT64 nTimeCodeIn )
+{
+	ASSERT(nTimeCodeIn >= 0);
+	INT64 F = nTimeCodeIn;
+	int ff = (F % 25);	F /=25;
+	int ss = (F % 60);	F /=60;
+	int mm = (F % 60);	F /=60;
+	int hh = F;
+	CString strRet;
+	strRet.Format(TEXT("%02d:%02d:%02d:%02d"), hh, mm, ss, ff);
+	return strRet;
+}
+
+CString Time2Str( INT64 tTimeIn )
+{
+	if (tTimeIn == 0)
+	{
+		return TEXT("");
+	}
+	CTime tm(tTimeIn);
+	return tm.Format(TEXT("%Y-%m-%d %H:%M:%S"));
+}
+
+BOOL IsAppRunning(HANDLE& hMutexout, BOOL bPathMutexOnly/* = TRUE*/)
+{
+	CString strMutxName = TEXT("txappmutex-");
+	char szbuff[512];
+	GetModuleFileNameA(NULL, szbuff, 256);
+	CString strAppFile = szbuff;
+	if (bPathMutexOnly)
+	{
+		strMutxName += strAppFile;
+	}
+	else
+	{
+		int nPos = strAppFile.ReverseFind('\\');
+		strMutxName += strAppFile.Right(strAppFile.GetLength() - nPos-1);
+	}
+	
+	HANDLE hMux = CreateMutex(NULL, TRUE, strMutxName);
+	if (hMux)
+	{
+		hMutexout = hMux;
+
+		if (GetLastError() == ERROR_ALREADY_EXISTS)
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	else
+	{
+		return FALSE;		
+	}
+
+}

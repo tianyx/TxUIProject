@@ -88,16 +88,44 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 			}
 			pBuff += 4;
 			int nMsgRead = recv(socRecv, pBuff, nMsgLen-5, 0);
+			if (nMsgRead == SOCKET_ERROR)
+			{
+				ASSERT(FALSE);
+				CFWriteLog(TEXT("msg head read error!"));
+				bSafeEnd = FALSE;
+				break;
+			}
+			else
+			{
+				pBuff+= nMsgRead;
+			}
+#define SOCKDATARECVRERTY 1000
+			int nRetry = SOCKDATARECVRERTY;
 			while(nMsgRead < nMsgLen -5)
 			{
 				int nTmpRead =recv(socRecv, pBuff, nMsgLen-5 - nMsgRead, 0);
 				if (nTmpRead == SOCKET_ERROR)
 				{
+					if (WSAGetLastError() == WSAEWOULDBLOCK
+						&& nMsgRead < nMsgLen -5 && nRetry> 0)
+					{
+						//try again once
+						nTmpRead = 0;
+						--nRetry;
+						continue;
+					}
+					CFWriteLog(0, TEXT("sock recv data error sock = %d, err =%d"), (int)socRecv, WSAGetLastError());
 					break;
 				}
 				else
 				{
 					nMsgRead += nTmpRead;
+					pBuff += nTmpRead;
+					if (nRetry < SOCKDATARECVRERTY)
+					{
+						CFWriteLog(TEXT("retry time %d get recv data =%d,total = %d"), SOCKDATARECVRERTY - nRetry, nTmpRead, nMsgRead);
+					}
+					nRetry = SOCKDATARECVRERTY;
 				}
 			}
 
@@ -109,10 +137,26 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 					ProcessIncomingMsg(pMBCSock, nMsgType, pRealUsedBuffer, nMsgLen);
 					//CFWriteLog( "msg ReadData, sock = %d, len = %d", (int)wParam, nMsgRead+5);
 				}
+				else
+				{
+					CFWriteLog(TEXT("unknow msg type!"));
+				}
 			}
 			else
 			{
 				ASSERT(FALSE);
+				CFWriteLog(0, TEXT("msg data len error need =%d, real=%d"), nMsgLen, nMsgRead);
+				//dump msg
+#ifdef EMBDUMPERRORSOCKDATA
+		CFile dpFile;
+		CString strDumpfile;
+		strDumpfile.Format(TEXT("c:\\embdumpdata\\msgdata%d.dmp"), time(NULL));
+		if (dpFile.Open(strDumpfile, CFile::modeWrite|CFile::modeCreate, NULL))
+		{
+			dpFile.Write(pRealUsedBuffer, nMsgRead);
+			dpFile.Close();
+		}
+#endif
 				bSafeEnd = FALSE;
 			}
 
@@ -123,6 +167,7 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 			}
 			if (!bSafeEnd)
 			{
+				ASSERT(FALSE);
 				break;
 			}
 
@@ -141,11 +186,23 @@ HRESULT CMBCBaseObj::NetCall_Read(CMBCSocket* pMBCSock, WPARAM wParam, LPARAM lP
 		//clean all recvdata
 		ASSERT(FALSE);
 		int nRead = recv(socRecv, szbuff, MAXRECVBUFF, 0);
+		int nDiscard = 0;
 		while(nRead != SOCKET_ERROR)
 		{
+			nDiscard += nRead;
 			nRead = recv(socRecv, szbuff, MAXRECVBUFF, 0);
 		}
-		CFWriteLog(0, "msg ReadData error, data in sock buffer will clear!!! sock = %d", (int)wParam);
+#ifdef EMBDUMPERRORSOCKDATA
+		CFile dpFile;
+		CString strDumpfile;
+		strDumpfile.Format(TEXT("c:\\embdumpdata\\msgdata%d-discard.dmp"), time(NULL));
+		if (dpFile.Open(strDumpfile, CFile::modeWrite|CFile::modeCreate, NULL))
+		{
+			dpFile.Write(szbuff, nDiscard);
+			dpFile.Close();
+		}
+#endif
+		CFWriteLog(0, "msg ReadData error, data in sock buffer %d will clear!!! sock = %d", nDiscard, (int)wParam);
 		return E_FAIL;
 	}
 	

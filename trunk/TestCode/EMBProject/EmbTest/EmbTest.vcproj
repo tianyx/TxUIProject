@@ -5,10 +5,9 @@
 	Name="EmbTest"
 	ProjectGUID="{8FDBC5C7-676D-438E-919F-471D51BEFC9E}"
 	RootNamespace="EmbTest"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
+	SccProjectName="Perforce Project"
+	SccLocalPath=".."
+	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="MFCProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -22,7 +21,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -74,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="embcommonlib.lib embdbconnlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\$(ProjectName).exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				GenerateDebugInformation="true"
@@ -106,7 +105,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)Output\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)bin\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)Output\middle\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -160,7 +159,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
-				OutputFile="$(SolutionDir)bin\$(ConfigurationName)\$(ProjectName).exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
 				GenerateDebugInformation="true"
@@ -202,11 +201,23 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\DlgTaskQuery.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\DlgTestTask.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\EmbTest.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\EmbTestDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MainDef.cpp"
 				>
 			</File>
 			<File
@@ -236,11 +247,23 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\DlgTaskQuery.h"
+				>
+			</File>
+			<File
+				RelativePath=".\DlgTestTask.h"
+				>
+			</File>
+			<File
 				RelativePath=".\EmbTest.h"
 				>
 			</File>
 			<File
 				RelativePath=".\EmbTestDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MainDef.h"
 				>
 			</File>
 			<File

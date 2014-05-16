@@ -1,0 +1,13 @@
+<edoc_main ver="1.0" type="1" guid="{TaskGuid}">
+	<basic guid="{TaskGuid}" priority="1" actor = "" excList="step1,step2" />
+	<step1 acttype="1" actname="TransferTaskRequestType">
+		<TransferTaskRequestType TaskId="0102">
+<SourceFile Type="ftp" FilePath="" FileName="{SrcFile}" IP="192.168.1.202" User="sa" Pwd="123" Port="21" LimitBufferSize="5">源文件</SourceFile>
+<DestFile Type="disk" FilePath="c:\ftproot\" FileName="{SrcFile}" IP="192.168.1.202" User="sa02" Pwd="123" Port="21">目标文件</DestFile>
+		</TransferTaskRequestType>
+	</step1>
+	<step2 acttype="8" actname="md5">
+		<md5 desfile="c:\ftproot\{SrcFile}" >
+		</md5>
+	</step2>
+</edoc_main>

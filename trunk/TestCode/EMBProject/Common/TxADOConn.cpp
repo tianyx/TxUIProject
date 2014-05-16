@@ -159,7 +159,7 @@ BOOL CTxADORecordSet::MoveFirst()
 	return FALSE;
 }
 
-CTxStrConvert CTxADORecordSet::GetVal( LPCTSTR szColNameIn, LPCTSTR def /*= TEXT("")*/ )
+CTxStrConvert CTxADORecordSet::GetVal( LPCTSTR szColNameIn, LPCTSTR def /*= TEXT("")*/)
 {
 	CTxStrConvert valOut(def);
 	if (!m_apRecordSet || m_apRecordSet->GetState() != adStateOpen)
@@ -175,7 +175,46 @@ CTxStrConvert CTxADORecordSet::GetVal( LPCTSTR szColNameIn, LPCTSTR def /*= TEXT
 			FieldPtr fPtr= fieldsPtr->GetItem(_variant_t(szColNameIn));
 			if (fPtr)
 			{
-				valOut.SetVal((LPCTSTR)((_bstr_t)(fPtr->GetValue())));
+				_variant_t val =fPtr->GetValue();
+				if (val.vt == VT_INT)
+				{
+					valOut.SetVal(val.intVal);
+				}
+				else if (val.vt == VT_I8)
+				{
+					valOut.SetVal((INT64)val.llVal);
+				}
+				if (val.vt == VT_UINT)
+				{
+					valOut.SetVal(val.uintVal);
+				}
+				else if (val.vt == VT_I8)
+				{
+					valOut.SetVal((INT64)val.ullVal);
+				}
+				else if (val.vt == VT_R4|| val.vt == VT_R8)
+				{
+					valOut.SetVal(val.dblVal);
+				}
+				else if (val.vt == VT_DATE)
+				{
+					SYSTEMTIME st;
+					VariantTimeToSystemTime(val.date, &st);
+					tm temptm = {st.wSecond, 
+						st.wMinute, 
+						st.wHour, 
+						st.wDay, 
+						st.wMonth - 1, 
+						st.wYear - 1900, 
+						st.wDayOfWeek, 
+						0, 
+						0};
+					valOut.SetVal((INT64)mktime(&temptm));
+				}
+				else
+				{
+					valOut.SetVal((LPCTSTR)((_bstr_t)(val)));
+				}
 			}
 
 		}
@@ -368,6 +407,21 @@ BOOL CTxADOCommand::RollBackTrans()
 	return TRUE;
 }
 
+_RecordsetPtr CTxADOCommand::ExecuteStoredProc( LPCTSTR strStoreProc )
+{
+	if (m_apConn->GetState() == adStateClosed)
+	{
+		ASSERT(FALSE);
+		return NULL;
+	}
+
+	m_apCommand->CommandType = adCmdStoredProc;
+	m_apCommand->CommandText = _bstr_t(strStoreProc);
+	_RecordsetPtr pRecordset = m_apCommand->Execute(NULL,NULL,adCmdStoredProc); 
+
+	return pRecordset;
+}
+
 
 
 
@@ -539,6 +593,8 @@ void CTxADODBMgr::Clear()
 	for (; itb != m_mapAdoConns.end(); ++itb)
 	{
 		_Connection* pConn = itb->second.pConn;	
+		CAutoCritSec* pLock = itb->second.pcsLock;
+
 		if (pConn)
 		{
 			try
@@ -550,6 +606,11 @@ void CTxADODBMgr::Clear()
 			{
 				ASSERT(FALSE);
 			}
+		}
+
+		if (pLock)
+		{
+			delete pLock;
 		}
 	}
 

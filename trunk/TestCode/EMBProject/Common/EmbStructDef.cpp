@@ -174,11 +174,14 @@ BOOL ST_TASKBASIC::ToString( CString& strOut )
 	strVal.SetVal(strTaskFrom);
 	sParm.SetAttribVal(NULL, EV_TBTASKFROM, strVal);
 
-	strVal.SetVal(nTaskSplit);
+	strVal.SetVal(nTaskSplitFlag);
 	sParm.SetAttribVal(NULL, EV_TBTASKSPLIT, strVal);
 
-	strVal.SetVal(strTaskID);
+	strVal.SetVal(strGuidBase);
 	sParm.SetAttribVal(NULL, EV_TBTASKID, strVal);
+
+	sParm.SetElemVal(EV_TBTASKSEQUENCE, strTaskSequence);
+
 
 	sParm.UpdateData();
 	strOut = sParm;
@@ -196,8 +199,10 @@ BOOL ST_TASKBASIC::FromString( const CString& strIn )
 	nStartStep = sParm.GetAttribVal(NULL, EV_TBSTARTSTEP).GetAsInt(0);
 	sParm.GetAttribVal(NULL, EV_TBSUBTASKLIST).GetAsStringArray(vSubTask);
 	strTaskFrom = sParm.GetAttribVal(NULL, EV_TBTASKFROM).GetAsString();
-	nTaskSplit = sParm.GetAttribVal(NULL, EV_TBTASKSPLIT).GetAsInt(0);
-	strTaskID = sParm.GetAttribVal(NULL, EV_TBTASKID).GetAsString();
+	//nTaskSplitFlag = sParm.GetAttribVal(NULL, EV_TBTASKSPLIT).GetAsInt(0);
+	strGuidBase = sParm.GetAttribVal(NULL, EV_TBTASKID).GetAsString();
+	strTaskSequence = sParm.GetElemVal(EV_TBTASKSEQUENCE).GetAsString();
+	nTaskSplitFlag = strTaskSequence.Find(tasktype_split) == -1? 0:1;
 	return TRUE;
 }
 
@@ -333,7 +338,7 @@ BOOL ST_TASKRISERCONFIG::FromString( const CString& strIn )
 	if (vList.size() == 0)
 	{
 		ASSERT(FALSE);
-		return S_FALSE;
+		return FALSE;
 	}
 	for (size_t i = 0; i< vList.size(); ++i)
 	{
@@ -407,7 +412,9 @@ BOOL ST_TASKDISPATCHCONFIG::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("IpActorHolder"), txVal);
 	txVal.SetVal(strIpMaster);
 	txParam.SetAttribVal(NULL, TEXT("IpMaster"), txVal);
-	txParam.SetAttribVal(NULL, TEXT("nfgMaxFcvsSplit"), nfgMaxFcvsSplit);
+	txParam.SetAttribVal(NULL, TEXT("nfgMaxFcvsSplit"), nfgMaxFcvsSplitCount);
+	txParam.SetAttribVal(NULL, TEXT("nfgMinFcvsSplitSize"), nfgMinFcvsSplitFileSizeMB);
+	txParam.SetAttribVal(NULL, TEXT("nfgMinTaskSplitActorCount"), nfgMinTaskSplitActorCount);
 
 
 	txParam.UpdateData();
@@ -425,7 +432,6 @@ BOOL ST_TASKDISPATCHCONFIG::FromString( const CString& strIn )
 	strIpMaster = txParam.GetAttribVal(NULL, TEXT("IpMaster")).GetAsString();
 	strDBLogConn = txParam.GetAttribVal(NULL, TEXT("DBLogConn")).GetAsString();
 	//////////////////////////////////////////////////////////////////////////
-	nfgTaskPoolSizeMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskPoolSizeMax")).GetAsInt(-1);
 	//
 	nfgTaskReDispatchMaxCount = txParam.GetAttribVal(NULL, TEXT("nfgTaskReDispatchMaxCount")).GetAsInt(-1);
 	nfgTaskDispatchCD = txParam.GetAttribVal(NULL, TEXT("nfgTaskDispatchCD")).GetAsInt(-1);
@@ -443,7 +449,18 @@ BOOL ST_TASKDISPATCHCONFIG::FromString( const CString& strIn )
 	nfgDiskIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgDiskIOWeight")).GetAsInt(-1);
 	nfgNetIOWeight = txParam.GetAttribVal(NULL, TEXT("nfgNetIOWeight")).GetAsInt(-1);
 
-	nfgMaxFcvsSplit = txParam.GetAttribVal(NULL, TEXT("nfgMaxFcvsSplit")).GetAsInt(3);
+	nfgMaxFcvsSplitCount = txParam.GetAttribVal(NULL, TEXT("nfgMaxFcvsSplitCount")).GetAsInt(5);
+	nfgMinFcvsSplitFileSizeMB = txParam.GetAttribVal(NULL, TEXT("nfgMinFcvsSplitSize")).GetAsInt(400);
+	nfgMinTaskSplitActorCount = txParam.GetAttribVal(NULL, TEXT("nfgMinTaskSplitActorCount")).GetAsInt(3);
+	nfgSplitTaskParallelRunMax = txParam.GetAttribVal(NULL, TEXT("nfgSplitTaskParallelRunMax")).GetAsInt(10);
+
+	nfgTaskPoolSizeMax = txParam.GetAttribVal(NULL, TEXT("nfgTaskPoolSizeMax")).GetAsInt(3);
+	if (nfgMinFcvsSplitFileSizeMB <=0)
+	{
+		ASSERT(FALSE);
+		nfgMinFcvsSplitFileSizeMB = 300;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	return TRUE;
 }
@@ -469,7 +486,8 @@ BOOL ST_TASKUPDATE::ToString( CString& strOut )
 	val.SetVal(strTaskID);
 	txParam.SetAttribVal(NULL, TEXT("taskID"), val);
 
-	if (nUpdateType == embtaskupdatetype_finish)
+	if (nUpdateType == embtaskupdatetype_finish
+		||nUpdateType == embtaskupdatetype_runState)
 	{
 		val.SetVal("");
 		txParam.SetElemVal(EK_TASKUPDATE_END, val);
@@ -510,7 +528,8 @@ BOOL ST_TASKUPDATE::FromString( const CString& strIn )
 	nUpdateType = txParam.GetAttribVal(EK_TASKUPDATE, TEXT("nUpdateType")).GetAsInt(embtaskupdatetype_none);
 	strTaskID = txParam.GetAttribVal(EK_TASKUPDATE, TEXT("taskID")).GetAsString();
 	txParam.GoIntoKey(EK_TASKUPDATE);
-	if (nUpdateType == embtaskupdatetype_finish)
+	if (nUpdateType == embtaskupdatetype_finish
+		||nUpdateType == embtaskupdatetype_runState)
 	{
 		//to be add...
 		CString strGuid = txParam.GetAttribVal(NULL, TEXT("guid")).GetAsString("");
@@ -597,6 +616,7 @@ BOOL ST_ACTORSTATE::ToString( CString& strOut )
 	txParam.GoIntoKey(EK_ACTORSTATE);
 	val.SetVal(actorId);
 	txParam.SetAttribVal(NULL, TEXT("actorId"), val);
+
 	val.SetVal(nActorLevel);
 	txParam.SetAttribVal(NULL, TEXT("nActorLevel"), val);
 	val.SetVal(nCpuUsage);
@@ -774,7 +794,8 @@ BOOL ST_FCVSTASKINFO::FromString(const CString& strIn)
 	txParam.GoIntoKey(EK_FCVSHeader);
 	txParam.GoIntoKey(EK_FCVSTASK);
 
-		
+	bRuntimeUpdate = txParam.GetAttribVal(NULL,TEXT("bRuntimeUpdate")).GetAsBOOL();
+	
 	clipType = txParam.GetAttribVal(NULL,TEXT("ClipType")).GetAsString();
 	fileMediaType = txParam.GetAttribVal(NULL,TEXT("FileMediaType")).GetAsString();
 	checkItem = txParam.GetAttribVal(NULL,TEXT("CheckItem")).GetAsInt(0x00111111);
@@ -811,6 +832,8 @@ BOOL ST_FCVSTASKINFO::ToString(CString& strOut)
 	txParam.GoIntoKey(EK_FCVSTASK);
 // 	val.SetVal(actorId);
 // 	txParam.SetAttribVal(NULL, TEXT("actorId"), val);
+	txParam.SetAttribVal(NULL, TEXT("bRuntimeUpdate"),bRuntimeUpdate);
+
 	val.SetVal(clipType);
 	txParam.SetAttribVal(NULL, TEXT("ClipType"),val);
 	val.SetVal(fileMediaType);
@@ -959,8 +982,10 @@ BOOL ST_FCVSCONFIGINFO::ToString(CString& strOut)
 	int i;
 	txParam.SetElemVal(EK_FCVSTASKCONFIG, val);
 	txParam.GoIntoKey(EK_FCVSTASKCONFIG);
+
 	val.SetVal(serverName);
 	txParam.SetAttribVal(NULL,TEXT("ServerName"),val);
+
 // 	val.SetVal(dataBaseInfo);
 // 	txParam.SetAttribVal(NULL,TEXT("DataBaseInfo"),val);
 	val.SetVal(bSaveXML);
@@ -1335,6 +1360,17 @@ BOOL ST_FCVSRESULTTASK::ToString(CString& strOut)
 	txParam.SetAttribVal(NULL,TEXT("FilePath"),val);
 	val.SetVal(nTotalSectionCount);
 	txParam.SetAttribVal(NULL,TEXT("NTotalSectionCount"),val);	
+
+	txParam.SetAttribVal(NULL, TEXT("guidbase"), strGuidBase);
+
+	val.SetVal(vSubIds);
+	txParam.SetAttribVal(NULL, TEXT("subList"), val);
+	txParam.SetAttribVal(NULL, TEXT("bRegisterToDB"), bRegisterToDB);
+	txParam.SetAttribVal(NULL, TEXT("strDBConn"), strDBConn);
+	txParam.SetAttribVal(NULL, TEXT("bRuntimeUpdate"), bRuntimeUpdate);
+	txParam.SetAttribVal(NULL, TEXT("bWirteResultXml"), bWirteResultXml);
+
+
 	txParam.UpdateData();
 	strOut = txParam;
 	return TRUE;
@@ -1345,6 +1381,14 @@ BOOL ST_FCVSRESULTTASK::FromString(const CString& strIn)
 	txParam.GoIntoKey(EK_FCVSRESULTTASK);
 	filePath = txParam.GetAttribVal(NULL,TEXT("FilePath")).GetAsString("");
 	nTotalSectionCount = txParam.GetAttribVal(NULL,TEXT("NTotalSectionCount")).GetAsInt(0);
+	strGuidBase = txParam.GetAttribVal(NULL, TEXT("guidbase")).GetAsString();
+	txParam.GetAttribVal(NULL, TEXT("subList")).GetAsStringArray(vSubIds);
+
+	bRegisterToDB = txParam.GetAttribVal(NULL, TEXT("bRegisterToDB")).GetAsInt();
+	strDBConn = txParam.GetAttribVal(NULL, TEXT("strDBConn")).GetAsString();
+	bRuntimeUpdate = txParam.GetAttribVal(NULL, TEXT("bRuntimeUpdate")).GetAsBOOL();
+	bWirteResultXml = txParam.GetAttribVal(NULL, TEXT("bWirteResultXml")).GetAsBOOL();
+
 	return TRUE;
 }
 
@@ -1370,11 +1414,14 @@ BOOL ST_TRANSFILEINFO::ToString( CString& strOut )
 	CTxParamString txParam(TEXT(""));
 	txParam.SetElemVal(TEXT("TranFileInfo"), TEXT(""));
 	txParam.GoIntoKey(TEXT("TranFileInfo"));
+	txParam.SetElemVal(TEXT("nSrcSiteTryStart"), nSrcSiteTryStart);
+	txParam.SetElemVal(TEXT("nDesSiteTryStart"), nDesSiteTryStart);
+
 	txParam.SetElemVal(TEXT("srcFtpList"), TEXT(""));
 	txParam.GoIntoKey(TEXT("srcFtpList"));
 	txParam.SetAttribVal(NULL, TEXT("count"), vSitSrc.size());
-
-	for (size_t i = 0; i < vSitSrc.size(); ++i)
+	size_t i;
+	for (i = 0; i < vSitSrc.size(); ++i)
 	{
 		ST_FTPSITEINFO& sitRef = vSitSrc[i];
 		CString strNum;
@@ -1386,6 +1433,8 @@ BOOL ST_TRANSFILEINFO::ToString( CString& strOut )
 		txParam.SetAttribVal(strNum, TEXT("strUser"), sitRef.strUser);
 		txParam.SetAttribVal(strNum, TEXT("strPw"), sitRef.strPw);
 		txParam.SetAttribVal(strNum, TEXT("nPassive"), sitRef.nPassive);
+		txParam.SetAttribVal(strNum, TEXT("strUncDir"), sitRef.strUncDir);
+
 		txParam.SetAttribVal(strNum, TEXT("strDBConn"), sitRef.strDBConn);
 		txParam.SetAttribVal(strNum, TEXT("nLocation"), sitRef.nLocation);
 		txParam.SetAttribVal(strNum, TEXT("strStoreName"), sitRef.strStoreName);
@@ -1398,7 +1447,7 @@ BOOL ST_TRANSFILEINFO::ToString( CString& strOut )
 	txParam.GoIntoKey(TEXT("desFtpList"));
 	txParam.SetAttribVal(NULL, TEXT("count"), vSitDes.size());
 
-	for (size_t i = 0; i < vSitDes.size(); ++i)
+	for (i = 0; i < vSitDes.size(); ++i)
 	{
 		ST_FTPSITEINFO& sitRef = vSitDes[i];
 		CString strNum;
@@ -1410,6 +1459,8 @@ BOOL ST_TRANSFILEINFO::ToString( CString& strOut )
 		txParam.SetAttribVal(strNum, TEXT("strUser"), sitRef.strUser);
 		txParam.SetAttribVal(strNum, TEXT("strPw"), sitRef.strPw);
 		txParam.SetAttribVal(strNum, TEXT("nPassive"), sitRef.nPassive);
+		txParam.SetAttribVal(strNum, TEXT("strUncDir"), sitRef.strUncDir);
+
 		txParam.SetAttribVal(strNum, TEXT("strDBConn"), sitRef.strDBConn);
 		txParam.SetAttribVal(strNum, TEXT("nLocation"), sitRef.nLocation);
 		txParam.SetAttribVal(strNum, TEXT("strStoreName"), sitRef.strStoreName);
@@ -1489,11 +1540,15 @@ BOOL ST_TRANSFILEINFO::ToString( CString& strOut )
 BOOL ST_TRANSFILEINFO::FromString( const CString& strIn )
 {
 	CTxParamString txParam(strIn);
+	int i;
 	txParam.GoIntoKey(TEXT("TranFileInfo"));
+	nSrcSiteTryStart = txParam.GetElemVal(TEXT("nSrcSiteTryStart")).GetAsInt(0);
+	nDesSiteTryStart = txParam.GetElemVal(TEXT("nDesSiteTryStart")).GetAsInt(0);
+
 	txParam.GoIntoKey(TEXT("srcFtpList"));
 	int nFtpSrcCount = txParam.GetAttribVal(NULL, TEXT("count")).GetAsInt();
 	vSitSrc.clear();
-	for (int i = 0; i < nFtpSrcCount; ++i)
+	for (i = 0; i < nFtpSrcCount; ++i)
 	{
 		ST_FTPSITEINFO sitTmp;
 		CString strNum;
@@ -1504,6 +1559,8 @@ BOOL ST_TRANSFILEINFO::FromString( const CString& strIn )
 		sitTmp.strUser = txParam.GetAttribVal(strNum, TEXT("strUser")).GetAsString();
 		sitTmp.strPw = txParam.GetAttribVal(strNum, TEXT("strPw")).GetAsString();
 		sitTmp.nPassive = txParam.GetAttribVal(strNum, TEXT("nPassive")).GetAsInt();
+		sitTmp.strUncDir = txParam.GetAttribVal(strNum, TEXT("strUncDir")).GetAsString();
+
 		sitTmp.strDBConn = txParam.GetAttribVal(strNum, TEXT("strDBConn")).GetAsString();
 		sitTmp.strStoreName = txParam.GetAttribVal(strNum, TEXT("strStoreName")).GetAsString();
 		sitTmp.nLocation = txParam.GetAttribVal(strNum, TEXT("nLocation")).GetAsInt();
@@ -1516,7 +1573,7 @@ BOOL ST_TRANSFILEINFO::FromString( const CString& strIn )
 	txParam.GoIntoKey(TEXT("desFtpList"));
 	int nFtpDesCount = txParam.GetAttribVal(NULL, TEXT("count")).GetAsInt();
 	vSitDes.clear();
-	for (int i = 0; i < nFtpDesCount; ++i)
+	for (i = 0; i < nFtpDesCount; ++i)
 	{
 		ST_FTPSITEINFO sitTmp;
 		CString strNum;
@@ -1527,6 +1584,8 @@ BOOL ST_TRANSFILEINFO::FromString( const CString& strIn )
 		sitTmp.strUser = txParam.GetAttribVal(strNum, TEXT("strUser")).GetAsString();
 		sitTmp.strPw = txParam.GetAttribVal(strNum, TEXT("strPw")).GetAsString();
 		sitTmp.nPassive = txParam.GetAttribVal(strNum, TEXT("nPassive")).GetAsInt();
+		sitTmp.strUncDir = txParam.GetAttribVal(strNum, TEXT("strUncDir")).GetAsString();
+
 		sitTmp.strDBConn = txParam.GetAttribVal(strNum, TEXT("strDBConn")).GetAsString();
 		sitTmp.strStoreName = txParam.GetAttribVal(strNum, TEXT("strStoreName")).GetAsString();
 		sitTmp.nLocation = txParam.GetAttribVal(strNum, TEXT("nLocation")).GetAsInt();
@@ -1590,15 +1649,24 @@ BOOL ST_TRANSFILEINFO::FromString( const CString& strIn )
 
 BOOL ST_TRANSRESULT::ToString( CString& strOut )
 {
-	CTxParamString txParam(TEXT(""));
+	CString strXml;
+	strXml.Format(EDOC_MAINHEADERFMT, 1, embxmltype_fileDest, TEXT(""));
+	CTxParamString txParam(strXml);
+	txParam.GoIntoKey(EK_MAIN);
 	txParam.SetElemVal(TEXT("TransResult"), TEXT(""));
 	txParam.GoIntoKey(TEXT("TransResult"));
 	txParam.SetAttribVal(NULL, TEXT("strClipID"), strClipID);
 	txParam.SetAttribVal(NULL, TEXT("strClipLogicID"), strClipLogicID);
 	txParam.SetAttribVal(NULL, TEXT("strDestDBConn"), strDestDBConn);
-	txParam.SetAttribVal(NULL, TEXT("strDestDir"), strDestDir);
+	txParam.SetAttribVal(NULL, TEXT("strDestUNCDir"), strDestUncDir);
 	txParam.SetAttribVal(NULL, TEXT("strDestFileName"), strDestFileName);
-
+	txParam.SetAttribVal(NULL, TEXT("strDestFtpIp"), strDestFtpIp);
+	txParam.SetAttribVal(NULL, TEXT("strDestFtpUser"), strDestFtpUser);
+	txParam.SetAttribVal(NULL, TEXT("strDestFtpPw"), strDestFtpPw);
+	txParam.SetAttribVal(NULL, TEXT("strDestFtpDir"), strDestFtpDir);
+	txParam.SetAttribVal(NULL, TEXT("nDestFtpPassive"), nDestFtpPassive);
+	txParam.SetAttribVal(NULL, TEXT("strLocalTmpFileDir"), strLocalTmpFileDir);
+	txParam.SetAttribVal(NULL, TEXT("nPathType"), nPathType);
 	txParam.UpdateData();
 	strOut = txParam;
 	return TRUE;
@@ -1607,13 +1675,20 @@ BOOL ST_TRANSRESULT::ToString( CString& strOut )
 BOOL ST_TRANSRESULT::FromString( const CString& strIn )
 {
 	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(EK_MAIN);
 	txParam.GoIntoKey(TEXT("TransResult"));
 	strClipID = txParam.GetAttribVal(NULL,TEXT("strClipID")).GetAsString("");
 	strClipLogicID = txParam.GetAttribVal(NULL,TEXT("strClipLogicID")).GetAsString("");
 	strDestDBConn = txParam.GetAttribVal(NULL,TEXT("strDestDBConn")).GetAsString("");
-	strDestDir = txParam.GetAttribVal(NULL,TEXT("strDestDir")).GetAsString("");
 	strDestFileName = txParam.GetAttribVal(NULL,TEXT("strDestFileName")).GetAsString("");
-
+	strDestUncDir = txParam.GetAttribVal(NULL,TEXT("strDestUNCDir")).GetAsString("");
+	strDestFtpIp = txParam.GetAttribVal(NULL,TEXT("strDestFtpIp")).GetAsString("");
+	strDestFtpUser = txParam.GetAttribVal(NULL,TEXT("strDestFtpUser")).GetAsString("");
+	strDestFtpPw = txParam.GetAttribVal(NULL,TEXT("strDestFtpPw")).GetAsString("");
+	strDestFtpDir = txParam.GetAttribVal(NULL,TEXT("strDestFtpDir")).GetAsString("");
+	nDestFtpPassive = txParam.GetAttribVal(NULL,TEXT("nDestFtpPassive")).GetAsInt();
+	strLocalTmpFileDir = txParam.GetAttribVal(NULL,TEXT("strLocalTmpFileDir")).GetAsString("");
+	nPathType = txParam.GetAttribVal(NULL,TEXT("nPathType")).GetAsInt();
 	return TRUE;
 
 }
@@ -1626,6 +1701,7 @@ BOOL ST_SLEEPTASKINFO::ToString( CString& strOut )
 	txParam.SetAttribVal(NULL, TEXT("nSleepSec"), nSleepSec);
 	txParam.SetAttribVal(NULL, TEXT("nReCallType"), nReCallType);
 	txParam.SetAttribVal(NULL, TEXT("nRetOnFinish"), nRetOnFinish);
+	txParam.SetAttribVal(NULL, TEXT("strExtInfo"), strExtInfo);
 
 	txParam.UpdateData();
 	strOut = txParam;
@@ -1638,30 +1714,34 @@ BOOL ST_SLEEPTASKINFO::FromString( const CString& strIn )
 	txParam.GoIntoKey(TEXT("WorkSleep"));
 	nSleepSec = txParam.GetAttribVal(NULL,TEXT("nSleepSec")).GetAsInt(0);
 	nReCallType = txParam.GetAttribVal(NULL,TEXT("nReCallType")).GetAsInt(0);
-	nRetOnFinish = txParam.GetAttribVal(NULL,TEXT("nRetOnFinish")).GetAsInt(0);
-	strExtInfo = txParam.GetAttribVal(NULL,TEXT("strExtendTag")).GetAsString("");
+	nRetOnFinish = txParam.GetAttribVal(NULL,TEXT("nRetOnFinish")).GetAsUInt(0);
+	strExtInfo = txParam.GetAttribVal(NULL,TEXT("strExtInfo")).GetAsString("");
 	return TRUE;
 
 }
 
-BOOL ST_WORKERRET::ToString( CString& strOut )
+BOOL ST_WORKERRECALL::ToString( CString& strOut )
 {
 	CTxParamString txParam(TEXT(""));
-	txParam.SetElemVal(TEXT("WorkerRet"), TEXT(""));
-	txParam.GoIntoKey(TEXT("WorkerRet"));
-	txParam.SetAttribVal(NULL, TEXT("nRetType"), nRetType);
-	txParam.SetAttribVal(NULL, TEXT("strRetInfo"), strRetInfo);
+	txParam.SetElemVal(TEXT("WorkerRecall"), TEXT(""));
+	txParam.GoIntoKey(TEXT("WorkerRecall"));
+	txParam.SetAttribVal(NULL, TEXT("nReCallType"), nReCallType);
+	txParam.SetAttribVal(NULL, TEXT("nRuntimeType"), nRuntimeType);
+
+	txParam.SetAttribVal(NULL, TEXT("strRuntimeInfo"), strRuntimeInfo);
 	txParam.UpdateData();
 	strOut = txParam;
 	return TRUE;
 }
 
-BOOL ST_WORKERRET::FromString( const CString& strIn )
+BOOL ST_WORKERRECALL::FromString( const CString& strIn )
 {
 	CTxParamString txParam(strIn);
-	txParam.GoIntoKey(TEXT("WorkerRet"));
-	nRetType = txParam.GetAttribVal(NULL,TEXT("nRetType")).GetAsInt(0);
-	strRetInfo = txParam.GetAttribVal(NULL,TEXT("strRetInfo")).GetAsString("");
+	txParam.GoIntoKey(TEXT("WorkerRecall"));
+	nReCallType = txParam.GetAttribVal(NULL,TEXT("nReCallType")).GetAsInt(0);
+	nRuntimeType = txParam.GetAttribVal(NULL,TEXT("nRuntimeType")).GetAsInt(0);
+	strRuntimeInfo = txParam.GetAttribVal(NULL,TEXT("strRuntimeInfo")).GetAsString("");
+
 	return TRUE;
 
 }
@@ -1669,17 +1749,39 @@ BOOL ST_WORKERRET::FromString( const CString& strIn )
 BOOL ST_EXCCALLBACKINFO::ToString( CString& strOut )
 {
 	CString strFmt;
-	strFmt.Format(EDOC_EXCCALLBACKFMT, embxmltype_excCallback);
+	strFmt.Format(EDOC_EXCCALLBACKFMT, embxmltype_excCallback, taskId);
 	CTxParamString txParam(strFmt);
+	txParam.GoIntoKey(EK_MAIN);
 	txParam.SetElemVal(TEXT("ST_EXCCALLBACKINFO"), TEXT(""));
 	txParam.GoIntoKey(TEXT("ST_EXCCALLBACKINFO"));
 	txParam.SetAttribVal(NULL, TEXT("nRetType"), nRetType);
 	txParam.SetAttribVal(NULL, TEXT("nStep"), nStep);
+	txParam.SetAttribVal(NULL, TEXT("nWorkType"), nWorkType);
 	txParam.SetAttribVal(NULL, TEXT("taskId"), taskId);
 	txParam.SetAttribVal(NULL, TEXT("nExcId"), nExcId);
 	txParam.SetAttribVal(NULL, TEXT("nActorId"), nActorId);
 	txParam.SetElemVal(TEXT("strExtInfo"), strExtInfo);
+	int nExcCount = mapExchInfo.size();
+	if (nExcCount > 0)
+	{
+		txParam.SetElemVal(TEXT("mapExchInfo"), TEXT(""));
+		txParam.GoIntoKey(TEXT("mapExchInfo"));
+		txParam.SetAttribVal(NULL, TEXT("count"), mapExchInfo.size());
+		std::map<int, CString>::iterator itb = mapExchInfo.begin();
+		std::map<int, CString>::iterator ite = mapExchInfo.end();
+		for (int i = 0; itb != ite;  ++itb, ++i)
+		{
+			CString strIdx;
+			strIdx.Format(TEXT("key%d"), i);
+			txParam.SetElemVal(strIdx, TEXT(""));
+			txParam.SetAttribVal(strIdx, TEXT("key"), itb->first);
+			txParam.SetAttribVal(strIdx, TEXT("val"), itb->second);
+		}
 
+	}
+
+	txParam.UpdateData();
+	strOut = txParam;
 	return TRUE;
 }
 
@@ -1697,9 +1799,139 @@ BOOL ST_EXCCALLBACKINFO::FromString( const CString& strIn )
 	txParam.GoIntoKey(TEXT("ST_EXCCALLBACKINFO"));
 	nRetType = txParam.GetAttribVal(NULL, TEXT("nRetType")).GetAsInt();
 	nStep = txParam.GetAttribVal(NULL, TEXT("nStep")).GetAsInt();
+	nWorkType = txParam.GetAttribVal(NULL, TEXT("nWorkType")).GetAsInt();
 	taskId =txParam.GetAttribVal(NULL, TEXT("taskId")).GetAsString();
 	nExcId= txParam.GetAttribVal(NULL, TEXT("nExcId")).GetAsInt();
 	nActorId= txParam.GetAttribVal(NULL, TEXT("nActorId")).GetAsInt();
-	strExtInfo=txParam.GetElemVal( TEXT("strExtInfo")).GetAsString();
+	strExtInfo=CTxParamString::UnEscapeString(txParam.GetElemVal( TEXT("strExtInfo")).GetAsString());
+	mapExchInfo.clear();
+	int nExcCount = txParam.GetAttribVal(TEXT("mapExchInfo"), TEXT("count")).GetAsInt();
+	if (nExcCount > 0)
+	{
+		txParam.GoIntoKey(TEXT("mapExchInfo"));
+		for (int i = 0; i< nExcCount; ++i)
+		{
+			CString strIdx;
+			strIdx.Format(TEXT("key%d"), i);
+			int nKey =txParam.GetAttribVal(strIdx, TEXT("key")).GetAsInt();
+			CString strVal =CTxParamString::UnEscapeString(txParam.GetAttribVal(strIdx, TEXT("val")).GetAsString());
+			if (!strVal.IsEmpty())
+			{
+				mapExchInfo[nKey] = strVal;
+			}
+		}
+	}
+	return TRUE;
+}
+
+BOOL ST_FCVSRUNTIMEMERGEINFO::ToString( CString& strOut )
+{
+	CString strFmt;
+	strFmt.Format(EDOC_MAINHEADERFMT,1, embxmltype_fcvsmergeinfo, TEXT(""));
+	CTxParamString txParam(strFmt);
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.SetElemVal(TEXT("ST_FCVSRUNTIMEMERGEINFO"), TEXT(""));
+	txParam.GoIntoKey(TEXT("ST_FCVSRUNTIMEMERGEINFO"));
+	txParam.SetAttribVal(NULL, TEXT("strClipId"), strClipId);
+	txParam.SetAttribVal(NULL, TEXT("strPath"), strPath);
+	txParam.SetAttribVal(NULL, TEXT("strFileName"), strFileName);
+	txParam.SetAttribVal(NULL, TEXT("nTotalSplit"), nTotalSplit);
+	txParam.SetElemVal(TEXT("subIds"), vSubIds);
+	
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_FCVSRUNTIMEMERGEINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("edoc_main"));
+	int ntype = txParam.GetAttribVal(NULL, TEXT("type")).GetAsInt();
+	if (ntype != embxmltype_fcvsmergeinfo)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	txParam.GoIntoKey(TEXT("ST_FCVSRUNTIMEMERGEINFO"));
+	strClipId = txParam.GetAttribVal(NULL,TEXT("strClipId")).GetAsString();
+	strPath = txParam.GetAttribVal(NULL,TEXT("strPath")).GetAsString();
+	strFileName = txParam.GetAttribVal(NULL,TEXT("strFileName")).GetAsString();
+	nTotalSplit = txParam.GetAttribVal(NULL,TEXT("nTotalSplit")).GetAsInt(0);
+	txParam.GetElemVal(TEXT("subIds")).GetAsStringArray(vSubIds);
+	return TRUE;
+
+}
+
+BOOL ST_RUNTIMEMEDIAINFO::ToString( CString& strOut )
+{
+	CString strFmt;
+	strFmt.Format(EDOC_MAINHEADERFMT,1, embxmltype_mediafileinfo, TEXT(""));
+	CTxParamString txParam(strFmt);
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.SetElemVal(TEXT("ST_RUNTIMEMEDIAINFO"), TEXT(""));
+	txParam.GoIntoKey(TEXT("ST_RUNTIMEMEDIAINFO"));
+	txParam.SetAttribVal(NULL, TEXT("strFileName"), strFileName);
+	txParam.SetAttribVal(NULL, TEXT("nFileLength"), nFileLength);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+	
+}
+
+BOOL ST_RUNTIMEMEDIAINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("edoc_main"));
+	int ntype = txParam.GetAttribVal(NULL, TEXT("type")).GetAsInt();
+	if (ntype != embxmltype_mediafileinfo)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	txParam.GoIntoKey(TEXT("ST_RUNTIMEMEDIAINFO"));
+	strFileName = txParam.GetAttribVal(NULL,TEXT("strFileName")).GetAsString();
+	nFileLength = txParam.GetAttribVal(NULL,TEXT("nFileLength")).GetAsInt64();
+
+	return TRUE;
+}
+
+BOOL ST_TASKPUBLISHINFO::ToString( CString& strOut )
+{
+	CString strFmt;
+	strFmt.Format(EDOC_MAINHEADERFMT,1, mebxmltype_taskpublishinfo, TEXT(""));
+	CTxParamString txParam(strFmt);
+	txParam.GoIntoKey(EK_MAIN);
+	txParam.SetElemVal(TEXT("ST_TASKPUBLISHINFO"), TEXT(""));
+	txParam.GoIntoKey(TEXT("ST_TASKPUBLISHINFO"));
+	txParam.SetAttribVal(NULL, TEXT("strTaskId"), strTaskId);
+	txParam.SetAttribVal(NULL, TEXT("strClipPgmId"), strClipPgmId);
+	txParam.SetAttribVal(NULL, TEXT("nState"), nState);
+	txParam.SetAttribVal(NULL, TEXT("nErrcode"), nErrcode);
+	txParam.SetAttribVal(NULL, TEXT("tReportTime"), tReportTime);
+
+	txParam.UpdateData();
+	strOut = txParam;
+	return TRUE;
+}
+
+BOOL ST_TASKPUBLISHINFO::FromString( const CString& strIn )
+{
+	CTxParamString txParam(strIn);
+	txParam.GoIntoKey(TEXT("edoc_main"));
+	int ntype = txParam.GetAttribVal(NULL, TEXT("type")).GetAsInt();
+	if (ntype != mebxmltype_taskpublishinfo)
+	{
+		ASSERT(FALSE);
+		return FALSE;
+	}
+	txParam.GoIntoKey(TEXT("ST_TASKPUBLISHINFO"));
+	strTaskId = txParam.GetAttribVal(NULL,TEXT("strTaskId")).GetAsString();
+	strClipPgmId = txParam.GetAttribVal(NULL,TEXT("strClipPgmId")).GetAsString();
+	nState= txParam.GetAttribVal(NULL,TEXT("nState")).GetAsInt();
+	nErrcode =  txParam.GetAttribVal(NULL,TEXT("nErrcode")).GetAsInt();
+	tReportTime= txParam.GetAttribVal(NULL,TEXT("tReportTime")).GetAsInt64();
 	return TRUE;
 }

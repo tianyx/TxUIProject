@@ -20,7 +20,8 @@ class CStorageMgr:
 	public IPluginConnectorInterce,
 	public IPluginStorageInterface,
 	public IPluginConfigInterface,
-	public IPluginTaskCommit
+	public IPluginTaskCommit,
+	public IEMBInfoPublishRegisterInterface
 {
 public:
 	CStorageMgr(void);
@@ -55,6 +56,10 @@ public:
 	virtual HRESULT FetchTaskFromStorage(const int nDispatchID,  int nMinPriority, int nDesiredNum, VECTASKS& vTasks);
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
 	virtual HRESULT UpdateActorID(CTaskString& strTaskGuid, ACTORID actorId);
+
+
+	virtual HRESULT RegisterPublisher(IEMBPublishCallbackInterface* pPublisher, const int nPubType);
+	virtual HRESULT UnRegisterPublisher(IEMBPublishCallbackInterface* pPublisher, const int nPubType);
 
 	IPluginStorageInterface* m_pIStorage;
 	IPluginTaskCommit* m_pTaskCommit;

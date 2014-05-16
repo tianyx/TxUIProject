@@ -129,7 +129,7 @@ void CEMBPluginManager::Init()
 
 HRESULT CEMBPluginManager::FindPlugin( const UINT nPluginType, const UINT nSubType, GUID& guidOut )
 {
-	HRESULT hr = S_FALSE;
+	HRESULT hr = E_FAIL;
 	MAPPLUGINMAGRDATAS::iterator itb = m_mapPluginInfo.begin();
 	MAPPLUGINMAGRDATAS::iterator ite = m_mapPluginInfo.end();
 	for (; itb != ite; ++itb)
@@ -281,10 +281,10 @@ HRESULT EMB::CEMBPluginManager::UnloadPlugin(const GUID guidIn, HANDLE handle )
 	}
 	else
 	{
-		hr = S_FALSE;
+		hr = E_FAIL;
 	}
 
-	return S_FALSE;
+	return E_FAIL;
 }
 
 HRESULT EMB::CEMBPluginManager::InitPluginsSearch( BOOL bDeepSearch, LPCTSTR szFileExtern )

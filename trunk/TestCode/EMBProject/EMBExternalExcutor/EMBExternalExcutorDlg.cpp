@@ -122,6 +122,7 @@ BOOL CEMBExternalExcutorDlg::OnInitDialog()
 	if (!m_pExcObj->Start())
 	{
 		OutputDebugString("CExcutorObj::Start() 失败");
+		CFWriteLog(0, TEXT("ExcutorObj::Start() 失败"));
 	}
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE

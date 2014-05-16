@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include "FGlobal.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -38,7 +39,7 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		//  Œ Ã‚°£
 
 		new CDynLinkLibrary(WorkPluginMergeDBWriterDLL);
-
+		MACRO_CREATEOUTPUTCONSOLE
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)
 	{

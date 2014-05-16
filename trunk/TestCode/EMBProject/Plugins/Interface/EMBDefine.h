@@ -45,6 +45,8 @@
 #define EMBERR_FILEDELETE	0x800A0015
 #define EMBERR_MD5NOTMATCH	0x800A0016
 #define EMBERR_FCVSERROR    0X800A0017
+#define EMBERR_TIMEOUT		0X800A0018
+#define EMBERR_CANCELED		0X800A0019
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -82,7 +84,11 @@
 #define embxmltype_taskRunState	24
 #define embxmltype_excCallback	25
 #define embxmltype_changeWork	26
-
+#define embxmltype_fileDest		27
+#define embxmltype_subFcvsReport	28
+#define embxmltype_mediafileinfo	29
+#define embxmltype_fcvsmergeinfo	30
+#define mebxmltype_taskpublishinfo	31
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -90,6 +96,8 @@
 #define embtaskupdatetype_finish	1
 #define embtaskupdatetype_del		2
 #define embtaskupdatetype_change	3
+#define embtaskupdatetype_runState	4
+
 //////////////////////////////////////////////////////////////////////////
 //任务执行状态
 #define embtaskstate_none			-1
@@ -102,9 +110,9 @@
 //////////////////////////////////////////////////////////////////////////
 //to specify the actor for the task, set the task priority more than actorlevel;
 #define embtaskPriority_normal		0
-#define embtaskPriority_high		1
+#define embtaskPriority_high		100
 #define embActorLevel_normal		0
-#define embActorLevel_high			1
+#define embActorLevel_high			100
 
 //	执行任务类型
 #define embexcuteType_none			-1
@@ -164,5 +172,43 @@ typedef int DISPATCHID;
 
 //////////////////////////////////////////////////////////////////////////
 //实时任务修改
-#define embrecalltype_none		0
-#define embrecalltype_spfcvs	1
+#define embrecalltype_none				0
+#define embrecalltype_RuntimeFileDest	1 //runtime file destination
+#define embrecalltype_spfcvs			2
+#define embrecalltype_WorkChange		3
+
+#define embrecalltype_registerRuntimeInfo	5
+#define embrecalltype_RequestRuntimeInfo	6
+
+//call that not need runtime exchange info
+#define embrecalltype_PureCallMin		100
+
+#define embrecalltype_RequestTaskRunInfo	101
+
+#define embrecalltype_PureCallMax		200
+
+//runtime exchange info type
+#define embruntimeInfoType_filedest			1
+#define embruntimeInfoType_fcvsMergeInfo	2
+#define embruntimeInfoType_meidaInfo		3
+#define embruntimeInfoType_taskrunstate		4
+
+//////////////////////////////////////////////////////////////////////////
+//path type
+#define embpathtype_local	1
+#define embpathtype_unc		2
+#define embpathtype_ftp		4
+
+//////////////////////////////////////////////////////////////////////////
+//actor type 
+#define actortype_union				0
+#define actortype_single			1
+
+//////////////////////////////////////////////////////////////////////////
+//<!--TaskSequece-迁移=1,迁移MD5=2，技审 =3，切片技审= 4，技审合并=5 -->
+#define tasktype_split  TEXT("4")
+
+//
+#define embpublishtype_none 0 
+#define embpublishtype_ontaskstart 1 
+#define embpublishtype_ontaskend 2 

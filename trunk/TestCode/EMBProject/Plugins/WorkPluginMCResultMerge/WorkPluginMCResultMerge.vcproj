@@ -72,7 +72,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib embdbconnlib.lib"
 				OutputFile="$(OutDir)\$(ProjectName).epl"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"
@@ -158,7 +158,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="embcommonlib.lib embguidlib.lib"
+				AdditionalDependencies="embcommonlib.lib embguidlib.lib embdbconnlib.lib"
 				OutputFile="$(OutDir)\$(ProjectName).epl"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)lib\$(ConfigurationName)\"

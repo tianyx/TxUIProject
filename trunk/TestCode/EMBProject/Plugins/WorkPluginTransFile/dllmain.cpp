@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include "FGlobal.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -51,12 +52,13 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		{
 			return FALSE;
 		}
+
+		MACRO_CREATEOUTPUTCONSOLE
 	
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)
 	{
 		TRACE0("WorkPluginTransFile.DLL 正在终止!\n");
-
 		// 在调用析构函数之前终止该库
 		AfxTermExtensionModule(WorkPluginTransFileDLL);
 	}

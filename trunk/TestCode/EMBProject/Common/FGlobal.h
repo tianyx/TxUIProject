@@ -69,6 +69,15 @@ GUID TxGenGuid();
 
 int GenRand();
 
+//convert string time olny format like "2014-12-23 11:32:34"
+INT64 Str2Time(LPCTSTR szTime);
+CString Time2Str(INT64 tTimeIn);
+
+CTimeSpan TimeCodeToSpan( INT64 nTimeCodeIn );
+
+CString  TimeCodeToString( INT64 nTimeCodeIn );
+
+BOOL IsAppRunning(HANDLE& hMutexout, BOOL bPathMutexOnly = TRUE);
 
 //*Description: like WaitForMultipleObjects
 //*Input Param: hWait: wait object,  hQuit: quit object
@@ -85,6 +94,12 @@ DWORD TxWaitObjWithQuit(HANDLE hWait, HANDLE hQuit, DWORD dwTimeOut = INFINITE);
 	AllocConsole();\
 	g_hconsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);\
 
+#define MACRO_COLOSEOUTPUTCONSOLE \
+	if (g_hconsoleHandle)\
+	{\
+		CloseHandle(g_hconsoleHandle);\
+		g_hconsoleHandle = NULL;\
+	}\
 
 #define MACRO_FREEOUTPUTCONSOLE FreeConsole();
 

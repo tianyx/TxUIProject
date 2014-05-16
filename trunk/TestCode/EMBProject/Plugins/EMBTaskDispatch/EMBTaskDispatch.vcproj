@@ -5,10 +5,9 @@
 	Name="EMBTaskDispatch"
 	ProjectGUID="{C09F0BBD-BFA6-47BD-B051-11BEC2DE3A6B}"
 	RootNamespace="EMBTaskDispatch"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
+	SccProjectName="Perforce Project"
+	SccLocalPath="..\.."
+	SccProvider="MSSCCI:Perforce SCM"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
 	>

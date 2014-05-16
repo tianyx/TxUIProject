@@ -89,12 +89,15 @@ void CTxLogManager::CheckLog()
 	}
 }
 
-void CTxLogManager::Stop()
+void CTxLogManager::Stop(BOOL bForce/* = FALSE*/)
 {
 	if (m_hLoopThread)
 	{
 		SetEvent(m_hQuitEvent);
-		WaitForSingleObject(m_hLoopThread, INFINITE);
+		if(WaitForSingleObject(m_hLoopThread, bForce? 100:INFINITE) != WAIT_OBJECT_0)
+		{
+			TerminateThread(m_hLoopThread, -2);
+		}
 		m_hLoopThread = NULL;
 	}
 

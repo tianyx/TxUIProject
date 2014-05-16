@@ -227,6 +227,11 @@ HRESULT CActorHolder::ProcessIncomingMsg( CMBCSocket* pMBCSock, int nMsgType, ch
 		}
 
 	}
+	else
+	{
+		ASSERT(FALSE);
+		CFWriteLog(TEXT("receive unknow msgtype = %d"), nMsgType);
+	}
 
 	
 	return hr;

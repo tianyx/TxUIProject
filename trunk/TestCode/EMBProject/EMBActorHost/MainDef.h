@@ -19,6 +19,7 @@ struct ST_GLOBAL
 	CString szPluginPath;
 	CString szLogFile;
 	CString strGuid;
+	CString strTitle;
 	GUID guid;
 
 	CString strHostName;

@@ -9,7 +9,7 @@
 #endif
 
 #include "resource.h"		// 主符号
-
+#include "MiniDump.h"
 
 // CEmbTestApp:
 // 有关此类的实现，请参阅 EmbTest.cpp
@@ -20,6 +20,7 @@ class CEmbTestApp : public CWinAppEx
 public:
 	CEmbTestApp();
 
+	CMiniDump m_dump;
 // 重写
 	public:
 	virtual BOOL InitInstance();
@@ -27,6 +28,7 @@ public:
 // 实现
 
 	DECLARE_MESSAGE_MAP()
+	virtual int ExitInstance();
 };
 
 extern CEmbTestApp theApp;

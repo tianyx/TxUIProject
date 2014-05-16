@@ -39,6 +39,8 @@ DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 	{
 		HRESULT hr = GetLastError();
 		ASSERT(FALSE);
+		CFWriteLog(0, TEXT("RegisterClassEx failed %d"), hr);
+		return 0;
 	}
 
 	HWND& hwnd = pExcObj->m_hwndExcMsg;
@@ -62,12 +64,19 @@ DWORD __stdcall ExcObjMsgLoopThread( void* lparam )
 	ShowWindow (hwnd, SW_HIDE);
 	UpdateWindow (hwnd);
 	
+	SetEvent(pExcObj->m_hEventMsgWndCreated);
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	if(IsWindow(hwnd))
+	{
+		DestroyWindow(hwnd);
+	}
+	UnregisterClass(strClsName, hInstance);
 
 	return 0;
 }
@@ -128,13 +137,16 @@ CExcutorObj::CExcutorObj( )
 	m_hThreadMsgPoolCheck = NULL;
 	m_hEventQuitLoop = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_hEventPoolMsgArrival = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_hEventMsgWndCreated = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_bRegistered = FALSE;
 	m_hwndExcMsg = NULL;
+	m_pTaskMessageface = NULL;
+	m_pTaskDllInterface = NULL;
 
 	nfgTaskCheckInterval = 1;
 	nfgIdleReportInterval = 5;
 	nfgIdleTimeoutForQuit = 20;
-	nfgTaskRetryMax = 1;
+	nfgTaskRetryMax = 0;
 	ASSERT(g_pExcObject == NULL);
 	g_pExcObject  = this;
 	LoadPluginManager();
@@ -156,11 +168,10 @@ BOOL CExcutorObj::Start()
 	m_hThreadMsgLoop = CreateThread(NULL, 0, ExcObjMsgLoopThread, (LPVOID)this, 0, 0);
 	if (m_hThreadMsgLoop)
 	{
-		int i = 0;
-		while(m_hwndExcMsg == 0 && i <10000)
+		if(WaitForSingleObject(m_hEventMsgWndCreated, 100000) != WAIT_OBJECT_0)
 		{
-			++i;
-			Sleep(1);
+			CFWriteLog(0, "excobj window start failed,quit");
+			return FALSE;
 		}
 	}
 	else
@@ -205,6 +216,7 @@ BOOL CExcutorObj::Stop()
 
 	ResetEvent(m_hEventPoolMsgArrival);
 	ResetEvent(m_hEventQuitLoop);
+	ResetEvent(m_hEventMsgWndCreated);
 	ClearMsgPool();
 
 	if (m_hMapping)
@@ -508,6 +520,7 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 				report.nStep = m_runState.nCurrStep;
 				report.nPercent = m_runState.nPercent;
 				report.nExcType = m_runState.nExcType;
+				report.nSubErrorCode = m_lastReport.code;
 			}
 		}
 		report.ToString(strRet);
@@ -516,6 +529,12 @@ HRESULT CExcutorObj::OnActorMessage( CString& strInfo, CString& strRet )
 	{
 		m_runState.nState = embtaskstate_cancle;
 		CFWriteLog(0, TEXT("Excutor receive cancle task %s"), strInfo);
+	}
+	else if (embxmltype_excCallback == mainInfo.nType)
+	{
+		ST_EXCCALLBACKINFO callInfo;
+		callInfo.FromString(strInfo);
+		OnRecvExcCallbackInfo(callInfo);
 	}
 
 	return S_OK;
@@ -567,7 +586,8 @@ HRESULT CExcutorObj::TaskCheckLoop()
 							
 							m_runState.nPercent = 0;
 							//change dll, and send sub task info
-							HRESULT hr = LaunchTask();
+							ST_SUBTASKDATA& subtaskRef = m_vSubTasks[m_runState.nCurrStep];
+							HRESULT hr = LaunchTask(subtaskRef);
 							if (hr != S_OK)
 							{
 								//dll launch failed
@@ -587,9 +607,10 @@ HRESULT CExcutorObj::TaskCheckLoop()
 					}
 					else if (m_runState.nState == embtaskstate_cancle)
 					{
+						CAutoLock lock(&m_csWorkDll);
 						m_pTaskDllInterface->CancelTask();
+						m_lastReport.code = EMBERR_CANCELED;
 						m_runState.nState = embtaskstate_error;
-						
 						continue;
 					}
 					
@@ -610,6 +631,7 @@ HRESULT CExcutorObj::TaskCheckLoop()
 								int nPercent = 0;
 								// 查询任务执行状态信息
 								CEMBWorkString szWorkStr;
+								CAutoLock lock(&m_csWorkDll);
 								HRESULT hr = m_pTaskDllInterface->GetTaskProgress(szWorkStr);
 								szInfo = szWorkStr;
 								ASSERT(hr == S_OK);
@@ -702,6 +724,8 @@ HRESULT CExcutorObj::OnDllReportTaskProgress( const CTaskString& szInfo )
 		nPercent = -1;
 		//ASSERT(FALSE);
 	}
+
+	m_lastReport = workreport;
 
 	OnTaskProgress(nPercent); // 进度信息
 	return S_OK;
@@ -796,7 +820,8 @@ HRESULT CExcutorObj::InitTask()
 		m_runState.nExcType = m_vSubTasks[m_runState.nCurrStep].nType;
 
 		// 启动媒体处理分步任务
-		hr = LaunchTask();
+		ST_SUBTASKDATA& subtaskRef = m_vSubTasks[m_runState.nCurrStep];
+		hr = LaunchTask(subtaskRef);
 	}
 	if (hr != S_OK)
 	{
@@ -817,7 +842,7 @@ HRESULT CExcutorObj::InitTask()
 
 void CExcutorObj::OnTaskProgress( int nPercent, HRESULT codeIn )
 {
-	CFWriteLog(0, TEXT("task %s step %d, percent %d"), Guid2String(m_runState.guid), m_runState.nCurrStep, nPercent);
+	CFWriteLog(TEXT("task %s step %d, percent %d"), Guid2String(m_runState.guid), m_runState.nCurrStep, nPercent);
 	if (nPercent < 0 || nPercent > 100)
 	{
 		//ASSERT(FALSE);
@@ -847,6 +872,7 @@ void CExcutorObj::OnTaskProgress( int nPercent, HRESULT codeIn )
 			m_runState.nState = embtaskstate_dispatched;
 			m_runState.nCurrStep--;
 			m_runState.nPercent =100;
+			m_lastReport.code = 0;
 			//back to the task init
 			CFWriteLog(0, TEXT("task setp [%d] err, rollback and retry!"), m_runState.nCurrStep+1);
 		}
@@ -868,6 +894,7 @@ void CExcutorObj::OnTaskProgress( int nPercent, HRESULT codeIn )
 	report.nStep = m_runState.nCurrStep;
 	report.nPercent = m_runState.nPercent;
 	report.nExcType = m_runState.nExcType;
+	report.nSubErrorCode = m_lastReport.code;
 	CString strRet;
 	report.ToString(strRet);
 	SendToActor(strRet); // 向Actor.exe 反馈任务状态信息
@@ -890,6 +917,7 @@ BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 		{
 			bOk = TRUE;
 		}
+		tmpPlugin.pIface->QueryInterface(GuidEMBPlugin_ITaskWorkerOnMessage, (LPVOID&) m_pTaskMessageface );
 	}
 
 	if (!bOk)
@@ -903,6 +931,14 @@ BOOL CExcutorObj::LunchTaskDll( int nTaskType )
 BOOL CExcutorObj::UnLoadTaskDll()
 {
 	CFWriteLog(0, TEXT("unload work dll"));
+	CAutoLock lock(&m_csWorkDll);
+
+	if (m_pTaskMessageface)
+	{
+		m_pTaskMessageface->Release();
+		m_pTaskMessageface = NULL;
+	}
+
 	if (m_pTaskDllInterface)
 	{
 		m_pTaskDllInterface->Release();
@@ -919,7 +955,7 @@ BOOL CExcutorObj::UnLoadTaskDll()
 	return TRUE;
 }
 
-HRESULT CExcutorObj::LaunchTask()
+HRESULT CExcutorObj::LaunchTask(ST_SUBTASKDATA& taskIn)
 {
 	HRESULT hr = S_OK;
 	CFWriteLog(0, TEXT("start launch workdll"));
@@ -927,45 +963,31 @@ HRESULT CExcutorObj::LaunchTask()
 	UnLoadTaskDll();
 
 	// 根据分步任务类型，加载对应的功能dll
-	BOOL bOk = LunchTaskDll(m_vSubTasks[m_runState.nCurrStep].nType);
+	BOOL bOk = LunchTaskDll(taskIn.nType);
 	if (!bOk)
 	{
 		OutputDebugString("---未加载功能dll");
+		CFWriteLog(0, TEXT("dll load failed, type = %d"), taskIn.nType);
 		return EMBERR_SUBTASKLOADDLL; // 未加载功能dll
 	}
 
 	CString strRet;
 
+	CAutoLock lock(&m_csWorkDll);
 	if (m_pTaskDllInterface)
 	{
 		// 向功能dll提交分步任务
 		CEMBWorkString szWorkRet;
-		hr = m_pTaskDllInterface->DoTask(m_vSubTasks[m_runState.nCurrStep].strSubTask, szWorkRet, this);
+		hr = m_pTaskDllInterface->DoTask(taskIn.strSubTask, szWorkRet, this);
 		if (hr != S_OK)
 		{
-			hr = EMBERR_TASKSUBMIT; // 提交失败
+			CFWriteLog(0, TEXT("task submit failed, errcode = %x"), hr);
+			//hr = EMBERR_TASKSUBMIT; // 提交失败
 			//ASSERT(FALSE);
 		}
 		else
 		{
-			//time to check if need change task or other action
-			CString strRetInfo = szWorkRet;
-			if (!strRetInfo.IsEmpty())
-			{
-				ST_WORKERRET workRet;
-				CString strTmp = szWorkRet;
-				workRet.FromString(strTmp);
-				ST_EXCCALLBACKINFO callInfo;
-				callInfo.nActorId = m_executorReg.actorId;
-				callInfo.nExcId = m_executorReg.guid;
-				callInfo.nRetType = workRet.nRetType;
-				callInfo.strExtInfo = workRet.strRetInfo;
-				callInfo.nStep = m_runState.nCurrStep;
-				CString strCallRet;
-				callInfo.ToString(strCallRet);
-				SendToActor(strCallRet);
-			}
-			
+						
 		}
 		CFWriteLog(0, TEXT("end launch workdll"));
 	}
@@ -997,6 +1019,177 @@ void CExcutorObj::ResetTaskInfor()
 {
 	m_strTask.Empty();
 	m_vSubTasks.clear();
+}
+
+BOOL CExcutorObj::OnRecvExcCallbackInfo( ST_EXCCALLBACKINFO& infoIn )
+{
+	if (m_strTask.IsEmpty())
+	{
+		return FALSE;
+	}
+
+	CString strCurrGuid = Guid2String(m_runState.guid);
+	if (infoIn.taskId.CompareNoCase(strCurrGuid) !=0)
+	{
+		CFWriteLog(0, TEXT("exc callback info not match current task!, call= %s, current= %s"), infoIn.taskId, strCurrGuid);
+		return FALSE;
+	}
+
+	if (infoIn.nStep != m_runState.nCurrStep)
+	{
+		CFWriteLog(0, TEXT("exc callback info not match currnet step, call step = %d, current = %d"), infoIn.nStep, m_runState.nCurrStep);
+		return FALSE;
+	}
+
+	if (m_runState.nState != embtaskstate_dispatched)
+	{
+		ASSERT(FALSE);
+		CFWriteLog(0, TEXT("exc callback: currnet step state not valid"), infoIn.nStep, m_runState.nCurrStep);
+		return FALSE;
+	}
+
+	if (infoIn.mapExchInfo.size() > 0)
+	{
+		SetRuntimeExchangeInfo(infoIn.mapExchInfo);
+	}
+
+	if (infoIn.nRetType == embrecalltype_WorkChange)
+	{
+		//change current worker, and task info;
+		CAutoLock lock(&m_csTaskInfo);
+		ST_SUBTASKDATA subtaskChanged = m_vSubTasks[m_runState.nCurrStep];
+		CFWriteLog(0, TEXT("start change worker: from %d to %d"), subtaskChanged.nType, infoIn.nWorkType);
+		subtaskChanged.nType = infoIn.nWorkType;
+		subtaskChanged.strSubTask = infoIn.strExtInfo;
+		{
+			CAutoLock lock(&m_csWorkDll);
+			if (m_pTaskDllInterface)
+			{
+				m_pTaskDllInterface->CancelTask();
+			}
+		}
+		HRESULT hr = LaunchTask(subtaskChanged);
+		if (hr != S_OK)
+		{
+			//dll launch failed
+			m_runState.nState = embtaskstate_error;
+			
+		}
+	}
+	else if (infoIn.nRetType > embrecalltype_PureCallMin
+		&& infoIn.nRetType < embrecalltype_PureCallMax)
+	{
+		//direct send to dll
+		CAutoLock lock(&m_csWorkDll);
+		if (m_pTaskMessageface)
+		{
+			m_pTaskMessageface->OnMessageToWorker(infoIn.strExtInfo);
+		}
+	}
+
+	return TRUE;
+}
+
+HRESULT CExcutorObj::OnDllRuntimeCall( const CTaskString& szInfo, CEMBWorkString& strRet )
+{
+	CAutoLock lock(&m_csWorkDll);
+	ST_WORKERRECALL workRecall;
+	workRecall.FromString(szInfo);
+	if (workRecall.nReCallType == embrecalltype_registerRuntimeInfo)
+	{
+		//file dest changed save and notify other step
+		AddRuntimeExchangeInfo(workRecall.nRuntimeType, workRecall.strRuntimeInfo);		
+	}
+	else if (workRecall.nReCallType== embrecalltype_RequestRuntimeInfo)
+	{
+		CString strInfo;
+		GetRuntimeExchangeInfo(workRecall.nRuntimeType, strInfo);
+		strRet = strInfo;
+	}
+	else if(workRecall.nReCallType == embrecalltype_spfcvs)
+	{
+		//send to actor
+		ST_EXCCALLBACKINFO callInfo;
+		callInfo.nActorId = m_executorReg.actorId;
+		callInfo.nExcId = m_executorReg.guid;
+		callInfo.nRetType = workRecall.nReCallType;
+		callInfo.strExtInfo = workRecall.strRuntimeInfo;
+		callInfo.mapExchInfo = m_mapInfoExchange;
+		callInfo.nStep = m_runState.nCurrStep;
+		callInfo.taskId = Guid2String(m_runState.guid);
+		CString strCallRet;
+		callInfo.ToString(strCallRet);
+		SendToActor(strCallRet);
+	}
+	else if (workRecall.nReCallType > embrecalltype_PureCallMin
+		&& workRecall.nReCallType < embrecalltype_PureCallMax)
+	{
+		//call that not need runtime info
+		ST_EXCCALLBACKINFO callInfo;
+		callInfo.nActorId = m_executorReg.actorId;
+		callInfo.nExcId = m_executorReg.guid;
+		callInfo.nRetType = workRecall.nReCallType;
+		callInfo.strExtInfo = workRecall.strRuntimeInfo;
+		callInfo.nStep = m_runState.nCurrStep;
+		callInfo.taskId = Guid2String(m_runState.guid);
+		CString strCallRet;
+		callInfo.ToString(strCallRet);
+		SendToActor(strCallRet);
+	}
+	else
+	{
+		ASSERT(FALSE);
+		CFWriteLog(0, TEXT("unknow runtime recall info! %s"), szInfo);
+		return EMBERR_INVALIDARG;
+	}
+
+	return S_OK;
+}
+
+BOOL CExcutorObj::GetRuntimeExchangeInfo( int nType, CString& strRet )
+{
+	CAutoLock lock(&m_csExchInfo);
+
+	MAPWORKPREINFOEXCHANGE::iterator itf = m_mapInfoExchange.find(nType);
+	if (itf != m_mapInfoExchange.end())
+	{
+		strRet = itf->second;
+	}
+	else
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+BOOL CExcutorObj::AddRuntimeExchangeInfo( int nType, CString& strIn )
+{
+	CFWriteLog(TEXT("add new runtime info type =%d"), nType);
+	CAutoLock lock(&m_csExchInfo);
+
+	MAPWORKPREINFOEXCHANGE::iterator itf = m_mapInfoExchange.find(nType);
+	if (itf != m_mapInfoExchange.end())
+	{
+		itf->second = strIn;
+		CFWriteLog(TEXT("exchange info was replaced by new!"));
+	}
+	else
+	{
+		m_mapInfoExchange[nType] = strIn;
+	}
+	return TRUE;
+}
+
+BOOL CExcutorObj::SetRuntimeExchangeInfo( MAPWORKPREINFOEXCHANGE& mapDataIn )
+{
+	CAutoLock lock(&m_csExchInfo);
+	if(m_mapInfoExchange.size() > 0)
+	{
+		CFWriteLog(0, TEXT("runtime exchange info was replaced by svr!"));
+	}
+	m_mapInfoExchange = mapDataIn;
+	return TRUE;
 }
 
 

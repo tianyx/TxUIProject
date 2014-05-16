@@ -431,6 +431,17 @@ BOOL CTxParamString::OutofKey()
 	return FALSE;
 }
 
+CString CTxParamString::UnEscapeString( CString& strXmlIn )
+{
+	return CMarkup::UnescapeText(strXmlIn);
+}
+
+CString CTxParamString::EscapeString( CString& strXmlIn )
+{
+	return CMarkup::EscapeText(strXmlIn, CMarkup::MNF_ESCAPEQUOTES);
+
+}
+
 
 
 #ifdef VC6DEFINE

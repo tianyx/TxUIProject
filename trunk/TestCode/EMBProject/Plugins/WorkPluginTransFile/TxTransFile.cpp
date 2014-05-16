@@ -70,7 +70,7 @@ HRESULT EMB::CTxTransFile::DoTask( const CTaskString& szTaskIn, CEMBWorkString& 
 	m_nMaxFtpSpeedPerExc = m_taskInfo.nSpeedLimit < 1000? 1000: m_taskInfo.nSpeedLimit*1000;
 	m_nCurrSrcSite = -1;
 	m_nCurrDesSite = -1;
-
+	m_nCurrFileLength = 0;
 	ResetEvent(m_hEventQuit);
 	m_pReportCallback = pICallback;
 	m_hThreadTask = CreateThread(NULL, 0, TaskRunProc, (LPVOID)this, 0, 0);
@@ -87,6 +87,7 @@ HRESULT EMB::CTxTransFile::GetTaskProgress( CEMBWorkString& szInfo )
 {
 	ST_WORKERREPORT report;
 	report.nPercent = m_nPercent;
+	report.code = m_nSubErrCode;
 	CString strRet;
 	report.ToString(strRet);
 	szInfo = strRet;
@@ -142,13 +143,12 @@ BOOL EMB::CTxTransFile::RunTaskLoop()
 		{
 			break;
 		}
-		if (m_taskInfo.bWriteLocalResult)
+		
+
+		hr = RegisterRuntimeInfo();
+		if (FAILED(hr))
 		{
-			hr = WriteLocalResult();
-			if (FAILED(hr))
-			{
-				break;
-			}
+			break;
 		}
 
 		if (m_taskInfo.bRegisterToDB)
@@ -172,6 +172,8 @@ BOOL EMB::CTxTransFile::RunTaskLoop()
 		m_nPercent = 100;
 	}
 
+	m_nSubErrCode =hr;
+
 	ST_WORKERREPORT report;
 	if (m_pReportCallback)
 	{
@@ -193,14 +195,17 @@ HRESULT EMB::CTxTransFile::ParseTaskInfo( const CString& strXml)
 {
 	HRESULT hr = S_OK;
 	m_taskInfo.FromString(strXml);
-	if (m_taskInfo.vSitSrc.size() == 0
-		||m_taskInfo.vSitDes.size() == 0)
+	if (m_taskInfo.vSitSrc.size() <= 0
+		||m_taskInfo.vSitDes.size() <= 0)
 	{
 		CFWriteLog(0, TEXT("task param error, no ftp sit"));
 		hr = EMBERR_INVALIDARG;
 		return hr;
 	}
 
+	m_taskInfo.nSrcSiteTryStart = m_taskInfo.nSrcSiteTryStart < 0? 0:(m_taskInfo.nSrcSiteTryStart%m_taskInfo.vSitSrc.size());
+	m_taskInfo.nDesSiteTryStart = m_taskInfo.nDesSiteTryStart < 0? 0:(m_taskInfo.nDesSiteTryStart%m_taskInfo.vSitDes.size());
+	
 	if (m_taskInfo.strClipLogicID.IsEmpty())
 	{
 		CFWriteLog(0, TEXT("task param error, no cliplogicid"));
@@ -239,11 +244,7 @@ HRESULT EMB::CTxTransFile::ParseTaskInfo( const CString& strXml)
 
 	}
 
-	if (m_taskInfo.bMD5Check && m_taskInfo.strMD5Compare.IsEmpty())
-	{
-		CFWriteLog(0, TEXT("md5 compare text is empty"));
-		hr = EMBERR_INVALIDARG;
-	}
+	
 
 	return hr;
 }
@@ -269,17 +270,23 @@ HRESULT EMB::CTxTransFile::TansferFile()
 		int nFtpSrcID = -1;
 		int nFtpDesID = -1;
 		//find first valid ftp
-		for (size_t i = 0; i < m_taskInfo.vSitSrc.size(); ++i)
+		int iftpLoop = m_taskInfo.nSrcSiteTryStart;
+		CFWriteLog(TEXT("start src ftp check from NO.%d"), iftpLoop);
+
+		const int nSrcSitCount = m_taskInfo.vSitSrc.size();
+		for (size_t i = 0; i < nSrcSitCount; ++i,++iftpLoop)
 		{
-			ST_FTPSITEINFO& sitRef = m_taskInfo.vSitSrc[i];
+			iftpLoop = (iftpLoop)%nSrcSitCount;
+			ST_FTPSITEINFO& sitRef = m_taskInfo.vSitSrc[iftpLoop];
 			try
 			{
 				pFtpConnectionSrc = pInetSession.GetFtpConnection(sitRef.strFtpIp, sitRef.strUser, sitRef.strPw, sitRef.nFtpPort, sitRef.nPassive);
 				if (pFtpConnectionSrc)
 				{
 					//valid
-					m_nCurrSrcSite = i;
+					m_nCurrSrcSite = iftpLoop;
 					sitInfoSrc = sitRef;
+					CFWriteLog(TEXT("use SrcFtp:%s %s:%d %s/%s "), sitRef.strFtpName, sitRef.strFtpIp, sitRef.nFtpPort, sitRef.strUser, sitRef.strPw);
 					break;
 				}
 			}
@@ -287,7 +294,7 @@ HRESULT EMB::CTxTransFile::TansferFile()
 			{
 				//ftp is not valid
 				pFtpConnectionSrc = NULL;
-				CFWriteLog(0, TEXT("ftp not valid %s:%d"), sitRef.strFtpIp, sitRef.nFtpPort);
+				CFWriteLog(0, TEXT("ftp not valid, %s, %s:%d,%s:%s"),sitRef.strFtpName,  sitRef.strFtpIp, sitRef.nFtpPort, sitRef.strUser, sitRef.strPw);
 			}
 		}
 
@@ -298,17 +305,22 @@ HRESULT EMB::CTxTransFile::TansferFile()
 		}
 
 		//find first valid Des Ftp
-		for (size_t i = 0; i < m_taskInfo.vSitDes.size(); ++i)
+		iftpLoop = m_taskInfo.nDesSiteTryStart;
+		CFWriteLog(TEXT("start des ftp check from NO.%d"), iftpLoop);
+		const int nDesSitCount = m_taskInfo.vSitDes.size();
+		for (size_t i = 0; i < nDesSitCount; ++i,++iftpLoop)
 		{
-			ST_FTPSITEINFO& sitRef = m_taskInfo.vSitDes[i];
+			iftpLoop = iftpLoop%nDesSitCount;
+			ST_FTPSITEINFO& sitRef = m_taskInfo.vSitDes[iftpLoop];
 			try
 			{
 				pFtpConnectionDes = pInetSession.GetFtpConnection(sitRef.strFtpIp, sitRef.strUser, sitRef.strPw, sitRef.nFtpPort, sitRef.nPassive);
 				if (pFtpConnectionDes)
 				{
 					//valid
-					m_nCurrDesSite = i;
+					m_nCurrDesSite = iftpLoop;
 					sitInfoDes = sitRef;
+					CFWriteLog(TEXT("use DesFtp:%s %s:%d %s/%s "), sitRef.strFtpName, sitRef.strFtpIp, sitRef.nFtpPort, sitRef.strUser, sitRef.strPw);
 					break;
 				}
 			}
@@ -316,7 +328,7 @@ HRESULT EMB::CTxTransFile::TansferFile()
 			{
 				//ftp is not valid
 				pFtpConnectionDes = NULL;
-				CFWriteLog(0, TEXT("ftp not valid %s:%d"), sitRef.strFtpIp, sitRef.nFtpPort);
+				CFWriteLog(0, TEXT("ftp not valid, %s, %s:%d,%s:%s"),sitRef.strFtpName,  sitRef.strFtpIp, sitRef.nFtpPort, sitRef.strUser, sitRef.strPw);
 			}
 		}
 
@@ -339,7 +351,7 @@ HRESULT EMB::CTxTransFile::TansferFile()
 		string szNameDes = m_taskInfo.strDesFileName;
 		string szNameDesUtf8 = szNameDes;
 
-		if (m_taskInfo.nCodePage == CP_UTF8)
+			if (m_taskInfo.nCodePage == CP_UTF8)
 		{
 			wstring wszSrcDir = Ansi2W(szSrcDir);
 			szDirSrcUtf8 = W2UTF8(wszSrcDir);
@@ -352,6 +364,7 @@ HRESULT EMB::CTxTransFile::TansferFile()
 
 			wstring wszNameDes = Ansi2W(szNameDes);
 			szNameDesUtf8 = W2UTF8(wszNameDes);
+			
 		}
 
 		BOOL bSrcRet = TRUE;
@@ -359,13 +372,14 @@ HRESULT EMB::CTxTransFile::TansferFile()
 		{
 			bSrcRet = pFtpConnectionSrc->SetCurrentDirectory(szDirSrcUtf8.c_str());
 		}
+
 		BOOL bDesRet = TRUE;
 		if (szDesDirUtf8.size() > 0)
 		{
 			bDesRet = pFtpConnectionDes->SetCurrentDirectory(szDesDirUtf8.c_str());
 		}
 
-		INT64 nSrcFileLength = 0;
+		ULONGLONG nSrcFileLength = 0;
 		if (!bSrcRet || !bDesRet)
 		{
 			ASSERT(FALSE);
@@ -387,7 +401,36 @@ HRESULT EMB::CTxTransFile::TansferFile()
 		{
 			finder.FindNextFile();
 			nSrcFileLength = finder.GetLength();
-			CFWriteLog(0, "src file length = %I64dM", nSrcFileLength/1024/1024);
+			m_nCurrFileLength = nSrcFileLength;
+			CFWriteLog(0, "src file length = %I64dByte, %I64dM", nSrcFileLength, nSrcFileLength/((ULONGLONG)(1024*1024)));
+/* //don't delete, use these code when actor in winxp or server 2003
+			if (!m_taskInfo.vSitSrc[m_nCurrSrcSite].strUncDir.IsEmpty())
+			{
+				//used when actor in winxp or win2003
+				CString strUncFile = m_taskInfo.vSitSrc[m_nCurrSrcSite].strUncDir;
+				strUncFile += "\\";
+				
+				strUncFile += m_taskInfo.strSrcFileName;
+				OFSTRUCT ofStruct; 
+				HFILE tHandle = NULL;
+				
+				tHandle =OpenFile(strUncFile, &ofStruct,OF_READ );
+				CFWriteLog("unc file =%s, handle = %d", strUncFile, tHandle);
+				if (tHandle)
+				{
+					LARGE_INTEGER tInt1;
+					ZeroMemory(&tInt1, sizeof(tInt1));
+					GetFileSizeEx((HANDLE)tHandle, &tInt1);
+					__int64 tFileSize2 = tInt1.QuadPart;
+					if (tFileSize2 > 0)
+					{
+						nSrcFileLength = tFileSize2;
+						m_nCurrFileLength = nSrcFileLength;
+						CFWriteLog(0, "src file changed length = %I64dByte, %I64dM", nSrcFileLength, nSrcFileLength/((ULONGLONG)(1024*1024)));
+					}
+					CloseHandle((HANDLE)tHandle);
+				}	
+			}*/
 		}
 		//后缀名
 		finder.Close();
@@ -453,8 +496,10 @@ HRESULT EMB::CTxTransFile::TansferFile()
 
 			INT64 nFileTransed= 0;
 			INT64 nPercent = 0;
-			const INT64  nSleepPot = m_nMaxFtpSpeedPerExc/100;
+			const INT64  nSleepPot = m_nMaxFtpSpeedPerExc;
+			CFWriteLog(TEXT("trans speed limit to %.2f MB/s"), m_nMaxFtpSpeedPerExc/1024.0/1024.0);
 			INT64 nCurrTransed  = 0;
+			UINT nCurrTick = GetTickCount();
 			INT64 nTransedPerSecond = 0;
 			DWORD nTickStart = GetTickCount();
 			INT64 nSpeedKBPerS = 0;
@@ -489,9 +534,15 @@ HRESULT EMB::CTxTransFile::TansferFile()
 					nCurrTransed += nRead;
 					if (nSleepPot > 0 && nCurrTransed > nSleepPot)
 					{
+						INT64 nTickSleep =GetTickCount() - nCurrTick;
+						nTickSleep = nTickSleep > 1000? 0:(1000-nTickSleep);
 						nCurrTransed = 0;
+						nCurrTick = GetTickCount();
 						//limit speed
-						Sleep(10);
+						if (nTickSleep > 10)
+						{
+							Sleep(nTickSleep);
+						}
 					}
 					//calc speed
 					nTransedPerSecond += nRead;
@@ -504,8 +555,9 @@ HRESULT EMB::CTxTransFile::TansferFile()
 							nSpeedKBPerS = nTransedPerSecond*1000/((nTickNow - nTickStart)*1024);
 							nTransedPerSecond = 0;
 							nTickStart = nTickNow;
-							//TRACE("\ntask%I64d, speed %dKB/s", m_taskInfo.strTaskID, nSpeedKBPerS);
+							CFWriteLog("runtimeSpeed %.2f MB/s", nSpeedKBPerS/1024.0);
 							// 										TRACE("\ntask%I64d, percent%d", m_taskInfo.nTaskId, nPercent);
+							//CFWriteLog("write %I64d, total %I64d", nSrcFileLength, nFileTransed);
 						}
 					}
 				}
@@ -521,7 +573,7 @@ HRESULT EMB::CTxTransFile::TansferFile()
 					{
 						//
 						//CFWriteLog(0, TEXT("读取源文件失败"));
-						CFWriteLog(0, TEXT("src file write err %s"), szNameSrc.c_str());
+						CFWriteLog(0, TEXT("src file write err %s, src = %I64d,  writed = %I64d"), szNameSrc.c_str(), nSrcFileLength, nFileTransed);
 						hRet = EMBERR_FILEACCESS;
 					}
 					break;
@@ -539,13 +591,22 @@ HRESULT EMB::CTxTransFile::TansferFile()
 			if (hRet==S_OK && pMd5)
 			{
 				strMd5Result = pMd5->GetResult();
+				CFWriteLog(0, "md5value = %s",strMd5Result);
 				if (!strMd5Result.IsEmpty())
 				{
-					if (m_taskInfo.strMD5Compare.CompareNoCase(strMd5Result) != 0)
+					if (!m_taskInfo.strMD5Compare.IsEmpty())
 					{
-						CFWriteLog(TEXT("md5 compare error src:%s, des:%s"), m_taskInfo.strMD5Compare, strMd5Result);
-						hRet = EMBERR_MD5NOTMATCH;
+						if (m_taskInfo.strMD5Compare.CompareNoCase(strMd5Result) != 0)
+						{
+							CFWriteLog(0, TEXT("md5 compare error src:%s, des:%s"), m_taskInfo.strMD5Compare, strMd5Result);
+							hRet = EMBERR_MD5NOTMATCH;
+						}
 					}
+					
+				}
+				else
+				{
+					CFWriteLog(0, TEXT("md5 calculate failed"));
 				}
 			}
 
@@ -554,13 +615,15 @@ HRESULT EMB::CTxTransFile::TansferFile()
 		catch (CInternetException* e)
 		{
 			ASSERT(FALSE);
-			CFWriteLog(0, TEXT("ftp file transfer error!"));
+			char szbuff[4096];
+			e->GetErrorMessage(szbuff, 4094);
+			CFWriteLog(0, TEXT("ftp file transfer exception error! %s"), szbuff);
 			hRet = EMBERR_INTERNET;
 		}
 		catch(...)
 		{
 			ASSERT(FALSE);
-			CFWriteLog(0, TEXT("file transfer error!"));
+			CFWriteLog(0, TEXT("file transfer exception error!"));
 		}
 
 		if (pFileSrc)
@@ -610,7 +673,7 @@ HRESULT EMB::CTxTransFile::TansferFile()
 	return hRet;
 }
 
-HRESULT EMB::CTxTransFile::WriteLocalResult()
+HRESULT EMB::CTxTransFile::RegisterRuntimeInfo()
 {
 	HRESULT hr = S_OK;
 	ASSERT(m_nCurrDesSite >= 0 && m_nCurrDesSite < m_taskInfo.vSitDes.size());
@@ -618,25 +681,72 @@ HRESULT EMB::CTxTransFile::WriteLocalResult()
 	rst.strDestDBConn = m_taskInfo.vSitDes[m_nCurrDesSite].strDBConn;
 	rst.strClipID  = m_taskInfo.strClipID;
 	rst.strClipLogicID = m_taskInfo.strClipLogicID;
+	rst.strLocalTmpFileDir =m_taskInfo.strLocalDownDir;
+	rst.nPathType = m_taskInfo.bDownToLocal? embpathtype_local : 0;
+	rst.strDestUncDir = m_taskInfo.vSitDes[m_nCurrDesSite].strUncDir;
+	rst.nPathType = rst.strDestUncDir.IsEmpty()? rst.nPathType:(rst.nPathType|embpathtype_unc);
+	rst.strDestFtpIp = m_taskInfo.vSitDes[m_nCurrDesSite].strFtpIp;
+	rst.strDestFtpUser = m_taskInfo.vSitDes[m_nCurrDesSite].strUser;
+	rst.strDestFtpPw = m_taskInfo.vSitDes[m_nCurrDesSite].strPw;
+	rst.strDestFtpDir = m_taskInfo.strDesDir;
+	rst.nDestFtpPassive = m_taskInfo.vSitDes[m_nCurrDesSite].nPassive;
+	rst.nPathType = rst.strDestFtpIp.IsEmpty()? rst.nPathType:(rst.nPathType|embpathtype_ftp);
+	rst.strDestFileName = m_taskInfo.strDesFileName;
 	CString strRes;
 	rst.ToString(strRes);
-	CString strResFile = m_taskInfo.strLocalDownDir;
-	strResFile.TrimRight(TEXT("\\"));
-	strResFile += TEXT("\\");
-	strResFile += m_taskInfo.strLocalDownFileName;
-	strResFile += TEXT(".res");
-	CFile file;
-	if (!file.Open(strResFile, CFile::modeCreate|CFile::modeWrite, NULL))
+
+	ST_WORKERRECALL workRecall;
+	workRecall.nReCallType = embrecalltype_registerRuntimeInfo;
+	workRecall.nRuntimeType = embruntimeInfoType_filedest;
+	workRecall.strRuntimeInfo = strRes;
+	CString strRecall;
+	workRecall.ToString(strRecall);
+
+	if (m_taskInfo.vSitDes.size() > 1)
 	{
-		CFWriteLog(0, TEXT("result file write err! %s"), strResFile);
-		hr = EMBERR_FILEACCESS;
-	}
-	else
-	{
-		file.Write(strRes, strRes.GetLength());
-		file.Close();
+		//must info executor to change file dest
+		if (m_pReportCallback)
+		{
+			CEMBWorkString strRet;
+			m_pReportCallback->OnDllRuntimeCall(strRecall, strRet);
+		}
 	}
 
+	//register mediainfo
+	ST_RUNTIMEMEDIAINFO mediaInfo;
+	mediaInfo.strFileName = m_taskInfo.strDesFileName;
+	mediaInfo.nFileLength = m_nCurrFileLength;
+	mediaInfo.ToString(strRes);
+	workRecall.nReCallType = embrecalltype_registerRuntimeInfo;
+	workRecall.nRuntimeType = embruntimeInfoType_meidaInfo;
+	workRecall.strRuntimeInfo = strRes;
+	CString strRecall2;
+	workRecall.ToString(strRecall2);
+	if (m_pReportCallback)
+	{
+		CEMBWorkString strRet;
+		m_pReportCallback->OnDllRuntimeCall(strRecall2, strRet);
+	}
+
+	if (m_taskInfo.bWriteLocalResult)
+	{
+		CString strResFile = m_taskInfo.strLocalDownDir;
+		strResFile.TrimRight(TEXT("\\"));
+		strResFile += TEXT("\\");
+		strResFile += m_taskInfo.strLocalDownFileName;
+		strResFile += TEXT(".res");
+		CFile file;
+		if (!file.Open(strResFile, CFile::modeCreate|CFile::modeWrite, NULL))
+		{
+			CFWriteLog(0, TEXT("result file write err! %s"), strResFile);
+			hr = EMBERR_FILEACCESS;
+		}
+		else
+		{
+			file.Write(strRes, strRes.GetLength());
+			file.Close();
+		}
+	}
 	return hr;
 }
 
@@ -728,7 +838,7 @@ HRESULT EMB::CTxTransFile::RegisterToDB()
 	if (!rs.IsEOF())
 	{
 		CFWriteLog(0, TEXT("clip already existed in T_LOCATIONINFO, delete it and continue"));
-		strTmpSql.Format(TEXT("delete from T_LOCATIONINFO where strClipLogicID = '%s' and strStorageName = '%s'"), m_taskInfo.strClipLogicID, sitRef.strFtpName);
+		strTmpSql.Format(TEXT("delete from T_LOCATIONINFO where strClipLogicID = '%s' and strStorageName = '%s'"), m_taskInfo.strClipLogicID, sitRef.strStoreName);
 		vSqlRun.push_back(strTmpSql);
 	}
 

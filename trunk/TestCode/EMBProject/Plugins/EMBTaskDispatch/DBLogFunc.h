@@ -7,3 +7,5 @@
 
 void CFWriteDBLog_Task(DWORD dwLogKey, int nSrvCode,  LPCTSTR szTaskID, int nState, LPCTSTR szRemark);
 void CFWriteDBLog_EMB(DWORD dwLogKey, int nSrvCode, int nType, LPCTSTR szRemark);
+
+void CFUpdateTaskRunTime(DWORD dwLogKey, LPCTSTR szTaskID, int nStarttime, time_t& tmIn);

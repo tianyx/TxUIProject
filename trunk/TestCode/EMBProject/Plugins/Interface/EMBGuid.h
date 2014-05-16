@@ -16,6 +16,9 @@ extern const GUID GuidEMBPlugin_PTaskDispatch;
 
 extern const GUID GuidEMBPlugin_PTaskStorage;
 extern const GUID GuidEMBPlugin_PActor;
+extern const GUID GuidEMBPlugin_PEMBInfoPublish;
+
+
 extern const GUID GuidEMBPlugin_PWorkerSample;
 extern const GUID GuidEMBPlugin_PWorkerMediaCheck;
 extern const GUID GuidEMBPlugin_PWorkerMD5;
@@ -44,6 +47,7 @@ extern const GUID GuidEMBPlugin_IControler;
 extern const GUID GuidEMBPlugin_IStorage;
 
 extern const GUID GuidEMBPlugin_ITaskWorkerCall;
+extern const GUID GuidEMBPlugin_ITaskWorkerOnMessage;
 
 // 用于Actor界面获取信息
 extern const GUID GuidEMBPlugin_IActorUI;
@@ -53,3 +57,6 @@ extern const GUID GuidEMBPlugin_IUIMessageProcess;
 
 // Server UI
 extern const GUID GuidEMBServer_IUI;
+
+//publish interface
+extern const GUID GuidEMBPublishRegister;

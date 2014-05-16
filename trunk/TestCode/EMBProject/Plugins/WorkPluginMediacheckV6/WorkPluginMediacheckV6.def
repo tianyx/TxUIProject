@@ -1,7 +1,0 @@
-; WorkPluginMediacheckV6.def : Declares the module parameters for the DLL.
-
-LIBRARY      "WorkPluginMediacheckV6"
-DESCRIPTION  'WorkPluginMediacheckV6 Windows Dynamic Link Library'
-
-EXPORTS
-    ; Explicit exports can go here

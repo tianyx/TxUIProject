@@ -55,6 +55,7 @@ public:
 	CTxADOCommand(DWDBKEY dwKey = DBKEY_ANY);
 	~CTxADOCommand(void);
 
+	_RecordsetPtr ExecuteStoredProc(LPCTSTR strStoreProc);
 
 	BOOL ExecuteSQL(CString& strSqlIn);
 

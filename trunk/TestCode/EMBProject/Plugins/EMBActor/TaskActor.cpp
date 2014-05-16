@@ -358,7 +358,7 @@ HRESULT EMB::CTaskActor::OnActorConnectorMsg(CString& strInfo, CString& strRet)
 			}
 		}
 	}
-	else if (embxmltype_changeWork == mainInfo.nType)
+	else if (embxmltype_excCallback == mainInfo.nType)
 	{
 		//find task executor and send to it
 		ST_TASKINACTOR taskInfo;
@@ -421,7 +421,7 @@ HRESULT EMB::CTaskActor::SetParam( const CTaskString& szIn, CTaskString& szOut )
 		if (regIn.actorId  < 0
 			|| regIn.addrMain.sin_family  != AF_INET
 			|| regIn.addrSlave.sin_family != AF_INET
-			|| regIn.nExcutorMinId >= regIn.nExcutorMaxId
+			|| regIn.nExcutorMinId > regIn.nExcutorMaxId
 			|| _access(regIn.strExcPath, 0) ==-1)
 		{
 			ret.nRetVal = EMBERR_INVALIDARG;

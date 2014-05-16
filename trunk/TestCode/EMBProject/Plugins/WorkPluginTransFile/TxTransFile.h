@@ -102,7 +102,7 @@ public:
 	HRESULT ParseTaskInfo(const CString& strXml);
 	
 	//write localResult
-	HRESULT WriteLocalResult();
+	HRESULT RegisterRuntimeInfo();
 	//register db
 	HRESULT RegisterToDB();
 	//
@@ -119,6 +119,7 @@ public:
 	int m_nCurrSrcSite;
 	int m_nCurrDesSite;
 	CString m_strMD5Val;
+	INT64 m_nCurrFileLength;
 };
 
 }

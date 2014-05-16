@@ -114,6 +114,8 @@ private:
 	BOOL CheckActorState();
 	int CalcActorPayload(ST_ACTORSTATE& actorStateIn);
 	BOOL TryFetchTask();
+	BOOL TryFetchTaskNew();
+
 private:
 	HRESULT CommitFileTask(TXGUID& guidIn, ST_FILETASKDATA& taskIn);
 
@@ -131,11 +133,17 @@ private:
 	BOOL UpdateActorState(ST_ACTORSTATE& stateIn);
 	BOOL IsLiveActor(const ACTORID nActorId);
 
-	BOOL GetIdleActors( CString strActorTeam,int nPriority, vector<ACTORID>& vActorOut);
+	BOOL GetIdleActors( CString strActorTeam,int nPriority, vector<ACTORID>& vActorOut, ACTORID excludeActor = INVALID_ID);
+	int GetTotalActors();
 
 	CString CreateSplitTaskXml(CString strTaskIn,int nStart,int nSize, ST_FILETASKDATA& subTask);
+
 	CString CreateCombinedTaskXml(CString strTaskIn,int nSize);
+
+	//not used
 	BOOL TaskNeedSplit(CString strTaskIn);
+
+	//not used
 	BOOL TryDispatchSplitTask(ST_FILETASKDATA& taskIn);
 
 	//for executor callback info
@@ -143,6 +151,11 @@ private:
 
 	//
 	BOOL TrySplitFCVSSubTask(ST_EXCCALLBACKINFO& infoIn);
+	BOOL CreateFcvsSubTask(const CString strOrgGuid, const ST_FCVS& taskOrgIn, const int nPartNumIn, const int nTotalPartIn, ST_FILETASKDATA& taskDataOut );
+	BOOL CreateFcvsMergeSubTask(const CString strOrgGuid, vector<CString>vSubGuids, const int nTotalPartIn, const CString& strFilePath,  CString& taskOut);
+
+	//called when executor request task run info
+	BOOL OnExcRequestTaskRunInfo(ST_EXCCALLBACKINFO& infoIn);
 
 	BOOL BroadcastToNotifier(CString& strInfo);
 private:
@@ -153,7 +166,7 @@ private:
 	HRESULT GetActorState(ACTORID actorID, CString& strRet);
 	HRESULT GetTaskList(CString& strRet);
 	HRESULT GetTaskRunState(TXGUID& taskGuid, CString& strRet);
-
+	int GetWaitingTaskCount();
 private:
 	// 全部任务列表
 	MAPFILETASKS m_mapTasks;
@@ -191,7 +204,7 @@ private:
 	// 任务分配配置文件
 	ST_TASKDISPATCHCONFIG m_config;
 
-	int nfgTaskPoolSizeMax;
+	int nfgTaskPoolSizeMax; //used when call oldfunc: TryFetchTask 
 	//
 	int nfgTaskReDispatchMaxCount;
 	int nfgTaskDispatchCD;
@@ -210,6 +223,15 @@ private:
 	int nfgNetIOWeight;
 	int nfgMaxActorLoad;
 	int nfgLowActorLoad;
+
+	int m_nSplitTaskCount;
+
+	void ResetUnionTask(){m_nSplitTaskCount = 0;}
+	void AddSplitTaskRef(){++m_nSplitTaskCount;}
+	void SubSplitTaskRef(){--m_nSplitTaskCount;}
+	int GetUnionTaskCount(){return m_nSplitTaskCount;}
+
+	int GetDispatchedSplitTaskCount();
 
 };
 

@@ -52,6 +52,9 @@ BOOL InitGlobalConfig()
 		delete[] pbuff;
 	}
 
+	ST_ACTORCONFIG actCfg;
+	actCfg.FromString(strXml);
+	g_GlobalInfo.strTitle.Format(TEXT("Actor[%d]"), actCfg.actorId);
 
 	//Load actorhost
 	if (!LoadActorHost(strXml))

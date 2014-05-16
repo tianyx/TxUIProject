@@ -34,6 +34,8 @@ enum ENUM_PLUGINTYPE
 	PluginType_Storage			= 0x20,
 	PluginType_Wroker			= 0x40,
 	PluginType_UIServer			= 0x80,
+	PluginType_InfoPublish		= 0x100,
+
 };
 
 enum ENUM_SUBTYPE
@@ -181,6 +183,7 @@ interface IActorMsgCallBackInterface
 interface ITaskReportToExcutorInterface
 {
 	virtual HRESULT OnDllReportTaskProgress(const CTaskString& szInfo) = 0;
+	virtual HRESULT OnDllRuntimeCall(const CTaskString& szInfo, CEMBWorkString& strRet) = 0;
 };
 
 interface ITaskWorkerCallInterface:virtual public ITxUnkown
@@ -188,6 +191,11 @@ interface ITaskWorkerCallInterface:virtual public ITxUnkown
 	virtual HRESULT DoTask(const CTaskString& szTaskIn, CEMBWorkString& szRet, ITaskReportToExcutorInterface* pICallback) = 0;
 	virtual HRESULT CancelTask() = 0;
 	virtual HRESULT GetTaskProgress(CEMBWorkString& szInfo) = 0;
+};
+
+interface ITaskWorkerOnMessageInterface:virtual public ITxUnkown
+{
+	virtual HRESULT OnMessageToWorker(const CTaskString& szInfo) = 0;
 };
 
 
@@ -235,5 +243,20 @@ interface IServerUI : virtual public ITxUnkown
 	virtual HRESULT GetActors(vector<CString>& vActor) = 0;
 };
 
+
+//for publish
+//
+interface IEMBPublishCallbackInterface
+{
+	virtual HRESULT OnReceivePublishInfo(CTaskString& strInfoIn, const int nPubType) = 0;
+};
+
+//see embpublishtype_xxx
+interface IEMBInfoPublishRegisterInterface: virtual public ITxUnkown
+{
+	virtual HRESULT RegisterPublisher(IEMBPublishCallbackInterface* pPublisher, const int nPubType) = 0;
+	virtual HRESULT UnRegisterPublisher(IEMBPublishCallbackInterface* pPublisher, const int nPubType) = 0;
+
+};
 
 }//namespace EMB

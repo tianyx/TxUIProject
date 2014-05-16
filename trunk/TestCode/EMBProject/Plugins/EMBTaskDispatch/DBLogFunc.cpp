@@ -19,3 +19,13 @@ void CFWriteDBLog_EMB( DWORD dwLogKey, int nSrvCode,  int nType, LPCTSTR szRemar
 
 }
 
+void CFUpdateTaskRunTime( DWORD dwLogKey, LPCTSTR szTaskID, int nStarttime , time_t& tmIn)
+{
+	CTime tmNow(tmIn);
+	CString strSql;
+	CString strKey = nStarttime == 1? "tTimeStartRun":"tTimeEndRun";
+	strSql.Format(TEXT("update T_EMBtask set %s = '%s' where strTaskID ='%s'"), strKey,  tmNow.Format(TEXT("%Y-%m-%d %H:%M:%S")), szTaskID);
+	CTxDBLogManager::GetTxDBLogMgr()->WriteLog(dwLogKey, strSql);
+
+}
+

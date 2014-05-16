@@ -1,14 +1,44 @@
 <edoc_main ver="1.0" type="1" guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067">
-	<basic guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067" priority="1" actor = "" excList="step1,step2" />
-	<step1 acttype="16" actname="sample">
-		<sample>
-			<src>c:\1.mpg</src>
-			<des>d:\1.mpg</des>
-		</sample>
+	<basic guid="AE1DD81F-8A27-4901-9090-4E2FF0B6D067" priority="1" actor = "" excList="step7" />
+		<step1 acttype="1" actname="TransferTaskRequestType">
+		<TransferTaskRequestType TaskId="0102">
+			<SourceFile Type="ftp" FilePath="" FileName="1AET0005.mpg" IP="192.168.1.104" User="tianyx" Pwd="tianyx" Port="21">src</SourceFile>
+			<DestFile Type="disk" FilePath="e:\clip\out\" FileName="1AET0006.mpg" IP="192.168.1.202" User="tianyx" Pwd="tianyx" Port="21">des</DestFile>
+		</TransferTaskRequestType>
 	</step1>
-	<step2 acttype="16" actname="sample">
-		<sample>
-			<src>d:\1.mpg</src>
-		</sample>
+	<step2 acttype="8" actname="md5">
+		<md5 desfile="E:\CLIP\out\1AET0006.mpg"  compare = "1234344">
+		</md5>
 	</step2>
+	<step3 acttype="4" actname="FCVS" >
+<FCVS><FCVSConfig BCheckAudio="1" BSaveXML="1" BUseSection="0" DetectLevelCount="1" DetectThresholodCount="1" FileDriverCount="1" ServerName="s1111111111111">
+<DetectLevel0 BlackFrame="125" ColorFrame="50" ColorSripe="1" HighDur="250" LevelID="0" LevelName="A" LowDur="250" StaticFrame="125"/>
+<DetectThresholodCount0 AMBIT_DEEMED_TO_SAME_PIXEL="1.000000" AUDIO_High_PERIOD="0.500000" AUDIO_High_THRESHOLD="-9.000000" AUDIO_Low_PERIOD="1.000000" AUDIO_Low_THRESHOLD="-38.000000" AUDIO_Mute_THRESHOLD="-60.000000" BLACK_SCENE_THRESHOLD="30.000000" BOTTOM_SAFE_SECTION="0.200000" COLOR_SCENE_PERCENTAGE="0.985000" COLOR_STRIP_PERCENTAGE="0.900000" LEFT_SAFE_SECTION="0.200000" LINE_COUNTS_FOR_STRIP_DETECT="100.000000" Name="" RIGHT_SAFE_SECTION="0.100000" STATIC_FRAME_PERCENTAGE="0.980000" TOP_SAFE_SECTION="0.200000" UNDULATE_AMBIT_OF_U="3.000000" UNDULATE_AMBIT_OF_V="3.000000" UNDULATE_AMBIT_OF_Y="3.000000"/>
+<FileDriver0 ClassString="CFileDriver_TS" DetectedCLIP_HEIGHT="576" DetectedCLIP_WIDTH="720" DriverName="PIN服务器TS格式解码器" FileType="TS" IsDefault="1" Name="FileDriver001"/>
+</FCVSConfig>
+<FCVSTask CheckItem="1118481" ClipType="电影" FileAdrIP="" FileAdrPort="" FileAdrPwd="" FileAdrType="磁盘" FileAdrUser="" FileMediaType="TS" FileName="1AET0006.mpg" FilePath="e:\clip\out" TaskCutEOM="0" TaskCutSOM="0" UsedDetectLevel="A"/>
+</FCVS>
+</step3>
+
+<step4 acttype="32" actname="dbwriter">
+<dbwriter dbtype=1 conn="Provider=SQLOLEDB; Server=.; Database=testdb; uid=sa; pwd=123" cmdlist = "cmd1,cmd2" >
+<cmd1>insert into table1 (col1,col2,col3) values (9,2,3)</cmd1>
+<cmd2>insert into table1 (col1,col2,col3) values (9,2,3)</cmd2>
+</dbwriter>
+</step4>
+
+<step5 acttype="16" actname="worksample">
+<worksample></worksample>
+</step5>
+
+<step6 acttype="2" actname="Transcoding">
+<Transcoding>
+<Param Driver="CMxfToMpg" VideoFile="c:\ftproot\K_Xiyouji1999E_3A_VIDEO.mxf" DstName="test.mpg" WorkDir="c:\ftproot" />
+</Transcoding>
+ </step6>
+
+<step7 acttype="128" actname="merge2db">
+<merge2db dbtype="0" conn ="Provider=SQLOLEDB; Server=.; Database=dbas60_zjtv; uid=sa; pwd=123" path="\\192.168.1.104\temp" taskid ="37CT0031"></merge2db>
+</step7>
 </edoc_main>
+

@@ -22,6 +22,7 @@ BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterf
 			if (pFun)
 			{
 				pFun(pInterfaceOut);
+				return TRUE;
 			}
 			else
 			{
@@ -30,7 +31,7 @@ BOOL TxLoadPlugin(const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterf
 			}
 			
 		}
-	return TRUE;
+	return FALSE;
 }
 
 BOOL TxLoadPluginVC6( const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pInterfaceOut )
@@ -46,6 +47,7 @@ BOOL TxLoadPluginVC6( const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pIn
 		if (pFun)
 		{
 			pFun(pInterfaceOut);
+			return TRUE;
 		}
 		else
 		{
@@ -54,7 +56,7 @@ BOOL TxLoadPluginVC6( const CString& strFileIn, HMODULE& hModuleOut, LPVOID& pIn
 		}
 
 	}
-	return TRUE;
+	return FALSE;
 }
 
 BOOL TxUnloadPlugin(HMODULE hModuleIn)
@@ -185,7 +187,7 @@ HRESULT ConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 )
 	if (!pIPlugin1 || !pIPlugin2)
 	{
 		ASSERT(FALSE);
-		return FALSE;
+		return E_FAIL;
 	}
 	CTxAutoComPtr<IPluginConnectorInterce> apIConn1;
 	pIPlugin1->QueryInterface(GuidEMBPlugin_IConnector, (LPVOID&)*&apIConn1);
@@ -194,7 +196,7 @@ HRESULT ConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 )
 		return apIConn1->Connect(pIPlugin2);
 	}
 
-	return S_FALSE;
+	return E_FAIL;
 }
 
 HRESULT DisConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 )
@@ -211,7 +213,7 @@ HRESULT DisConnectPlugins( EMB::ITxUnkown* pIPlugin1, EMB::ITxUnkown* pIPlugin2 
 		return apIConn1->Disconnect(pIPlugin2);
 	}
 
-	return S_FALSE;
+	return E_FAIL;
 }
 
 BOOL GetTaskBasicInfo( const CString& strTaskIn, ST_TASKBASIC& infoOut )

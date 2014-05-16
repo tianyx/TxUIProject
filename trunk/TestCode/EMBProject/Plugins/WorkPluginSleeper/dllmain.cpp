@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
-
+#include "FGlobal.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -38,12 +38,11 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		//  问题。
 
 		new CDynLinkLibrary(WorkPluginSleeperDLL);
-
+		MACRO_CREATEOUTPUTCONSOLE
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)
 	{
 		TRACE0("WorkPluginSleeper.DLL 正在终止!\n");
-
 		// 在调用析构函数之前终止该库
 		AfxTermExtensionModule(WorkPluginSleeperDLL);
 	}

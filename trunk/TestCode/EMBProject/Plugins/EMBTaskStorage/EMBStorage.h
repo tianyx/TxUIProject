@@ -69,6 +69,9 @@ typedef map<TXGUID, TXGUID> MAPTXGUID;
 // 已分配队列，一个任务管理可能有多个已分配任务
 typedef map<DISPATCHID, MAPTXGUID> MAPTASKASSIGNED;
 
+typedef multimap<int, EMB::IEMBPublishCallbackInterface*> MMAPPUBTYPEIFACE;
+
+
 namespace EMB{
 class CEMBStorageMem:
 	public IPluginStorageInterface,
@@ -103,7 +106,8 @@ private:
 
 class CEMBStorageDB:
 	public IPluginStorageInterface,
-	public IPluginTaskCommit
+	public IPluginTaskCommit,
+	public IEMBInfoPublishRegisterInterface
 {
 public:
 	CEMBStorageDB(void);
@@ -117,8 +121,14 @@ public:
 	virtual HRESULT GetDispatchedTaskFromStorage(const DISPATCHID nDispatchID, VECTASKS& vTasks);
 	virtual HRESULT UpdateActorID(CTaskString& strTaskGuid, ACTORID actorId);
 
+	//for IEMBInfoPublishRegisterInterface interface
+	virtual HRESULT RegisterPublisher(IEMBPublishCallbackInterface* pPublisher, const int nPubType);
+	virtual HRESULT UnRegisterPublisher(IEMBPublishCallbackInterface* pPublisher, const int nPubType);
+
 	// 设置数据库连接字符串
 	void SetDBConnectString(CString strDBCon);
+
+	void PublishInfo(ST_TASKPUBLISHINFO& taskPubInfo, int nPubType);
 
 private:
 	CString GetTaskKind(ST_TASKSAVEDATA taskInfo);
@@ -129,6 +139,11 @@ private:
 
 	//智能锁
 	CAutoCritSec m_csPoolLock;
+
+	//for publish register
+	CAutoCritSec m_csPub;
+	MMAPPUBTYPEIFACE m_mmapPubface;
+
 };
 
 }

@@ -263,7 +263,7 @@ HRESULT EMB::CUIServer::SetParam( const CTaskString& szIn, CTaskString& szOut )
 
 HRESULT EMB::CUIServer::UIMessageCallback( CString& taskIn, CString& strRet )
 {
-	HRESULT hr = S_FALSE;
+	HRESULT hr = E_FAIL;
 	ST_EMBXMLMAININFO mainInfo;
 	if (GetEmbXmlMainInfo(taskIn, mainInfo))
 	{

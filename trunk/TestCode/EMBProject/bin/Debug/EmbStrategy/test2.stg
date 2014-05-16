@@ -1,0 +1,94 @@
+--策略配置xml，nStgType 0= offline strategy, 1= online strategy
+--nStgPriority 模板应用先后的排序参考
+--KtInfo是(lua策略返回值,模板名称)映射。
+
+--**stgConfigPosBegin**--
+<stgconfig nStgType = "1" bEnable="1" strName="测试2" nStgPriority ="1">
+<KtInfo count="1">
+<Id0 key="0" val="temp1"/>
+</KtInfo>
+</stgconfig>
+--**stgConfignPosEnd**--
+
+--**stgLuaPosBegin**--
+--function for strategy
+--根据播出时间，频道id，时长
+ --定义比较值
+ --离线时间：播出时间减当前时间大于该值为离线任务，单位：秒
+ local s_tmLimitOffLine = 60*60*24*30
+ --关门时间：播出时间减当前时间小于该值为关门任务，单位：秒
+ local s_tmLimitClose =100
+ --频道列表
+ local s_tbChIds = {"ch01", "ch02"}
+ --素材时长,单位秒
+ local s_tClipDurLimit = 100
+ 
+ local s_tClipTypes = {"1", "2"}
+ 
+ -----------------------------------
+ --枚举定义
+ local callRt_ok = 0
+ local callRt_offline = 1
+ local callRt_closed = 2
+ local callRt_CHIdNotMatch =3
+ local callRt_ClipDurNotMatch =4
+ local calRt_ClipTypeNotMatch=5
+ local callRt_error = -1
+ local callRt_ErrInvalidArg = -2
+ ---------------------------------
+ 
+function StgCallFunc(pObjIn, tmPlayTimeIn, strChidIn, nClipTypeIn, tClipDurIn)
+ 
+ --check param is valid
+ if (pObjIn == nil) or (tmPlayTimeIn == nil) or(strChidIn== nil)
+     or(nClipTypeIn == nil) or (tClipDurIn == nil) then
+     return callRt_ErrInvalidArg;
+ end
+ 
+  bRet = callRt_ok
+ --check play time
+ if s_tmLimitOffLine ~= nil  and s_tmLimitClose ~= nil then
+   --time in second
+     tmNow = os.time()
+     tmDetla = tmPlayTimeIn - tmNow
+
+     strRunInfo = ""
+     nRunInfoType = 1
+     --check playtime
+     if tmDetla < s_tmLimitOffLine then
+      if tmDetla < s_tmLimitClose then
+        --closed
+        strRunInfo ="closed"
+        bRet = callRt_closed
+      else
+        --online
+        strRunInfo = "online"
+        bRet = callRt_ok
+      end
+     else
+      --offline
+        strRunInfo = "offline"
+        bRet = callRt_offline
+     end
+     
+     FuncCallbackToC(pObjIn, nRunInfoType, strRunInfo)
+   end
+ 
+ 
+  if bRet ~= callRt_ok then
+   return bRet
+ end
+ 
+  print("returned: ", bRet)
+  return bRet
+end
+
+--**stgLuaPosEnd**--
+--for test
+function FuncCallbackToC(nTypeIn, strInfoIn)
+  print("callback info: ", strInfoIn)
+end
+
+
+StgCallFunc(111, os.time() +103, "ch01", "1", 20)
+

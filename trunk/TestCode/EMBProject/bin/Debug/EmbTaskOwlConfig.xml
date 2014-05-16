@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="GB2312"?>
+<owlconfig>
+<bShowManualAlert>1</bShowManualAlert>
+<chClipMachineID>120</chClipMachineID>
+<mapFtpSites count="2">
+<key0 GroupName="媒资" count="2" key="1">
+<site0 nFtpPort="21" nLocation="1" nPassive="1" strDBConn="" strFtpIp="tianyx" strFtpName="" strPw="src1" strStoreName="BVS1" strUncDir="" strUser="src1"/>
+<site1 nFtpPort="21" nLocation="2" nPassive="1" strDBConn="" strFtpIp="tianyx" strFtpName="" strPw="src2" strStoreName="BVS2" strUncDir="" strUser="src2"/>
+</key0>
+<key1 GroupName="主干" count="2" key="2">
+<site0 nFtpPort="21" nLocation="1" nPassive="1" strDBConn="" strFtpIp="tianyx" strFtpName="" strPw="src1" strStoreName="BVS1" strUncDir="" strUser="src1"/>
+<site1 nFtpPort="21" nLocation="2" nPassive="1" strDBConn="" strFtpIp="tianyx" strFtpName="" strPw="src2" strStoreName="BVS2" strUncDir="" strUser="src2"/>
+</key1>
+</mapFtpSites>
+<mapExternalCHId count="2">
+<key0 ExtChID="0" ChID="CH00"></key0>
+<key1 ExtChID="1" ChID="CH01"></key1>
+</mapExternalCHId>
+
+<nAfdInfo>0</nAfdInfo>
+<nAutoLoopInterval>60</nAutoLoopInterval>
+<nClipKeepDays>5</nClipKeepDays>
+<nDefBitrate>8</nDefBitrate>
+<nDesFtpMaxsize>10</nDesFtpMaxsize>
+<nEmbtaskRetryCount>1</nEmbtaskRetryCount>
+<nEmergencyPriority>1</nEmergencyPriority>
+<nHDBitRate>8</nHDBitRate>
+<nIdleHourNum>-1</nIdleHourNum>
+<nIdleHourStart>0</nIdleHourStart>
+<nIdleTimeLineOffline>1440</nIdleTimeLineOffline>
+<nIdleTimelineClose>0</nIdleTimelineClose>
+<nMaxTaskCoutOnceCheck>100</nMaxTaskCoutOnceCheck>
+<nTimeLineOffline>1440</nTimeLineOffline>
+<nTimelineClose>60</nTimelineClose>
+<strDefChnID>CH00</strDefChnID>
+<strDefMediaType>OMN</strDefMediaType>
+<strEmbTaskDBConn>Provider=SQLOLEDB; Server=.; Database=emb; uid=sa; pwd=123;</strEmbTaskDBConn>
+<strPlayListCheckDBConn>Provider=SQLOLEDB; Server=.; Database=zjtv; uid=sa; pwd=123;</strPlayListCheckDBConn>
+<strPlayListCheckDBConn2>Provider=SQLOLEDB; Server=.; Database=Dbas60_zjtv2; uid=sa; pwd=123;</strPlayListCheckDBConn2>
+<strPlaylistDBName>zjtv</strPlaylistDBName>
+</owlconfig>

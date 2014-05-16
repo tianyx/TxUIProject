@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="GB2312"?>
+<!-- edited with XMLSpy v2011 rel. 2 (http://www.altova.com) by ttt (ttt) -->
+<!--TaskSequece-迁移=1,迁移MD5=2，技审 =3，切片技审= 4，技审合并=5 -->
+<!--测试流程-->
+<edoc_main ver="1.0" type="1" guid="{TaskGuid}">
+	<basic guid="{TaskGuid}" priority="1" actor="" excList="step1,step2,step3">
+		<taskSequence>2,4,5</taskSequence>
+	</basic>
+	<step1 acttype="1" actname="TranFileInfo">
+		<TranFileInfo>
+			<dbinfo strClipID="{TaskClipID}" strClipLogicID="{TaskGuid}">
+				<tbvsid nBitRate="8" nClipType="1" nTapeType="0" strChID="CH01" strClipName="{TaskClipID}" strDuration="00:10:00:00" strEOM="00:10:00:00" strLDuration="00:10:00:00" strLEOM="00:10:00:00" strLSOM="00:00:00:00" strSOM="00:00:00:00" strTapeID="" strTypeSOM="" tPlanAirTime="2014-03-06 00:00:00.000" tPlanLastAirTime="2014-12-06 00:00:00.000"/>
+				<tloc nAfdType="0" nBitReate="8" strFileSize="00:10:00:00" strMediaType="1"/>
+			</dbinfo>
+			<desFtpList count="2">
+				<site0 ftpName="des1" strUncDir="\\192.168.0.50\clip\des1" nFtpPort="21" nLocation="1" nPassive="1" strDBConn="Provider=SQLOLEDB; Server=192.168.0.50; Database=zjtv; uid=sa; pwd=123" strFtpIp="192.168.0.50" strPw="des1" strStoreName="BVS1" strUser="des1"/>
+				<site1 ftpName="des2" strUncDir="\\192.168.0.50\clip\des2" nFtpPort="21" nLocation="2" nPassive="1" strDBConn="Provider=SQLOLEDB; Server=192.168.0.50; Database=zjtv2; uid=sa; pwd=123" strFtpIp="192.168.0.50" strPw="des2" strStoreName="BVS2" strUser="des2"/>
+			</desFtpList>
+			<fileLoc strDesDir="" strDesFileName="{TaskClipID}" strSrcDir="" strSrcFileName="{MxfName}"/>
+			<options bDownToLocal="0" bMD5Check="1" bRegisterToDB="1" bWriteLocalResult="0" nCodePage="65001" nSpeedLimit="500000" strLocalDownDir="e:\clip\localDown" strLocalDownFileName="{TaskClipID}" strMD5Compare=""/>
+			<srcFtpList count="2">
+				<site0 ftpName="1" nFtpPort="21" nLocation="1" nPassive="1" strDBConn="" strFtpIp="192.168.0.50" strPw="src1" strStoreName="BVS1" strUser="src1"/>
+				<site1 ftpName="2" nFtpPort="21" nLocation="2" nPassive="1" strDBConn="" strFtpIp="192.168.0.50" strPw="src2" strStoreName="" strUser="src2"/>
+			</srcFtpList>
+		</TranFileInfo>
+	</step1>
+	<step2 acttype="4" actname="FCVS">
+		<FCVS>
+			<FCVSConfig BCheckAudio="1" BSaveXML="1" BUseSection="0" DetectLevelCount="1" DetectThresholodCount="1" FileDriverCount="1" ServerName="s1111111111111">
+				<DetectLevel0 BlackFrame="125" ColorFrame="50" ColorSripe="1" HighDur="250" LevelID="0" LevelName="A" LowDur="250" StaticFrame="125"/>
+				<DetectThresholodCount0 AMBIT_DEEMED_TO_SAME_PIXEL="1.000000" AUDIO_High_PERIOD="0.500000" AUDIO_High_THRESHOLD="-9.000000" AUDIO_Low_PERIOD="1.000000" AUDIO_Low_THRESHOLD="-38.000000" AUDIO_Mute_THRESHOLD="-60.000000" BLACK_SCENE_THRESHOLD="30.000000" BOTTOM_SAFE_SECTION="0.200000" COLOR_SCENE_PERCENTAGE="0.985000" COLOR_STRIP_PERCENTAGE="0.900000" LEFT_SAFE_SECTION="0.200000" LINE_COUNTS_FOR_STRIP_DETECT="100.000000" Name="" RIGHT_SAFE_SECTION="0.100000" STATIC_FRAME_PERCENTAGE="0.980000" TOP_SAFE_SECTION="0.200000" UNDULATE_AMBIT_OF_U="3.000000" UNDULATE_AMBIT_OF_V="3.000000" UNDULATE_AMBIT_OF_Y="3.000000"/>
+				<FileDriver0 ClassString="CFileDriver_omn" DetectedCLIP_HEIGHT="576" DetectedCLIP_WIDTH="720" DriverName="PIN服务器MPG格式解码器" FileType="mxf" IsDefault="1" Name="FileDriver001"/>
+			</FCVSConfig>
+			<FCVSTask bRuntimeUpdate="1" CheckItem="1118481" ClipType="电影" FileAdrIP="" FileAdrPort="" FileAdrPwd="" FileAdrType="磁盘" FileAdrUser="" FileMediaType="mxf" FileName="{MxfName}" FilePath="\\192.168.0.50\clip\des1\" nSectionID="1" nTotalSectionCount="1" UsedDetectLevel="A"/>
+		</FCVS>
+	</step2>
+	<step3 acttype="64" actname="FCVSResultTask">
+		<FCVSResultTask FilePath="c:111.mpg" NTotalSectionCount="1" bRegisterToDB="1" bRuntimeUpdate="1" bWirteResultXml="1" guidbase="" strDBConn="" subList=""/>
+	</step3>
+</edoc_main>

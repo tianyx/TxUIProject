@@ -1,11 +1,11 @@
 USE [master]
 GO
 
-/****** Object:  Database [emb]    Script Date: 02/13/2014 10:39:11 ******/
+/****** Object:  Database [emb]    Script Date: 05/07/2014 13:54:35 ******/
 CREATE DATABASE [emb] ON  PRIMARY 
 ( NAME = N'EAB', FILENAME = N'D:\Program Files\Microsoft SQL Server\MSSQL10_50.TIANYX\MSSQL\DATA\emb.mdf' , SIZE = 3072KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
  LOG ON 
-( NAME = N'EAB_log', FILENAME = N'D:\Program Files\Microsoft SQL Server\MSSQL10_50.TIANYX\MSSQL\DATA\emb_1.ldf' , SIZE = 5184KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+( NAME = N'EAB_log', FILENAME = N'D:\Program Files\Microsoft SQL Server\MSSQL10_50.TIANYX\MSSQL\DATA\emb_1.ldf' , SIZE = 6912KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
 GO
 
 ALTER DATABASE [emb] SET COMPATIBILITY_LEVEL = 100

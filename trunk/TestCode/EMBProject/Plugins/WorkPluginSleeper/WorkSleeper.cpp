@@ -68,12 +68,13 @@ HRESULT EMB::CWorkSleeper::DoTask( const CTaskString& szTaskIn, CEMBWorkString& 
 	//ret if need
 	if (m_taskInfo.nReCallType != embrecalltype_none)
 	{
-		ST_WORKERRET stRet;
-		stRet.nRetType = m_taskInfo.nReCallType;
-		stRet.strRetInfo = m_taskInfo.strExtInfo;
+		ST_WORKERRECALL stRet;
+		stRet.nReCallType = m_taskInfo.nReCallType;
+		stRet.strRuntimeInfo = m_taskInfo.strExtInfo;
 		CString strRet;
 		stRet.ToString(strRet);
-		szRet = strRet;
+		CEMBWorkString szRecalRet;
+		m_pReportCallback->OnDllRuntimeCall(strRet, szRecalRet);
 
 	}
 	return S_OK;

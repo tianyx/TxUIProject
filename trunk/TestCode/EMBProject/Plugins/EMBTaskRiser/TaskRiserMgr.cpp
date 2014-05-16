@@ -180,7 +180,7 @@ HRESULT CTaskRiserMgr::Run_Plugin()
 	}
 
 
-	return S_FALSE;
+	return hr;
 }
 
 /*
@@ -349,7 +349,7 @@ HRESULT EMB::CTaskRiserMgr::Connect( ITxUnkown* pInterfaceIn )
 	}
 	else
 	{
-		return S_FALSE;
+		return E_FAIL;
 	}
 }
 
@@ -436,7 +436,7 @@ HRESULT EMB::CTaskRiserMgr::OnDisconnect( ITxUnkown* pInterfaceIn )
 		return E_FAIL;
 	}
 
-	HRESULT hr = S_FALSE;
+	HRESULT hr = E_FAIL;
 	BOOL bFound = FALSE;
 	if (m_pTaskStorage == pInterfaceIn)
 	{

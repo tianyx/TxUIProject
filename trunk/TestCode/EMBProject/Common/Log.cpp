@@ -14,7 +14,7 @@ const int Log::ToDebug   =  1;
 const int Log::ToFile    =  2;
 const int Log::ToConsole =  4;
 
-const static int LINE_BUFFER_SIZE = 1024;
+const static int LINE_BUFFER_SIZE = 8096;
 
 Log::Log(int mode, int level, LPCTSTR filename, bool append)
 {

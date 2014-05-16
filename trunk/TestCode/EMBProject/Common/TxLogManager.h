@@ -76,7 +76,7 @@ public:
 	virtual DWORD WriteLog(DWORD dwLogKey, CString strDataIn); 
 
 	void Start();
-	void Stop();
+	void Stop(BOOL bForce = FALSE);
 
 protected:
 

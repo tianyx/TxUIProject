@@ -300,6 +300,8 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 	//判断是否为任务完成状态
 	if (updateInfo.nUpdateType == embtaskupdatetype_finish)
 	{
+		CString strTaskID = Guid2String(guid);
+
 		//是否正常完成
 		int nEndState = updateInfo.data_end.nEndState;
 		if (nEndState == embtaskstate_finished)
@@ -324,7 +326,7 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 			CTxStrConvert conval(embtaskstate_finished);
 			strSQL +=conval.GetAsString();
 			strSQL +=" where strTaskID='";
-			strSQL += Guid2String(guid);
+			strSQL += strTaskID;
 			strSQL += "'";
 
 			if(!dbCtrl.ExecuteSQL(strSQL))
@@ -332,12 +334,34 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 				CFWriteLog(LOGKEY_TASKSTORAGE,"更新完成任务数据库表信息失败， SQL语句失败!");
 				CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
 			}
+
+			CString strSqlPub;
+			strSqlPub.Format(TEXT("  select strProgramID from T_EMBTask where strTaskID = '%s'"), strTaskID);
+			if(dbCtrl.OpenRecordset(strSqlPub))
+			{
+				CString strPgmID;
+				dbCtrl.GetSpecialValue("strProgramID",&strPgmID);
+				if (!strPgmID.IsEmpty() && strPgmID.Find(TEXT("-")) == -1)
+				{
+					//
+					//publish info
+					ST_TASKPUBLISHINFO pubInfo;
+					pubInfo.strTaskId = Guid2String(guid);
+					pubInfo.strClipPgmId =strPgmID;
+					pubInfo.nErrcode = 0;
+					pubInfo.nState = embtaskstate_finished;
+					pubInfo.tReportTime = time(NULL);
+					PublishInfo(pubInfo, embpublishtype_ontaskend);
+				}
+				
+			}
+			
 		}
 		else if (nEndState == embtaskstate_error)
 		{
 			//if retry time not max,reset task;
 			//else remove from all map;
-			strSQL = "select nRetry from t_EMBTask where strTaskID='";
+			strSQL = "select nRetry, strProgramID from t_EMBTask where strTaskID='";
 			strSQL += Guid2String(guid);
 			strSQL += "'";
 
@@ -366,6 +390,22 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 // 						strSQL = "delete from t_EMBTask where strTaskID='";
 // 						strSQL += Guid2String(guid);
 // 						strSQL += "'";
+
+
+						CString strPgmID;
+						dbCtrl.GetSpecialValue("strProgramID",&strPgmID);
+						if (!strPgmID.IsEmpty() && strPgmID.Find(TEXT("-")) == -1)
+						{
+							//
+							//publish info
+							ST_TASKPUBLISHINFO pubInfo;
+							pubInfo.strTaskId = Guid2String(guid);
+							pubInfo.strClipPgmId =strPgmID;
+							pubInfo.nErrcode = 0;
+							pubInfo.nState = embtaskstate_error;
+							pubInfo.tReportTime = time(NULL);
+							PublishInfo(pubInfo, embpublishtype_ontaskend);
+						}
 					}
 
 					if(!strSQL.IsEmpty())
@@ -377,7 +417,7 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 						}
 						else
 						{
-							// 将任务状态写到日志表中
+							/*// 将任务状态写到日志表中
 							CTime tmNow(time(NULL));
 							CString strRemark = TEXT("任务最终失败");
 							if (nRetry >= 0)
@@ -390,7 +430,7 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 							{
 								CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储插入T_EMBTASKLog SQL语句失败!");
 								CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
-							}
+							}*/
 						}
 					}
 				}
@@ -426,6 +466,23 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 		
 
 	}
+	else if (updateInfo.nUpdateType ==embtaskupdatetype_runState)
+	{
+		strSQL = "update T_EMBTask set nState = ";
+		strSQL += CTxStrConvert(updateInfo.data_end.nEndState).GetAsString();
+		strSQL += " where strTaskID='";
+		strSQL += updateInfo.strTaskID;
+		strSQL += "'";
+
+		if(!dbCtrl.ExecuteSQL(strSQL))
+		{
+			CFWriteLog(LOGKEY_TASKSTORAGE,"数据库存储执行SQL语句失败!");
+			CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
+
+			dbCtrl.CloseDB();
+			return S_FALSE;
+		}
+	}
 	else if (updateInfo.nUpdateType == embtaskupdatetype_change)
 	{
 		// 调整数组大小为20
@@ -442,6 +499,12 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 		strSQL += cNum;
 		strSQL += ",";
 
+		strSQL += "nState=";
+		strSQL += CTxStrConvert(updateInfo.data_end.nEndState).GetAsString();
+		strSQL += ",";
+
+
+
 		itoa(updateInfo.data_end.actorid,cNum,10);
 		strSQL += "nActorID=";
 		strSQL += cNum;
@@ -456,7 +519,7 @@ HRESULT EMB::CEMBStorageDB::UpdateTaskToStorage( const DISPATCHID nDispatchID, C
 			CFWriteLog(LOGKEY_TASKSTORAGE,strSQL);
 
 			dbCtrl.CloseDB();
-			return S_FALSE;
+			return E_FAIL;
 		}
 		else
 		{
@@ -499,7 +562,7 @@ HRESULT EMB::CEMBStorageDB::FetchTaskFromStorage( const DISPATCHID nDispatchID, 
 
 	
 
-	strSQL = "select * from t_EMBTask where (nState = 0) and (nDispatchID is null) and (nPRI > ";
+	strSQL = "select * from t_EMBTask where (nState = 0) and (nDispatchID is null) and (nPRI !< ";
 	itoa(nMinPriority,cNum,10);
 	strSQL += cNum;
 	
@@ -580,7 +643,7 @@ HRESULT EMB::CEMBStorageDB::SubmitTask( const CTaskString& szTaskIn, CTaskString
 	else
 	{
 		dbCtrl.CloseDB();
-		return S_FALSE;
+		return E_FAIL;
 	}
 
 	dbCtrl.CloseDB();
@@ -678,4 +741,62 @@ HRESULT EMB::CEMBStorageDB::UpdateActorID( CTaskString& strTaskGuid, ACTORID act
 
 	dbCtrl.CloseDB();
 	return S_OK;
+}
+
+HRESULT EMB::CEMBStorageDB::RegisterPublisher( EMB::IEMBPublishCallbackInterface* pPublisher, const int nPubType )
+{
+	CAutoLock lock(&m_csPub);
+	//enum support type
+	if (nPubType & embpublishtype_ontaskend)
+	{
+		m_mmapPubface.insert(make_pair(embpublishtype_ontaskend, pPublisher));
+	}
+	else if (embpublishtype_ontaskstart & nPubType)
+	{
+		m_mmapPubface.insert(make_pair(embpublishtype_ontaskstart, pPublisher));
+
+	}
+	else
+	{
+		ASSERT(FALSE);
+		CFWriteLog(TEXT("pub type unknow! type =%d"), nPubType);
+	}
+
+	return S_OK;
+}
+
+HRESULT EMB::CEMBStorageDB::UnRegisterPublisher( EMB::IEMBPublishCallbackInterface* pPublisher, const int nPubType )
+{
+	CAutoLock lock(&m_csPub);
+	MMAPPUBTYPEIFACE::iterator itf = m_mmapPubface.find(nPubType);
+
+	while (itf != m_mmapPubface.end() && itf->first == nPubType)
+	{
+		if (itf->second == pPublisher)
+		{
+			m_mmapPubface.erase(itf);
+			break;
+		}
+		++itf;
+	}
+
+	return S_OK;
+}
+
+void EMB::CEMBStorageDB::PublishInfo( ST_TASKPUBLISHINFO& taskPubInfo, int nPubType )
+{
+	CAutoLock lock(&m_csPub);
+	MMAPPUBTYPEIFACE::iterator itf = m_mmapPubface.find(nPubType);
+	CString strInfo;
+	taskPubInfo.ToString(strInfo);
+	while (itf != m_mmapPubface.end() && itf->first == nPubType)
+	{
+		if (itf->second)
+		{
+			itf->second->OnReceivePublishInfo(strInfo, nPubType);
+		}
+		++itf;
+	}
+
+
 }

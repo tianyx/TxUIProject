@@ -24,8 +24,12 @@ struct ST_SUBTASKDATA
 	CString strSubTask; // 信息
 };
 
+typedef std::map<int, CString> MAPWORKPREINFOEXCHANGE;
+
 class CExcutorObj : public ITaskReportToExcutorInterface
 {
+
+friend DWORD __stdcall ExcObjMsgLoopThread( void* lparam );
 private:
 	CExcutorObj();
 	~CExcutorObj();
@@ -66,6 +70,7 @@ public:
 	History：
 	*/
 	virtual HRESULT OnDllReportTaskProgress(const CTaskString& szInfo);
+	virtual HRESULT OnDllRuntimeCall(const CTaskString& szInfo, CEMBWorkString& strRet);
 
 public://for unit test
 	BOOL TestRunTask(CString& strTaskIn);
@@ -80,7 +85,7 @@ private:
 
 	BOOL	LunchTaskDll(int nTaskType);
 	BOOL	UnLoadTaskDll();
-	HRESULT LaunchTask();
+	HRESULT LaunchTask(ST_SUBTASKDATA& taskIn);
 
 	HANDLE  CreateMappingFile();
 
@@ -93,6 +98,12 @@ private:
 	BOOL Init(ST_EXCUTORREG& tExecutorReg, HWND hMain);
 	void ResetTaskInfor();
 
+	BOOL OnRecvExcCallbackInfo(ST_EXCCALLBACKINFO& infoIn);
+
+	BOOL GetRuntimeExchangeInfo(int nType, CString& strRet);
+	BOOL AddRuntimeExchangeInfo(int nType, CString& strIn);
+	BOOL SetRuntimeExchangeInfo(MAPWORKPREINFOEXCHANGE& mapDataIn);
+
 public:
 	HWND m_hwndExcMsg;	// 消息标识
 
@@ -100,10 +111,15 @@ private:
 	CString						m_strTask;				// 任务信息
 	vector<ST_SUBTASKDATA>		m_vSubTasks;			// 分步任务数组
 	ITaskWorkerCallInterface	*m_pTaskDllInterface;	// 任务工作者回调接口
+	ITaskWorkerOnMessageInterface * m_pTaskMessageface; //task dll notify interface
 	ST_LOADEDPLUGIN				m_taskDll;				// 加载任务插件
 	ST_TASKRUNSTATE				m_runState;				// 任务运行状态
 	ST_EXCUTORREG				m_executorReg;			// 执行者进程信息
 	VECPLUGINFOS				m_vexcInfo;				// 插件信息数组
+	//CString						m_strRuntimeFileDestInfo;			// task extInfo,current for runtime file destination change
+	ST_WORKERREPORT				m_lastReport;
+
+	MAPWORKPREINFOEXCHANGE		m_mapInfoExchange;	 //for work plugin request runtime info when do task
 
 	HWND	m_hwndMain;
 	HANDLE	m_hThreadMsgLoop;		// 消息分发线程
@@ -112,10 +128,13 @@ private:
 	HANDLE	m_hEventQuitLoop;		// QuitLoop 事件
 	HANDLE	m_hEventPoolMsgArrival; // MsgArrival 事件
 	HANDLE	m_hMapping;
+	HANDLE	m_hEventMsgWndCreated; 
 
 	CAutoCritSec	m_csPipeWrite;			// PipeWrite 临界区
 	CAutoCritSec	m_csMsgPool;			// MsgPool 临界区
 	CAutoCritSec	m_csTaskInfo;			// TaskInfo 临界区
+	CAutoCritSec	m_csWorkDll;			// dll lock
+	CAutoCritSec	m_csExchInfo;			//runtime exchange info lock
 	VECWNDMSG		m_vMsgPool;				// 消息数组
 	BOOL			m_bRegistered;
 	

@@ -83,7 +83,7 @@ BOOL CADOCtrl::OpenRecordset(CString SQLCommand)
 	{
 		if(m_pRecordset->State)
 	    	m_pRecordset->Close();
-		OutputDebugString(SQLCommand+"---OpenRecordset");
+		//OutputDebugString(SQLCommand+"---OpenRecordset");
 		m_pRecordset->Open(_variant_t(SQLCommand),_variant_t((IDispatch *)m_pConnection,true),
 			adOpenKeyset,adLockOptimistic,adCmdText);
 	}

@@ -64,7 +64,13 @@ BOOL CEMBServerApp::InitInstance()
 	// 更改用于存储设置的注册表项
 	// TODO: 应适当修改该字符串，
 	// 例如修改为公司或组织名
-	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+	HANDLE hmutex;
+	if (IsAppRunning(hmutex))
+	{
+		AfxMessageBox(TEXT("同一目录下程序已经在运行中."));
+		return FALSE;
+	}
+
 	MACRO_CREATEOUTPUTCONSOLE
 #ifndef _DEBUG
 		MACRO_SHOWCONSOLEWINDOW(FALSE)

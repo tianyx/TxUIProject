@@ -1,13 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="GB2312"?>
 <edoc_main>
 	<TaskRiserConfig proberList="prober1">
-		<prober1 type="1" listenIp="192.168.1.104:4001"/>
+	<!--这个配成本机ip即可-->
+	<prober1 type="1" listenIp="192.168.0.50:4001"/>
 	</TaskRiserConfig>
-	<TaskStorageConfig type = "1">
-		
+	<TaskStorageConfig type = "1" DBConnect = "Provider=SQLOLEDB; Server=.; Database=emb; uid=sa; pwd=123;">
 	</TaskStorageConfig>
-	<TaskDispatchConfig nSvrID = "1" nMaster = "1" IpActorHolder = "192.168.1.104:5001" IpMaster = "192.168.1.104:6001">
+	<!--配本机ip，nSvrID如果配一个svr就不要动， IpMaster是主备通信地址，主机配成本机ip，备机必须配成主机的IpMaster-->
+	<TaskDispatchConfig nSvrID = "1" nMaster = "1" IpActorHolder = "192.168.0.50:5001" IpMaster = "192.168.0.50:6001" DBLogConn = "Provider=SQLOLEDB; Server=.; Database=emb; uid=sa; pwd=123;" 
+		 nfgMaxFcvsSplitCount="5" nfgMinFcvsSplitSize ="400" nfgMinTaskSplitActorCount = "3" nfgSplitTaskParallelRunMax= "3">
 	</TaskDispatchConfig>
-	<TaskActorConfig actorId = "1" addrMain="192.168.1.104:5001" addrSlave = "192.168.1.104:5002" nExcutorMinId = "1" nExcutorMaxId = "100" >
-	</TaskActorConfig>
+	<UISvrConfig type = "1" addrListen = "192.168.0.50:8001"></UISvrConfig>
 </edoc_main>

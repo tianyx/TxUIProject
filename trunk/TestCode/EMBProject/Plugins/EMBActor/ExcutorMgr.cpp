@@ -42,6 +42,8 @@ DWORD __stdcall ExcMgrMsgLoopThread( void* lparam )
 	{
 		HRESULT hr = GetLastError();
 		ASSERT(FALSE);
+		CFWriteLog(0, TEXT("RegisterClassEx failed %d"), hr);
+		return 0;
 
 	}
 	HWND& hwnd = pMgr->m_hMessageWnd;
@@ -73,6 +75,11 @@ DWORD __stdcall ExcMgrMsgLoopThread( void* lparam )
 		DispatchMessage(&msg);
 	}
 
+	if(IsWindow(hwnd))
+	{
+		DestroyWindow(hwnd);
+	}
+	UnregisterClass(strClsName, hInstance);
 	return 0;
 }
 
@@ -126,9 +133,9 @@ DWORD __stdcall MsgPoolCheckProc(LPVOID lparam)
 CExcutorMgr* CExcutorMgr::m_spExcMgr = NULL;
 CExcutorMgr::CExcutorMgr(void)
 {
-	nfgExcutorLaunchTimeout = 30;
+	nfgExcutorLaunchTimeout = 60;
 #ifdef _DEBUG
-	nfgExcutorLaunchTimeout = 30;
+	nfgExcutorLaunchTimeout = 60;
 
 #endif // _DEBUG
 
@@ -252,7 +259,7 @@ HRESULT CExcutorMgr::Run()
 
 	m_hMsgPoolCheckThread = CreateThread(NULL, 0, MsgPoolCheckProc, (LPVOID)this, 0, 0);
 
-	return m_hMsgLoopThread != NULL? S_OK:S_FALSE;
+	return m_hMsgLoopThread != NULL? S_OK:E_FAIL;
 }
 
 BOOL CExcutorMgr::Init( LPCTSTR strExcPathIn, ST_ACTORCONFIG& actCfg, IExcutorMsgCallBack* pCallBack)
@@ -335,9 +342,9 @@ EXCUTORID CExcutorMgr::GetFirstNotUsedExcutorId()
 // 		}
 
 		// 若没有查询到空闲Executor
-		if (INVALID_ID == nRet && m_mapExcutors.size() < (m_nMaxExcutorId - m_nMinExcutorId + 1))
+		if (INVALID_ID == nRet && ((int)m_mapExcutors.size()) < (m_nMaxExcutorId - m_nMinExcutorId))
 		{
-			for(EXCUTORID id = m_nMinExcutorId; id <= m_nMaxExcutorId; ++id)
+			for(EXCUTORID id = m_nMinExcutorId; id < m_nMaxExcutorId; ++id)
 			{
 				MAPEXCUTORS::iterator findItor = m_mapExcutors.find(id);
 
@@ -507,10 +514,10 @@ BOOL CExcutorMgr::LaunchExcutorFile( const EXCUTORID excId , DWORD& dwProcessId)
 	{
 		//not exist
 		strDes += TEXT("\\*.*\"");
-		CString strCopyStr = m_strExcFolder;
-		strCopyStr += TEXT("\\*.* \"");
+		CString strCopyStr = TEXT("\"") +m_strExcFolder;
+		strCopyStr += TEXT("\\*.*\" ");
 		strCopyStr +=strDes;
-		strCopyStr += TEXT("\" /S /C /Y");
+		strCopyStr += TEXT(" /S /C /Y");
 // 		HINSTANCE hIns = ShellExecute(NULL, 0, TEXT("xcopy"), strCopyStr, NULL, SW_HIDE);
 // 		if ((int)hIns <=32)
 // 		{
@@ -851,5 +858,9 @@ bool CExcutorMgr::QueryExecutor( const EXCUTORID& id, ST_EXCUTORINFO& infor )
 int CExcutorMgr::GetExcResUsage()
 {
 	EMB::CAutoLock lock(&m_csExcutors);
-	return ((int)m_mapExcutors.size()*100/(m_nMaxExcutorId - m_nMinExcutorId+1));
+	if (m_nMaxExcutorId <= m_nMinExcutorId)
+	{
+		return 100;
+	}
+	return ((int)m_mapExcutors.size()*100/(m_nMaxExcutorId - m_nMinExcutorId));
 }

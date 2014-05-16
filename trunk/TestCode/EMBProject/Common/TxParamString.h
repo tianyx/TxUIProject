@@ -189,6 +189,9 @@ private:
 public:
 	ST_MARKITEM m_kvData;
 
+
+	static CString UnEscapeString(CString& strXmlIn);
+	static CString EscapeString(CString& strXmlIn);
 };
 
 

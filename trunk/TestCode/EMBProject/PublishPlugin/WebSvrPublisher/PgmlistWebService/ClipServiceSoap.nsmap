@@ -1,0 +1,14 @@
+
+#include "soapH.h"
+SOAP_NMAC struct Namespace namespaces[] =
+{
+	{"SOAP-ENV", "http://www.w3.org/2003/05/soap-envelope", "http://www.w3.org/2003/05/soap-envelope", NULL},
+	{"SOAP-ENC", "http://www.w3.org/2003/05/soap-encoding", "http://www.w3.org/2003/05/soap-encoding", NULL},
+	{"xsi", "http://www.w3.org/2001/XMLSchema-instance", "http://www.w3.org/*/XMLSchema-instance", NULL},
+	{"xsd", "http://www.w3.org/2001/XMLSchema", "http://www.w3.org/*/XMLSchema", NULL},
+	{"ns1", "http://JSTV/PublicService/Parameter/", NULL, NULL},
+	{"CLIPSVR2", "http://219.232.52.76:8084/WebSrv/FounderService.asmx/ClipServiceSoap", NULL, NULL},
+	{"CLIPSVR", "http://219.232.52.76:8084/WebSrv/FounderService.asmx", NULL, NULL},
+	{"CLIPSVR3", "http://219.232.52.76:8084/WebSrv/FounderService.asmx/ClipServiceSoap12", NULL, NULL},
+	{NULL, NULL, NULL, NULL}
+};
